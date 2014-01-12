@@ -1,29 +1,29 @@
-# chip8.coffee
+# This is a Chip-8 emulator.
 
-# This early version has approximately zero input checking and error catching,
-# ultimately improving that retro feel of confusion and despair.
+# Reference material for the Chip-8 specification:
+# [Chip-8 Technical Reference](http:#devernay.free.fr/hacks/chip8/C8TECH10.HTM#00E0)
 
-# Reference for Chip-8 specification:
-# http:#devernay.free.fr/hacks/chip8/C8TECH10.HTM#00E0
+# # Chip-8 Specifications
 
-# --*-- Chip-8 Specifications --*--
+# Declares the Chip-8 memory, registers, stack, display, sound, keyboard and
+# timers.
 
-# Declares the Chip-8 memory, registers, display, keyboard and timers.
-
-# -*- Memory -*-
+# ## Memory
 
 # Memory address range from 200h to FFFh (3,584 bytes) since the first 512
 # bytes (0x200) were reserved for the CHIP-8 interpreter:
-# FFF = 4095 bytes.
-# 200 = 512 bytes.
-# FFF - 200 = 3584 bytes.
+
+# - FFF = 4095 bytes.
+# - 200 = 512 bytes.
+# - FFF - 200 = 3584 bytes.
 
 memorySize = 4095
 memory = (0 for i in [0...memorySize])
 
-# -*- Registers -*-
+# ## Registers
 
 # The 16 8-bit data registers.
+
 registerCount = 16
 registers = (0 for i in [0...registerCount])
 
@@ -32,61 +32,63 @@ registers = (0 for i in [0...registerCount])
 # program.
 
 # The 16-bit address register, called I.
-I = 0;
+
+I = 0
 
 # The two special purpose registers for delay and sound timers.
 
 # When the registers are non-zero, they are automatically decremented at a rate
 # of 60Hz.
 
-DT = 0;
-ST = 0;
+DT = 0
+ST = 0
 
 # The program counter (PC, 16-bit) and stack pointer (SP, 8-bit).
 
-PC = 0;
-SP = 0;
+PC = 0
+SP = 0
 
 # The stack.
 
 # It is a 16 16-bit valued array used for storing the address that the
-# interpreter should return to when finished with a subroutine.
-# Chip-8 allows for up to 16 levels of nested subroutines.
+# interpreter should return to when finished with a subroutine. Chip-8 allows
+# for up to 16 levels of nested subroutines.
 
 stackSize = 16
 stack = (0 for i in [0...stackSize])
 
-# -*- Keyboard -*-
+# ## Keyboard
 
 # Computers using the Chip-8 language had a 16-key hexadecimal keypad with the
 # following layout:
 
-# |---|---|---|---|
-# | 1 | 2 | 3 | C |
-# |---|---|---|---|
-# | 4 | 5 | 6 | D |
-# |---|---|---|---|
-# | 7 | 8 | 9 | E |
-# |---|---|---|---|
-# | A | 0 | B | F |
-# |---|---|---|---|
+#     |---|---|---|---|
+#     | 1 | 2 | 3 | C |
+#     |---|---|---|---|
+#     | 4 | 5 | 6 | D |
+#     |---|---|---|---|
+#     | 7 | 8 | 9 | E |
+#     |---|---|---|---|
+#     | A | 0 | B | F |
+#     |---|---|---|---|
 
-# -*- Display -*-
+# ## Display
 
 # The original implementation of the Chip-8 language used a 64x32-pixel
 # monochrome display with the format:
 
-# |---------------|
-# |(0,0)    (63,0)|
-# |               |
-# |(0,31)  (63,31)|
-# |---------------|
+#     |---------------|
+#     |(0,0)    (63,0)|
+#     |               |
+#     |(0,31)  (63,31)|
+#     |---------------|
 
 displayWidth = 64
 displayHeight = 32
 
 # Technically we would want to have a bit instead of char but that isn't
 # possible. So any value different from 0 is seen as 1.
+
 display = ((0 for j in [0...displayWidth]) for i in [0...displayHeight])
 
 # Chip-8 draws graphics on screen through the use of sprites. A sprite is a
@@ -102,22 +104,22 @@ display = ((0 for j in [0...displayWidth]) for i in [0...displayHeight])
 
 # Declare the built-in sprites
 sprites = [
-  0xF0, 0x90, 0x90, 0x90, 0xF0, # 0-4
-  0x20, 0x60, 0x20, 0x20, 0x70, # 5-9
-  0xF0, 0x10, 0xF0, 0x80, 0xF0, # 10-14
-  0xF0, 0x10, 0xF0, 0x10, 0xF0, # 15-19
-  0x90, 0x90, 0xF0, 0x10, 0x10, # 20-24
-  0xF0, 0x80, 0xF0, 0x10, 0xF0, # 25-29
-  0xF0, 0x80, 0xF0, 0x90, 0xF0, # 30-34
-  0xF0, 0x10, 0x20, 0x40, 0x40, # 35-39
-  0xF0, 0x90, 0xF0, 0x90, 0xF0, # 40-44
-  0xF0, 0x90, 0xF0, 0x10, 0xF0, # 45-49
-  0xF0, 0x90, 0xF0, 0x90, 0x90, # 50-54
-  0xE0, 0x90, 0xE0, 0x90, 0xE0, # 55-59
-  0xF0, 0x80, 0x80, 0x80, 0xF0, # 60-64
-  0xE0, 0x90, 0x90, 0x90, 0xE0, # 65-69
-  0xF0, 0x80, 0xF0, 0x80, 0xF0, # 70-74
-  0xF0, 0x80, 0xF0, 0x80, 0x80  # 75-79
+  0xF0, 0x90, 0x90, 0x90, 0xF0, # 0: 0-4
+  0x20, 0x60, 0x20, 0x20, 0x70, # 1: 5-9
+  0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2: 10-14
+  0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3: 15-19
+  0x90, 0x90, 0xF0, 0x10, 0x10, # 4: 20-24
+  0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5: 25-29
+  0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6: 30-34
+  0xF0, 0x10, 0x20, 0x40, 0x40, # 7: 35-39
+  0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8: 40-44
+  0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9: 45-49
+  0xF0, 0x90, 0xF0, 0x90, 0x90, # A: 50-54
+  0xE0, 0x90, 0xE0, 0x90, 0xE0, # B: 55-59
+  0xF0, 0x80, 0x80, 0x80, 0xF0, # C: 60-64
+  0xE0, 0x90, 0x90, 0x90, 0xE0, # D: 65-69
+  0xF0, 0x80, 0xF0, 0x80, 0xF0, # E: 70-74
+  0xF0, 0x80, 0xF0, 0x80, 0x80  # F: 75-79
   ]
 
 # Put them into Chip-8 memory
@@ -125,7 +127,7 @@ sprites = [
 addSpritesToMemory = (address, sprites) ->
   (memory[address + i] = sprites[i]) for i in sprites
 
-# -*- Timers and Sounds -*-
+# ## Timers and Sounds
 
 # Chip-8 provides 2 timers, a delay timer and a sound timer.
 
@@ -141,7 +143,7 @@ addSpritesToMemory = (address, sprites) ->
 # The sound produced by the Chip-8 interpreter has only one tone. The frequency
 # of this tone is decided by the author of the interpreter.
 
-# --*-- Chip-8 Instructions --*--
+# # Chip-8 Instructions
 
 # All instructions are 2 bytes long and are stored most-significant-byte first.
 
@@ -159,7 +161,7 @@ addSpritesToMemory = (address, sprites) ->
 # y - A 4-bit value, the upper 4 bits of the low byte of the instruction
 # kk or byte - An 8-bit value, the lowest 8 bits of the instruction
 
-# -*- Instructions -*-
+# ## Instructions
 
 # 0nnn - SYS addr
 # Jump to a machine code routine at nnn.
@@ -454,7 +456,7 @@ instFx55LD = (x) ->
 instFx65LD = (x) ->
   (registers[i] = memory[I+i]) for i in [0..x]
 
-# --*-- Main --*--
+# # Main
 
 reset = () ->
   memory = (0 for i in [0...memorySize])

@@ -1,0 +1,12 @@
+{
+  "name" : "chip-8",
+  "version" : "0.1.0",
+	"description" : "A Chip-8 emulator",
+	"author" : "Peter Urbak peter<at>dragonwasrobot<dot>com",
+	"scripts" : {
+			"docs" : "make docs"
+	},
+  "dependencies" : {
+		"docco" : "*"
+  }
+}
