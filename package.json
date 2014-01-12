@@ -1,12 +1,27 @@
 {
-  "name" : "chip-8",
-  "version" : "0.1.0",
-	"description" : "A Chip-8 emulator",
-	"author" : "Peter Urbak peter<at>dragonwasrobot<dot>com",
-	"scripts" : {
-			"docs" : "make docs"
-	},
-  "dependencies" : {
-		"docco" : "*"
-  }
+		"name" : "chip-8",
+		"version" : "0.1.0",
+		"author" : "Peter Urbak peter<at>dragonwasrobot<dot>com",
+		"description" : "A Chip-8 emulator",
+
+		"scripts" : {
+				"docs" : "make docs"
+		},
+
+		"repository" : {
+				"type" : "git",
+				"url" : "https://github.com/dragonwasrobot/chip-8.git"
+		},
+
+		"keywords" : [
+				"chip-8",
+				"emulator"
+		],
+
+		"dependencies" : {
+				"docco" : "*"
+		},
+
+		"license" : "MIT"
+
 }
