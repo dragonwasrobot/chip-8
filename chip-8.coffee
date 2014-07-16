@@ -458,20 +458,24 @@ instFx65LD = (x) ->
 
 # # Main
 
+chip8 = () ->
+  reset()
+
 reset = () ->
+  I = 0 # "I" register
+  DT = 0 # Delay timer
+  ST = 0 # Sound timer
+  PC = 0 # Program counter
+  SP = 0 # Stack pointer
+
   memory = (0 for i in [0...memorySize])
   registers = (0 for i in [0..registerCount])
   stack = (0 for i in [0...stackSize])
   inst00E0CLS()
   addSpritesToMemory()
-  I = 0
-  DT = 0
-  ST = 0
-  PC = 0
-  SP = 0
 
 #
 main = () ->
   console.log "Start"
-  reset()
+  chip8()
   console.log "Stop"
