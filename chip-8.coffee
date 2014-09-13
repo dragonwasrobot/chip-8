@@ -11,21 +11,21 @@
 # ## Memory
 
 # Memory address range from 200h to FFFh (3,584 bytes) since the first 512
-# bytes (0x200) were reserved for the CHIP-8 interpreter:
+# bytes (0x200) are reserved for the CHIP-8 interpreter:
 
-# - FFF = 4095 bytes.
+# - FFF = 4096 bytes.
 # - 200 = 512 bytes.
 # - FFF - 200 = 3584 bytes.
 
-memorySize = 4095
-memory = (0 for i in [0...memorySize])
+memorySize = 4096
+memory = new Array(memorySize)
 
 # ## Registers
 
 # The 16 8-bit data registers.
 
 registerCount = 16
-registers = (0 for i in [0...registerCount])
+registers = new Array(registerCount)
 
 # V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, VA, VB, VC, VD, DE,
 # and VF, where VF doubles as a carry flag and thus shouldn't be used by any
@@ -50,12 +50,12 @@ SP = 0
 
 # The stack.
 
-# It is a 16 16-bit valued array used for storing the address that the
+# It is a 16-bit valued array of length 16 used for storing the address that the
 # interpreter should return to when finished with a subroutine. Chip-8 allows
 # for up to 16 levels of nested subroutines.
 
 stackSize = 16
-stack = (0 for i in [0...stackSize])
+stack = new Array(stackSize)
 
 # ## Keyboard
 
@@ -124,8 +124,8 @@ sprites = [
 
 # Put them into Chip-8 memory
 
-addSpritesToMemory = (address, sprites) ->
-  (memory[address + i] = sprites[i]) for i in sprites
+addSpritesToMemory = () ->
+  (memory[i] = sprites[i]) for i in [0...sprites.length]
 
 # ## Timers and Sounds
 
@@ -155,203 +155,231 @@ addSpritesToMemory = (address, sprites) ->
 
 # Variables used in the following instructions:
 
-# nnn or addr - A 12-bit value, the lowest 12 bits of the instruction
-# n or nibble - A 4-bit value, the lowest 4 bits of the instruction
-# x - A 4-bit value, the lower 4 bits of the high byte of the instruction
-# y - A 4-bit value, the upper 4 bits of the low byte of the instruction
-# kk or byte - An 8-bit value, the lowest 8 bits of the instruction
+# - nnn or addr - A 12-bit value, the lowest 12 bits of the instruction
+# - n or nibble - A 4-bit value, the lowest 4 bits of the instruction
+# - x - A 4-bit value, the lower 4 bits of the high byte of the instruction
+# - y - A 4-bit value, the upper 4 bits of the low byte of the instruction
+# - kk or byte - An 8-bit value, the lowest 8 bits of the instruction
 
 # ## Instructions
 
-# 0nnn - SYS addr
+# Below, all instructions are listed along with their informal descriptions and
+# their implementations.
+
+# #### 0nnn - SYS addr
+
 # Jump to a machine code routine at nnn.
 #
 # This instruction is only used on the old computers on which Chip-8 was
 # originally implemented. It is ignored by modern interpreters.
-inst0nnnSYSaddr = (addr, nnn) ->
+inst_0nnn_SYS = (nnn) ->
 
-# 00E0 - CLS
+# #### 00E0 - CLS
+
 # Clear the display.
-inst00E0CLS = () ->
+inst_00E0_CLS = () ->
   display = ((0 for j in [0...displayWidth]) for i in [0...displayHeight])
 
-# 00EE - BET
+# #### 00EE - RET
+
 # Return from a subroutine.
 #
 # The interpreter sets the program counter to the address at the top of the
 # stack, then subtracts 1 from the stack pointer.
-inst00EERET = () ->
+inst_00EE_RET = () ->
   PC = stack[SP]
   SP -= 1
 
-# 1nnn - JP addr
+# #### 1nnn - JP addr
+
 # Jump to location nnn.
 #
 # The interpreter sets the program counter to nnn.
-inst1nnnJP = (addr, nnn) ->
+inst_1nnn_JP = (nnn) ->
   PC = nnn
 
-# 2nnn - CALL addr
+# #### 2nnn - CALL addr
+
 # Call subroutine at nnn.
 #
 # The interpreter increments the stack pointer, then puts the current PC on the
 # top of the stack. The PC is then set to nnn.
-inst2nnnCALL = (addr, nnn) ->
+inst_2nnn_CALL = (nnn) ->
   SP += 1
   stack[SP] = PC
   PC = nnn
 
-# 3xkk - SE Vx, byte
+# #### 3xkk - SE Vx, byte
+
 # Skip next instruction if Vx = kk.
 #
 # The interpreter compares register Vx to kk, and if they are equal, increments
 # the program counter by 2.
-inst3xkkSE = (x, kk) ->
+inst_3xkk_SE = (x, kk) ->
   (PC += 2) if registers[x] is kk
 
-# 4xkk - SNE Vx, byte
+# #### 4xkk - SNE Vx, byte
+
 # Skip next instruction if Vx != kk.
 #
 # The interpreter compares register Vx to kk, and if they are not equal,
 # increments the program counter by 2.
-inst4xkkSNE = (x, kk) ->
+inst_4xkk_SNE = (x, kk) ->
   (PC += 2) if registers[x] isnt kk
 
-# 5xy0 - SE Vx, Vy
+# #### 5xy0 - SE Vx, Vy
+
 # Skip next instruction if Vx = Vy.
 #
 # The interpreter compares register Vx to register Vy, and if they are equal,
 # increments the program counter by 2.
-inst5xy0SE = (x, y) ->
+inst_5xy0_SE = (x, y) ->
   (PC += 2) if registers[x] is registers[y]
 
-# 6xkk - LD Vx, byte
+# #### 6xkk - LD Vx, byte
+
 # Set Vx = kk.
 #
 # The interpreter puts the value kk into register Vx.
-inst6xkkLD = (x, kk) ->
+inst_6xkk_LD = (x, kk) ->
   registers[x] = kk
 
-# 7xkk - ADD Vx, byte
+# #### 7xkk - ADD Vx, byte
+
 # Set Vx = Vx + kk.
 #
 # Adds the value kk to the value of register Vx, then stores the result in Vx.
-inst7xkkADD = (x, kk) ->
-  registers[x] += kk
+inst_7xkk_ADD = (x, kk) ->
+  registers[x] = (registers[x] + kk) % 256
 
-# 8xy0 - LD Vx, Vy
+# #### 8xy0 - LD Vx, Vy
+
 # Set Vx = Vy.
 #
 # Stores the value of register Vy in register Vx.
-inst8xy0LD = (x, y) ->
+inst_8xy0_LD = (x, y) ->
   registers[x] = registers[y]
 
-# 8xy1 - OR Vx, Vy
+# #### 8xy1 - OR Vx, Vy
+
 # Set Vx = Vx OR Vy.
 #
 # Performs a bitwise OR on the values of Vx and Vy, then stores the result in
 # Vx.
-inst8xy1OR = (x, y) ->
-  registers[x] = registers[x] | registers[y]
+inst_8xy1_OR = (x, y) ->
+  registers[x] |= registers[y]
 
-# 8xy2 - AND Vx, Vy
+# #### 8xy2 - AND Vx, Vy
+
 # Set Vx = Vx AND Vy.
 #
 # Performs a bitwise AND on the values of Vx and Vy, then stores the result in
 # Vx.
-inst8xy2AND = (x, y) ->
-  registers[x] = registers[x] & registers[y]
+inst_8xy2_AND = (x, y) ->
+  registers[x] &= registers[y]
 
-# 8xy3 - XOR Vx, Vy
+# #### 8xy3 - XOR Vx, Vy
+
 # Set Vx = Vx XOR Vy.
 #
 # Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the
 # result in Vx.
-inst8xy3XOR = (x, y) ->
-  registers[x] = registers[x] ^ registers[y]
+inst_8xy3_XOR = (x, y) ->
+  registers[x] ^= registers[y]
 
-# 8xy4 - ADD Vx, Vy
+# #### 8xy4 - ADD Vx, Vy
+
 # Set Vx = Vx + Vy, set VF = carry.
 #
 # The values of Vx and Vy are added together. If the result is greater than 8
 # bits (i.e., > 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of
 # the result are kept, and stored in Vx.
-inst8xy4Add = (x, y) ->
-  registers[x] = registers[x] + registers[y]
-  registers[15] = if registers[x] > 255 then 1 else 0
+inst_8xy4_Add = (x, y) ->
+  registers[15] = if (registers[x] + registers[y]) > 255 then 1 else 0
+  registers[x] = (registers[x] + registers[y]) % 256
 
-# 8xy5 - SUB Vx, Vy
+# #### 8xy5 - SUB Vx, Vy
+
 # Set Vx = Vx - Vy, set VF = NOT borrow.
 #
 # If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
 # and the results stored in Vx.
-inst8xy5SUB = (x, y) ->
-  registers[x] = registers[x] - registers[y]
+inst_8xy5_SUB = (x, y) ->
   registers[15] = if registers[x] > registers[y] then 1 else 0
+  registers[x] = registers[x] - registers[y]
+  if registers[x] < 0 then registers[x] += 256
 
-# 8xy6 - SHR Vx
+# #### 8xy6 - SHR Vx
+
 # Set Vx = Vx SHR 1.
 #
-# If the least-significant bit of Vx is 1, then VF is set to 1, otherwise
-# 0. Then Vx is divided by 2.
-inst8xy6SHR = (x) ->
+# If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
+# Then Vx is divided by 2.
+inst_8xy6_SHR = (x) ->
   LSB = registers[x] % 2
   registers[15] = if LSB is 1 then 1 else 0
   registers[x] = registers[x] / 2
 
-# 8xy7 - SUBN Vx, Vy
+# #### 8xy7 - SUBN Vx, Vy
+
 # Set Vx = Vy - Vx, set VF = NOT borrow.
 #
 # If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
 # and the results stored in Vx.
-inst8xy7SUBN = (x, y) ->
-  registers[x] = registers[y] - registers[x]
+inst_8xy7_SUBN = (x, y) ->
   registers[15] = if registers[y] > registers[x] then 1 else 0
+  registers[x] = registers[y] - registers[x]
+  if registers[x] < 0 then registers[x] += 256
 
-# 8xyE - SHL Vx ->, Vy
+# #### 8xyE - SHL Vx ->, Vy
+
 # Set Vx = Vx SHL 1.
 #
-# If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to
-# 0. Then Vx is multiplied by 2.
-inst8xyESHL = (x) ->
+# If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
+# Then Vx is multiplied by 2.
+inst_8xyE_SHL = (x) ->
   MSB = (registers[x] >> 7)
   registers[15] = if MSB is 1 then 1 else 0
   registers[x] = registers[x] * 2
 
-# 9xy0 - SNE Vx, Vy
+# #### 9xy0 - SNE Vx, Vy
+
 # Skip next instruction if Vx != Vy.
 #
 # The values of Vx and Vy are compared, and if they are not equal, the program
 # counter is increased by 2.
-inst9xy0SNE = (x, y) ->
+inst_9xy0_SNE = (x, y) ->
   (PC += 2) (registers[x] isnt registers[y])
 
-# Annn - LD I, addr
+# #### Annn - LD I, addr
+
 # Set I = nnn.
 #
 # The value of register I is set to nnn.
-instAnnnLD = (addr, nnn) ->
+inst_Annn_LD = (nnn) ->
   I = nnn
 
-# Bnnn - JP V0, addr
+# #### Bnnn - JP V0, addr
+
 # Jump to location nnn + V0.
 #
 # The program counter is set to nnn plus the value of V0.
-#/
-instBnnnJP = (addr, nnn) ->
-  inst1nnnJP(nnn + registers[0])
+inst_Bnnn_JP = (nnn) ->
+  inst_1nnn_JP(nnn + registers[0])
 
-# Cxkk - RND Vx, byte
+# #### Cxkk - RND Vx, byte
+
 # Set Vx = random byte AND kk.
 #
 # The interpreter generates a random number from 0 to 255, which is then ANDed
 # with the value kk. The results are stored in Vx. See instruction 8xy2 for
 # more information on AND.
-instCxkkRND = (x, kk) ->
-  random = Math.floor((Math.random() * 256) + 1)
+inst_Cxkk_RND = (x, kk) ->
+  random = Math.floor(Math.random() * 256)
   registers[x] = random & kk
 
-# Dxyn - DRW Vx, Vy, nibble
+# #### Dxyn - DRW Vx, Vy, nibble
+
 # Display n-byte sprite starting at memory location I at (Vx, Vy),
 # set VF = collision.
 #
@@ -363,97 +391,129 @@ instCxkkRND = (x, kk) ->
 # around to the opposite side of the screen. See instruction 8xy3 for more
 # information on XOR, and section 2.4, Display, for more information on the
 # Chip-8 screen and sprites.
-instDxyn = (x, y, n) ->
-  # todo
+inst_Dxyn = (x, y, n) ->
 
-# Ex9E - SKP Vx
+  hexToBitPattern = (num) ->
+    paddingByte = "00000000"
+    (paddingByte + num.toString(2)) # convert num to binary and pad with zeroes
+      .slice(-8) # reduce to one byte
+      .split('') # turn into char array
+      .map (char) -> parseInt(char) # parse chars into bits
+
+  setBit = (x,y,newValue) ->
+    oldValue = display[x][y]
+    registers[15] = if oldValue is 1 and newValue is 1 then 1 else 0 # carry
+    x = if x > displayWidth-1 then x - displayWidth else x # bounds x
+    y = if y > displayHeight-1 then y - displayHeight else x # bounds y
+    display[x][y] = oldValue ^ newValue
+
+  sprites = []
+  sprites[0...n] = memory[I...I+n]
+  console.log(sprites.map (sprite) -> sprite.toString(16))
+  for sprite in sprites
+    bits = hexToBitPattern(sprite)
+    console.log bits
+    setBit(x+index,y,bit) for bit, index in bits
+
+# #### Ex9E - SKP Vx
+
 # Skip next instruction if key with the value of Vx is pressed.
 #
 # Checks the keyboard, and if the key corresponding to the value of Vx is
 # currently in the down position, PC is increased by 2.
-instEx9ESKP = (x) ->
+inst_Ex9E_SKP = (x) ->
   # todo
 
-# ExA1 - SKNP Vx
+# #### ExA1 - SKNP Vx
+
 # Skip next instruction if key with the value of Vx is not pressed.
 #
 # Checks the keyboard, and if the key corresponding to the value of Vx is
 # currently in the up position, PC is increased by 2.
 #/
-instExA1SKNP = (x) ->
+inst_ExA1_SKNP = (x) ->
   # todo
 
-# Fx07 - LD Vx, DT
+# #### Fx07 - LD Vx, DT
+
 # Set Vx = delay timer value.
 #
 # The value of DT is placed into Vx.
-instFx07LD = (x) ->
+inst_Fx07_LD = (x) ->
   registers[x] = DT
 
-# Fx0A - LD Vx, K
+# #### Fx0A - LD Vx, K
+
 # Wait for a key press, store the value of the key in Vx.
 #
 # All execution stops until a key is pressed, then the value of that key is
 # stored in Vx.
-instFx0ALD = (x, key) ->
+inst_Fx0A_LD = (x, key) ->
   # todo
   registers[x] = key
 
-# Fx15 - LD DT, Vx
+# #### Fx15 - LD DT, Vx
+
 # Set delay timer = Vx.
 #
 # DT is set equal to the value of Vx.
-instFx15LD = (x) ->
+inst_Fx15_LD = (x) ->
   DT = registers[x]
 
-# Fx18 - LD ST, Vx
+# #### Fx18 - LD ST, Vx
+
 # Set sound timer = Vx.
 #
 # ST is set equal to the value of Vx.
-instFx18LD = (x) ->
+inst_Fx18_LD = (x) ->
   ST = registers[x]
 
-# Fx1E - ADD I, Vx
+# #### Fx1E - ADD I, Vx
+
 # Set I = I + Vx.
 #
 # The values of I and Vx are added, and the results are stored in I.
-instFx1EAdd = (x) ->
+inst_Fx1E_Add = (x) ->
   I += registers[x]
 
-# Fx29 - LD F, Vx
+# #### Fx29 - LD F, Vx
+
 # Set I = location of sprite for digit Vx.
 #
 # The value of I is set to the location for the hexadecimal sprite
 # corresponding to the value of Vx. See section 2.4, Display, for more
 # information on the Chip-8 hexadecimal font.
-instFx29 = (x) ->
+inst_Fx29_LD = (x) ->
   I = x * 5
 
-# Fx33 - LD B, Vx
+# #### Fx33 - LD B, Vx
+
 # Store BCD representation of Vx in memory locations I, I+1, and I+2.
 
 # The interpreter takes the decimal value of Vx, and places the hundreds digit
 # in memory at location in I, the tens digit at location I+1, and the ones
 # digit at location I+2.
-instFx33LD = (x) ->
+inst_Fx33_LD = (x) ->
   memory[I] = (registers[x] / 100)
   memory[I+1] = (registers[x] % 100) / 10
   memory[I+2] = (registers[x] % 10)
 
-# Fx55 - LD [I], Vx
+# #### Fx55 - LD [I], Vx
+
 # Store registers V0 through Vx in memory starting at location I.
 #
 # The interpreter copies the values of registers V0 through Vx into memory,
 # starting at the address in I.
-instFx55LD = (x) ->
+inst_Fx55_LD = (x) ->
   (memory[I+i] = registers[i]) for i in [0..x]
 
-# Fx65 - LD Vx, [I]
+# #### Fx65 - LD Vx, [I]
+
 # Read registers V0 through Vx from memory starting at location I.
 #
 # The interpreter reads values from memory starting at location I into
 # registers V0 through Vx.
-instFx65LD = (x) ->
+inst_Fx65_LD = (x) ->
   (registers[i] = memory[I+i]) for i in [0..x]
 
 # # Main
@@ -462,20 +522,24 @@ chip8 = () ->
   reset()
 
 reset = () ->
-  I = 0 # "I" register
+  I = 0  # 'I' register
   DT = 0 # Delay timer
   ST = 0 # Sound timer
   PC = 0 # Program counter
   SP = 0 # Stack pointer
 
-  memory = (0 for i in [0...memorySize])
-  registers = (0 for i in [0..registerCount])
-  stack = (0 for i in [0...stackSize])
-  inst00E0CLS()
+  memory = new Array(memorySize)
+  registers = new Array(registerCount)
+  stack = new Array(stackSize)
+  inst_00E0_CLS()
   addSpritesToMemory()
 
 #
 main = () ->
   console.log "Start"
   chip8()
+  I = 0
+  inst_Dxyn(0,0, 8)
   console.log "Stop"
+
+main()
