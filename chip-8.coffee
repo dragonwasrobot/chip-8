@@ -72,6 +72,11 @@ stack = new Array(stackSize)
 #     | A | 0 | B | F |
 #     |---|---|---|---|
 
+# TODO: Figure out how to implement keyboard.
+getKeyPresses = () -> [3,15]
+
+waitForKeyPress = () -> 5
+
 # ## Display
 
 # The original implementation of the Chip-8 language used a 64x32-pixel
@@ -422,7 +427,7 @@ inst_Dxyn = (x, y, n) ->
 # Checks the keyboard, and if the key corresponding to the value of Vx is
 # currently in the down position, PC is increased by 2.
 inst_Ex9E_SKP = (x) ->
-  # todo
+  if registers[x] in getKeyPresses() then PC += 2
 
 # #### ExA1 - SKNP Vx
 
@@ -432,7 +437,7 @@ inst_Ex9E_SKP = (x) ->
 # currently in the up position, PC is increased by 2.
 #/
 inst_ExA1_SKNP = (x) ->
-  # todo
+  if registers[x] not in getKeyPresses() then PC += 2
 
 # #### Fx07 - LD Vx, DT
 
@@ -449,7 +454,7 @@ inst_Fx07_LD = (x) ->
 # All execution stops until a key is pressed, then the value of that key is
 # stored in Vx.
 inst_Fx0A_LD = (x, key) ->
-  # todo
+  key = waitForKeyPress()
   registers[x] = key
 
 # #### Fx15 - LD DT, Vx
@@ -484,7 +489,7 @@ inst_Fx1E_Add = (x) ->
 # corresponding to the value of Vx. See section 2.4, Display, for more
 # information on the Chip-8 hexadecimal font.
 inst_Fx29_LD = (x) ->
-  I = x * 5
+  I = x * 5 # as each sprite is 5 bytes and stored at address 0
 
 # #### Fx33 - LD B, Vx
 
