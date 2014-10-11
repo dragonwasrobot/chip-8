@@ -1,5 +1,13 @@
+# dot-gitignore
+
+# Compiled
+dist
+
 # Documentation
 docs
 
 # Modules
 node_modules
+
+# OS/X Garbage
+.DS_Store

@@ -1,7 +1,7 @@
 # This is a Chip-8 emulator.
 
 # Reference material for the Chip-8 specification:
-# [Chip-8 Technical Reference](http:#devernay.free.fr/hacks/chip8/C8TECH10.HTM#00E0)
+# [Chip-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
 
 # # Chip-8 Specifications
 
@@ -94,7 +94,7 @@ displayHeight = 32
 # Technically we would want to have a bit instead of char but that isn't
 # possible. So any value different from 0 is seen as 1.
 
-display = ((0 for j in [0...displayWidth]) for i in [0...displayHeight])
+display = ((0 for j in [0...displayHeight]) for i in [0...displayWidth])
 
 # Chip-8 draws graphics on screen through the use of sprites. A sprite is a
 # group of bytes which are a binary representation of the desired
@@ -177,13 +177,13 @@ addSpritesToMemory = () ->
 #
 # This instruction is only used on the old computers on which Chip-8 was
 # originally implemented. It is ignored by modern interpreters.
-inst_0nnn_SYS = (nnn) ->
+inst_0nnn_SYS = (nnn) -> undefined
 
 # #### 00E0 - CLS
 
 # Clear the display.
 inst_00E0_CLS = () ->
-  display = ((0 for j in [0...displayWidth]) for i in [0...displayHeight])
+  display = ((0 for j in [0...displayHeight]) for i in [0...displayWidth])
 
 # #### 00EE - RET
 
@@ -399,26 +399,24 @@ inst_Cxkk_RND = (x, kk) ->
 inst_Dxyn = (x, y, n) ->
 
   hexToBitPattern = (num) ->
-    paddingByte = "00000000"
+    paddingByte = '00000000'
     (paddingByte + num.toString(2)) # convert num to binary and pad with zeroes
       .slice(-8) # reduce to one byte
       .split('') # turn into char array
       .map (char) -> parseInt(char) # parse chars into bits
 
-  setBit = (x,y,newValue) ->
+  setBit = (x, y, newValue) ->
     oldValue = display[x][y]
     registers[15] = if oldValue is 1 and newValue is 1 then 1 else 0 # carry
-    x = if x > displayWidth-1 then x - displayWidth else x # bounds x
-    y = if y > displayHeight-1 then y - displayHeight else x # bounds y
+    x = if x > displayWidth - 1 then x - displayWidth else x # bounds x
+    y = if y > displayHeight - 1 then y - displayHeight else x # bounds y
     display[x][y] = oldValue ^ newValue
 
   sprites = []
-  sprites[0...n] = memory[I...I+n]
-  console.log(sprites.map (sprite) -> sprite.toString(16))
+  sprites[0...n] = memory[I...I + n]
   for sprite in sprites
     bits = hexToBitPattern(sprite)
-    console.log bits
-    setBit(x+index,y,bit) for bit, index in bits
+    setBit(x + index, y, bit) for bit, index in bits
 
 # #### Ex9E - SKP Vx
 
@@ -500,8 +498,8 @@ inst_Fx29_LD = (x) ->
 # digit at location I+2.
 inst_Fx33_LD = (x) ->
   memory[I] = (registers[x] / 100)
-  memory[I+1] = (registers[x] % 100) / 10
-  memory[I+2] = (registers[x] % 10)
+  memory[I + 1] = (registers[x] % 100) / 10
+  memory[I + 2] = (registers[x] % 10)
 
 # #### Fx55 - LD [I], Vx
 
@@ -510,7 +508,7 @@ inst_Fx33_LD = (x) ->
 # The interpreter copies the values of registers V0 through Vx into memory,
 # starting at the address in I.
 inst_Fx55_LD = (x) ->
-  (memory[I+i] = registers[i]) for i in [0..x]
+  (memory[I + i] = registers[i]) for i in [0..x]
 
 # #### Fx65 - LD Vx, [I]
 
@@ -519,7 +517,61 @@ inst_Fx55_LD = (x) ->
 # The interpreter reads values from memory starting at location I into
 # registers V0 through Vx.
 inst_Fx65_LD = (x) ->
-  (registers[i] = memory[I+i]) for i in [0..x]
+  (registers[i] = memory[I + i]) for i in [0..x]
+
+# # Browser
+
+cellSize = 10
+tickLength = 100
+canvas = null
+drawingContext = null
+
+red = 0
+green = 255
+blue = 0
+trans = 0.1
+gray = 38
+
+createCanvas = () ->
+  canvas = document.createElement 'canvas'
+  document.body.appendChild canvas
+
+resizeCanvas = () ->
+  canvas.height = cellSize * displayHeight
+  canvas.width = cellSize * displayWidth
+
+createDrawingContext = () ->
+  drawingContext = canvas.getContext '2d'
+
+tick = () ->
+  drawGrid()
+  # perform fetch execute loop
+
+  setTimeout tick, tickLength
+
+drawGrid = () ->
+  for row in [0...displayHeight]
+    for column in [0...displayWidth]
+      drawCell {
+        'row' : row,
+        'column' : column,
+        'value' : display[column][row]
+      }
+
+drawCell = (cell) ->
+  x = cell.column * cellSize
+  y = cell.height * cellSize
+
+  if cell.value is 1
+    fillStyle = "rgb(#{red}, #{green}, #{blue})"
+  else
+    fillStyle = "rgb(#{gray}, #{gray}, #{gray})"
+
+  drawingContext.strokeStyle = "rgba(#{red}, #{green}, #{blue}, #{trans})"
+  drawingContext.strokeRect x, y, cellSize, cellSize
+
+  drawingContext.fillStyle = fillStyle
+  drawingContext.fillRect x, y, cellSize, cellSize
 
 # # Main
 
@@ -539,12 +591,39 @@ reset = () ->
   inst_00E0_CLS()
   addSpritesToMemory()
 
+fetchAndExecute = () ->
+  opcode = memory[PC] << 8 | memory[PC + 1]
+  firstNibble = opcode & 0xF000
+  console.log(nibble)
+  # todo finish fetch-execute loop
+
+readProgram = (program) ->
+  for i in [0...program.length]
+    memory[i + 200] = program[i]
+    console.log memory[i + 200].toString(16)
+
+loadProgram = () ->
+  xhr = new XMLHttpRequest()
+  xhr.open('GET', 'roms/INVADERS', true)
+  xhr.responseType = 'arraybuffer'
+  xhr.onload = () ->
+    readProgram(new Uint8Array(xhr.response))
+  xhr.send()
+
 #
 main = () ->
-  console.log "Start"
+  console.log 'Start'
   chip8()
+
+  loadProgram()
+
   I = 0
   inst_Dxyn(0,0, 8)
-  console.log "Stop"
+  createCanvas()
+  resizeCanvas()
+  createDrawingContext()
+  tick()
 
-main()
+  console.log 'Stop'
+
+window.main = main
