@@ -18,14 +18,14 @@
 # - FFF - 200 = 3584 bytes.
 
 memorySize = 4096
-memory = new Array(memorySize)
+memory = (0 for i in [0...memorySize])
 
 # ## Registers
 
 # The 16 8-bit data registers.
 
 registerCount = 16
-registers = new Array(registerCount)
+registers = (0 for i in [0...registerCount])
 
 # V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, VA, VB, VC, VD, DE,
 # and VF, where VF doubles as a carry flag and thus shouldn't be used by any
@@ -55,7 +55,7 @@ SP = 0
 # for up to 16 levels of nested subroutines.
 
 stackSize = 16
-stack = new Array(stackSize)
+stack = (0 for i in [0...stackSize])
 
 # ## Keyboard
 
@@ -73,7 +73,7 @@ stack = new Array(stackSize)
 #     |---|---|---|---|
 
 # TODO: Figure out how to implement keyboard.
-getKeyPresses = () -> [3,15]
+getKeyPresses = () -> [3, 15]
 
 waitForKeyPress = () -> 5
 
@@ -183,6 +183,7 @@ inst_0nnn_SYS = (nnn) -> undefined
 
 # Clear the display.
 inst_00E0_CLS = () ->
+  log('inside-inst_00E0_CLS')
   display = ((0 for j in [0...displayHeight]) for i in [0...displayWidth])
 
 # #### 00EE - RET
@@ -192,6 +193,7 @@ inst_00E0_CLS = () ->
 # The interpreter sets the program counter to the address at the top of the
 # stack, then subtracts 1 from the stack pointer.
 inst_00EE_RET = () ->
+  log('inside-inst_00EE_RET')
   PC = stack[SP]
   SP -= 1
 
@@ -201,7 +203,9 @@ inst_00EE_RET = () ->
 #
 # The interpreter sets the program counter to nnn.
 inst_1nnn_JP = (nnn) ->
+  log('inside-inst_1nnn_JP')
   PC = nnn
+  log("PC is now: #{PC}")
 
 # #### 2nnn - CALL addr
 
@@ -210,6 +214,7 @@ inst_1nnn_JP = (nnn) ->
 # The interpreter increments the stack pointer, then puts the current PC on the
 # top of the stack. The PC is then set to nnn.
 inst_2nnn_CALL = (nnn) ->
+  log('inside-inst_2nnn_CALL')
   SP += 1
   stack[SP] = PC
   PC = nnn
@@ -221,6 +226,7 @@ inst_2nnn_CALL = (nnn) ->
 # The interpreter compares register Vx to kk, and if they are equal, increments
 # the program counter by 2.
 inst_3xkk_SE = (x, kk) ->
+  log('inside-inst_3xkk_SE')
   (PC += 2) if registers[x] is kk
 
 # #### 4xkk - SNE Vx, byte
@@ -230,6 +236,7 @@ inst_3xkk_SE = (x, kk) ->
 # The interpreter compares register Vx to kk, and if they are not equal,
 # increments the program counter by 2.
 inst_4xkk_SNE = (x, kk) ->
+  log('inside-inst_4xkk_SNE')
   (PC += 2) if registers[x] isnt kk
 
 # #### 5xy0 - SE Vx, Vy
@@ -239,6 +246,7 @@ inst_4xkk_SNE = (x, kk) ->
 # The interpreter compares register Vx to register Vy, and if they are equal,
 # increments the program counter by 2.
 inst_5xy0_SE = (x, y) ->
+  log('inside-inst_5xy0_SE')
   (PC += 2) if registers[x] is registers[y]
 
 # #### 6xkk - LD Vx, byte
@@ -247,6 +255,7 @@ inst_5xy0_SE = (x, y) ->
 #
 # The interpreter puts the value kk into register Vx.
 inst_6xkk_LD = (x, kk) ->
+  log('inside-inst_6xkk_LD')
   registers[x] = kk
 
 # #### 7xkk - ADD Vx, byte
@@ -255,6 +264,7 @@ inst_6xkk_LD = (x, kk) ->
 #
 # Adds the value kk to the value of register Vx, then stores the result in Vx.
 inst_7xkk_ADD = (x, kk) ->
+  log('inside-inst_7xkk_ADD')
   registers[x] = (registers[x] + kk) % 256
 
 # #### 8xy0 - LD Vx, Vy
@@ -263,6 +273,7 @@ inst_7xkk_ADD = (x, kk) ->
 #
 # Stores the value of register Vy in register Vx.
 inst_8xy0_LD = (x, y) ->
+  log('inside-inst_8xy0_LD')
   registers[x] = registers[y]
 
 # #### 8xy1 - OR Vx, Vy
@@ -272,6 +283,7 @@ inst_8xy0_LD = (x, y) ->
 # Performs a bitwise OR on the values of Vx and Vy, then stores the result in
 # Vx.
 inst_8xy1_OR = (x, y) ->
+  log('inside-inst_8xy1_OR')
   registers[x] |= registers[y]
 
 # #### 8xy2 - AND Vx, Vy
@@ -281,6 +293,7 @@ inst_8xy1_OR = (x, y) ->
 # Performs a bitwise AND on the values of Vx and Vy, then stores the result in
 # Vx.
 inst_8xy2_AND = (x, y) ->
+  log('inside-inst_8xy2_AND')
   registers[x] &= registers[y]
 
 # #### 8xy3 - XOR Vx, Vy
@@ -290,6 +303,7 @@ inst_8xy2_AND = (x, y) ->
 # Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the
 # result in Vx.
 inst_8xy3_XOR = (x, y) ->
+  log('inside-inst_8xy3_XOR')
   registers[x] ^= registers[y]
 
 # #### 8xy4 - ADD Vx, Vy
@@ -299,7 +313,8 @@ inst_8xy3_XOR = (x, y) ->
 # The values of Vx and Vy are added together. If the result is greater than 8
 # bits (i.e., > 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of
 # the result are kept, and stored in Vx.
-inst_8xy4_Add = (x, y) ->
+inst_8xy4_ADD = (x, y) ->
+  log('inside-inst_8xy4_ADD')
   registers[15] = if (registers[x] + registers[y]) > 255 then 1 else 0
   registers[x] = (registers[x] + registers[y]) % 256
 
@@ -310,6 +325,7 @@ inst_8xy4_Add = (x, y) ->
 # If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
 # and the results stored in Vx.
 inst_8xy5_SUB = (x, y) ->
+  log('inside-inst_8xy5_SUB')
   registers[15] = if registers[x] > registers[y] then 1 else 0
   registers[x] = registers[x] - registers[y]
   if registers[x] < 0 then registers[x] += 256
@@ -321,6 +337,7 @@ inst_8xy5_SUB = (x, y) ->
 # If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
 # Then Vx is divided by 2.
 inst_8xy6_SHR = (x) ->
+  log('inside-inst_8xy6_SHR')
   LSB = registers[x] % 2
   registers[15] = if LSB is 1 then 1 else 0
   registers[x] = registers[x] / 2
@@ -332,6 +349,7 @@ inst_8xy6_SHR = (x) ->
 # If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
 # and the results stored in Vx.
 inst_8xy7_SUBN = (x, y) ->
+  log('inside-inst_8xy7_SUBN')
   registers[15] = if registers[y] > registers[x] then 1 else 0
   registers[x] = registers[y] - registers[x]
   if registers[x] < 0 then registers[x] += 256
@@ -343,6 +361,7 @@ inst_8xy7_SUBN = (x, y) ->
 # If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
 # Then Vx is multiplied by 2.
 inst_8xyE_SHL = (x) ->
+  log('inside-inst_8xyE_SHL')
   MSB = (registers[x] >> 7)
   registers[15] = if MSB is 1 then 1 else 0
   registers[x] = registers[x] * 2
@@ -354,7 +373,9 @@ inst_8xyE_SHL = (x) ->
 # The values of Vx and Vy are compared, and if they are not equal, the program
 # counter is increased by 2.
 inst_9xy0_SNE = (x, y) ->
-  (PC += 2) (registers[x] isnt registers[y])
+  log('inside-inst_9xy0_SNE')
+  log("reg[x]: #{registers[x]} vs reg[y]: #{registers[y]}")
+  (PC += 2) if (registers[x] isnt registers[y])
 
 # #### Annn - LD I, addr
 
@@ -362,6 +383,7 @@ inst_9xy0_SNE = (x, y) ->
 #
 # The value of register I is set to nnn.
 inst_Annn_LD = (nnn) ->
+  log('inside-inst_Annn_LD')
   I = nnn
 
 # #### Bnnn - JP V0, addr
@@ -370,6 +392,7 @@ inst_Annn_LD = (nnn) ->
 #
 # The program counter is set to nnn plus the value of V0.
 inst_Bnnn_JP = (nnn) ->
+  log('inside-inst_Bnnn_JP')
   inst_1nnn_JP(nnn + registers[0])
 
 # #### Cxkk - RND Vx, byte
@@ -380,6 +403,7 @@ inst_Bnnn_JP = (nnn) ->
 # with the value kk. The results are stored in Vx. See instruction 8xy2 for
 # more information on AND.
 inst_Cxkk_RND = (x, kk) ->
+  log('inside-inst_Cxkk_RND')
   random = Math.floor(Math.random() * 256)
   registers[x] = random & kk
 
@@ -396,7 +420,8 @@ inst_Cxkk_RND = (x, kk) ->
 # around to the opposite side of the screen. See instruction 8xy3 for more
 # information on XOR, and section 2.4, Display, for more information on the
 # Chip-8 screen and sprites.
-inst_Dxyn = (x, y, n) ->
+inst_Dxyn_DRW = (x, y, n) ->
+  log('inside-inst_Dxyn_DRW')
 
   hexToBitPattern = (num) ->
     paddingByte = '00000000'
@@ -425,6 +450,7 @@ inst_Dxyn = (x, y, n) ->
 # Checks the keyboard, and if the key corresponding to the value of Vx is
 # currently in the down position, PC is increased by 2.
 inst_Ex9E_SKP = (x) ->
+  log('inside-inst_Ex9E_SKP')
   if registers[x] in getKeyPresses() then PC += 2
 
 # #### ExA1 - SKNP Vx
@@ -435,6 +461,7 @@ inst_Ex9E_SKP = (x) ->
 # currently in the up position, PC is increased by 2.
 #/
 inst_ExA1_SKNP = (x) ->
+  log('inside-inst_ExA1_SKNP')
   if registers[x] not in getKeyPresses() then PC += 2
 
 # #### Fx07 - LD Vx, DT
@@ -443,6 +470,7 @@ inst_ExA1_SKNP = (x) ->
 #
 # The value of DT is placed into Vx.
 inst_Fx07_LD = (x) ->
+  log('inside-inst_Fx07_LD')
   registers[x] = DT
 
 # #### Fx0A - LD Vx, K
@@ -451,7 +479,8 @@ inst_Fx07_LD = (x) ->
 #
 # All execution stops until a key is pressed, then the value of that key is
 # stored in Vx.
-inst_Fx0A_LD = (x, key) ->
+inst_Fx0A_LD = (x) ->
+  log('inside-inst_Fx0A_LD')
   key = waitForKeyPress()
   registers[x] = key
 
@@ -461,6 +490,7 @@ inst_Fx0A_LD = (x, key) ->
 #
 # DT is set equal to the value of Vx.
 inst_Fx15_LD = (x) ->
+  log('inside-inst_Fx15_LD')
   DT = registers[x]
 
 # #### Fx18 - LD ST, Vx
@@ -469,6 +499,7 @@ inst_Fx15_LD = (x) ->
 #
 # ST is set equal to the value of Vx.
 inst_Fx18_LD = (x) ->
+  log('inside-inst_Fx18_LD')
   ST = registers[x]
 
 # #### Fx1E - ADD I, Vx
@@ -476,7 +507,8 @@ inst_Fx18_LD = (x) ->
 # Set I = I + Vx.
 #
 # The values of I and Vx are added, and the results are stored in I.
-inst_Fx1E_Add = (x) ->
+inst_Fx1E_ADD = (x) ->
+  log('inside-inst_Fx1E_ADD')
   I += registers[x]
 
 # #### Fx29 - LD F, Vx
@@ -487,6 +519,7 @@ inst_Fx1E_Add = (x) ->
 # corresponding to the value of Vx. See section 2.4, Display, for more
 # information on the Chip-8 hexadecimal font.
 inst_Fx29_LD = (x) ->
+  log('inside-inst_Fx29_LD')
   I = x * 5 # as each sprite is 5 bytes and stored at address 0
 
 # #### Fx33 - LD B, Vx
@@ -497,6 +530,7 @@ inst_Fx29_LD = (x) ->
 # in memory at location in I, the tens digit at location I+1, and the ones
 # digit at location I+2.
 inst_Fx33_LD = (x) ->
+  log('inside-inst_Fx33_LD')
   memory[I] = (registers[x] / 100)
   memory[I + 1] = (registers[x] % 100) / 10
   memory[I + 2] = (registers[x] % 10)
@@ -508,6 +542,7 @@ inst_Fx33_LD = (x) ->
 # The interpreter copies the values of registers V0 through Vx into memory,
 # starting at the address in I.
 inst_Fx55_LD = (x) ->
+  log('inside-inst_Fx55_LD')
   (memory[I + i] = registers[i]) for i in [0..x]
 
 # #### Fx65 - LD Vx, [I]
@@ -517,12 +552,13 @@ inst_Fx55_LD = (x) ->
 # The interpreter reads values from memory starting at location I into
 # registers V0 through Vx.
 inst_Fx65_LD = (x) ->
+  log('inside-inst_Fx65_LD')
   (registers[i] = memory[I + i]) for i in [0..x]
 
 # # Browser
 
 cellSize = 10
-tickLength = 100
+tickLength = 1000 # should be 100ish
 canvas = null
 drawingContext = null
 
@@ -535,19 +571,14 @@ gray = 38
 createCanvas = () ->
   canvas = document.createElement 'canvas'
   document.body.appendChild canvas
-
-resizeCanvas = () ->
   canvas.height = cellSize * displayHeight
   canvas.width = cellSize * displayWidth
-
-createDrawingContext = () ->
   drawingContext = canvas.getContext '2d'
 
 tick = () ->
   drawGrid()
-  # perform fetch execute loop
-
-  setTimeout tick, tickLength
+  fetchAndExecute()
+  setTimeout(tick, tickLength)
 
 drawGrid = () ->
   for row in [0...displayHeight]
@@ -585,22 +616,209 @@ reset = () ->
   PC = 0 # Program counter
   SP = 0 # Stack pointer
 
-  memory = new Array(memorySize)
-  registers = new Array(registerCount)
-  stack = new Array(stackSize)
+  memory = (0 for i in [0...memorySize])
+  registers = (0 for i in [0...registerCount])
+  stack = (0 for i in [0...stackSize])
   inst_00E0_CLS()
   addSpritesToMemory()
 
-fetchAndExecute = () ->
-  opcode = memory[PC] << 8 | memory[PC + 1]
-  firstNibble = opcode & 0xF000
-  console.log(nibble)
-  # todo finish fetch-execute loop
+toHex = (int) -> int.toString(16).toUpperCase()
+toDecimal = (hex) -> parseInt(hex, 16)
 
-readProgram = (program) ->
-  for i in [0...program.length]
-    memory[i + 200] = program[i]
-    console.log memory[i + 200].toString(16)
+# # Fetch and execute loop
+
+getHexAtIndex = (int, i) ->
+  if i < 0 or i > 3 then throw new Error("Bit index out of bounds: #{i}")
+  else toHex(int)[i]
+
+getHexRange = (int, from, to) ->
+  if from not in [0...4] or to not in [0...4] or to < from
+    throw new Error("Bit index out of bounds: from: #{from}, to: #{to}")
+  else return [from...to].map (idx) -> toHex(idx)
+
+handle0 = (opcode) ->
+  log('inside-handle0')
+  if opcode is 0x00E0
+    inst_00E0_CLS()
+  else if opcode is 0x00EE
+    inst_00EE_RET()
+  else throw new Error("Unknown instruction given: #{toHex(opcode)}")
+
+handle1 = (opcode) ->
+  log('inside-handle1')
+  nibbles = opcode ^ 0x1000
+  inst_1nnn_JP(nibbles)
+
+handle2 = (opcode) ->
+  log('inside-handle2')
+  nibbles = opcode ^ 0x2000
+  inst_2nnn_CALL(nibbles)
+
+handle3 = (opcode) ->
+  log('inside-handle3')
+  nibbles = opcode ^ 0x3000
+  x = nibbles >> 8
+  kk = nibbles ^ x
+  inst_3xkk_SE(x, kk)
+
+handle4 = (opcode) ->
+  log('inside-handle4')
+  nibbles = opcode ^ 0x4000
+  x = nibbles >> 8
+  kk = nibbles ^ (x << 8)
+  inst_4xkk_SNE(x, kk)
+
+handle5 = (opcode) ->
+  log('inside-handle5')
+  if toHex(opcode)[3] isnt '0'
+    throw new Error("Unknown instruction given: #{toHex(opcode)}")
+  nibbles = opcode ^ 0x5000
+  x = nibbles >> 8
+  y = (nibbles ^ (x << 8)) >> 4
+  inst_5xy0_SE(x, y)
+
+handle6 = (opcode) ->
+  log('inside-handle6')
+  nibbles = opcode ^ 0x6000
+  x = nibbles >> 8
+  kk = nibbles ^ (x << 8)
+  inst_6xkk_LD(x, kk)
+
+handle7 = (opcode) ->
+  log('inside-handle7')
+  nibbles = opcode ^ 0x7000
+  x = nibbles >> 8
+  kk = nibbles ^ (x << 8)
+  inst_7xkk_ADD(x, kk)
+
+handle8 = (opcode) ->
+  log('inside-handle8')
+  nibbles = opcode ^ 0x8000
+  x = nibbles >> 8
+  y = (nibbles ^ (x << 8)) >> 4
+  instDict = {
+    0: inst_8xy0_LD
+    1: inst_8xy1_OR
+    2: inst_8xy2_AND
+    3: inst_8xy3_XOR
+    4: inst_8xy4_ADD
+    5: inst_8xy5_SUB
+    6: inst_8xy6_SHR
+    7: inst_8xy7_SUBN
+    E: inst_8xyE_SHL
+  }
+  nibble = toHex(opcode)[3]
+  log("{x: #{x}, y: #{y}, nibble: #{nibble})")
+  if instDict[nibble]? then instDict[nibble](x, y)
+  else throw new Error("Unknown instruction given: #{toHex(opcode)}")
+
+handle9 = (opcode) ->
+  log('inside-handle9')
+  if toHex(opcode)[3] isnt '0'
+    throw new Error("Unknown instruction given: #{toHex(opcode)}")
+  nibbles = opcode ^ 0x9000
+  x = nibbles >> 8
+  y = (nibbles ^ (x << 8)) >> 4
+  inst_9xy0_SNE(x, y)
+
+handleA = (opcode) ->
+  log('inside-handleA')
+  nibbles = opcode ^ 0xA000
+  inst_Annn_LD(nibbles)
+
+handleB = (opcode) ->
+  log('inside-handleB')
+  nibbles = opcode ^ 0xB000
+  inst_Bnnn_JP(nibbles)
+
+handleC = (opcode) ->
+  log('inside-handleC')
+  nibbles = opcode ^ 0xC000
+  x = nibbles >> 8
+  kk = nibbles ^ (x << 8)
+  inst_Cxkk_RND(x, kk)
+
+handleD = (opcode) ->
+  log('inside-handleD')
+  nibbles = opcode ^ 0xD000
+  x = nibbles >> 8
+  y = (nibbles ^ (x << 8)) >> 4
+  n = (nibbles ^ (x << 8)) ^ (y << 4)
+  inst_Dxyn_DRW(x, y, n)
+
+handleE = (opcode) ->
+  log('inside-handleE')
+  nibbles = opcode ^ 0xE000
+  x = nibbles >> 8
+  y = (nibbles ^ (x << 8)) >> 4
+  n = (nibbles ^ (x << 8)) ^ (y << 4)
+  console.log("x: #{x}")
+  console.log("y: #{y}")
+  console.log("n: #{n}")
+  if y is 9 and n is 'E' then inst_Ex9E_SKP x
+  else if y is 'A' and n is '1' then inst_ExA1_SKNP x
+  else throw new Error("Unknown nibbles: #{toHex(nibbles)}")
+
+handleF = (opcode) ->
+  log('inside-handleF')
+  nibbles = opcode ^ 0xF000
+  x = nibbles >> 8
+  y = (nibbles ^ (x << 8)) >> 4
+  n = (nibbles ^ (x << 8)) ^ (y << 4)
+  console.log("x: #{x}")
+  console.log("y: #{y}")
+  console.log("n: #{n}")
+  if y is 0 and n is 7 then inst_Fx07_LD x
+  else if y is 0 and n is 10 then inst_Fx0A_LD x
+  else if y is 1 and n is 5 then inst_Fx15_LD x
+  else if y is 1 and n is 8 then inst_Fx18_LD x
+  else if y is 1 and n is 14 then inst_Fx1E_ADD x
+  else if y is 2 and n is 9 then inst_Fx29_LD x
+  else if y is 3 and n is 3 then inst_Fx33_LD x
+  else if y is 5 and n is 5 then inst_Fx55_LD x
+  else if y is 6 and n is 5 then inst_Fx65_LD x
+  else throw new Error("Unknown nibbles: #{toHex(nibbles)}")
+
+fetchAndExecute = () ->
+
+  handleDict = {
+    0: handle0
+    1: handle1
+    2: handle2
+    3: handle3
+    4: handle4
+    5: handle5
+    6: handle6
+    7: handle7
+    8: handle8
+    9: handle9
+    A: handleA
+    B: handleB
+    C: handleC
+    D: handleD
+    E: handleE
+    F: handleF
+  }
+
+  console.log("stack: #{stack}")
+  console.log("PC: #{PC}")
+  console.log("SP: #{SP}")
+  firstNibble = memory[PC]
+  secondNibble = memory[PC + 1]
+  console.log("first int: #{firstNibble}")
+  console.log("second int: #{secondNibble}")
+  log("first nibble is:  #{toHex(firstNibble)}")
+  log("second nibble is: #{toHex(secondNibble)}")
+
+  opcode = memory[PC] << 8 | memory[PC + 1]
+  log("opcode is: #{toHex(opcode)}")
+  nibble = if toHex(opcode).length is 4 then toHex(opcode)[0] else 0
+  console.log("handleDict[#{nibble}]")
+  if handleDict[nibble]?
+    handleDict[nibble](opcode)
+    PC += 2
+  else
+    throw new Error("Unknown instruction given: #{toHex(opcode)}")
 
 loadProgram = () ->
   xhr = new XMLHttpRequest()
@@ -610,20 +828,27 @@ loadProgram = () ->
     readProgram(new Uint8Array(xhr.response))
   xhr.send()
 
+readProgram = (program) ->
+  PROGRAM_START = 512
+  (memory[i + PROGRAM_START] = program[i]) for i in [0...program.length]
+  log((memory.slice(PROGRAM_START, program.length)).map (x) -> toHex(x))
+  startProgram()
+
+startProgram = () ->
+  I = 0
+  PC = 512
+  createCanvas()
+  tick()
+
+DEBUG = true
+
+log = (string) ->
+  if DEBUG then console.log(string)
+
 #
 main = () ->
-  console.log 'Start'
   chip8()
 
   loadProgram()
-
-  I = 0
-  inst_Dxyn(0,0, 8)
-  createCanvas()
-  resizeCanvas()
-  createDrawingContext()
-  tick()
-
-  console.log 'Stop'
 
 window.main = main

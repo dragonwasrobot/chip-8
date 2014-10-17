@@ -64,10 +64,20 @@ module.exports = (grunt) ->
       }
     }
 
+    nodeunit: {
+      app: ['test/src/*.coffee']
+      options: {
+        reporter: 'junit'
+        reporterOptions: {
+          output: 'test_out'
+        }
+      }
+    }
+
     watch: {
       app: {
         files: ['app/src/*.coffee', 'app/views/*.html']
-        tasks: ['analyze', 'build']
+        tasks: ['analyze', 'build', 'nodeunit']
         options: {
           atBegin: true
         }
@@ -82,6 +92,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-connect'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-copy'
+  grunt.loadNpmTasks 'grunt-contrib-nodeunit'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-docco'
 
