@@ -59,6 +59,7 @@ class InstructionSet
   # Initialize instruction set
 
   constructor: (@display, @keyboard) ->
+    @reset()
 
   reset: () ->
     @I = 0  # 'I' register
