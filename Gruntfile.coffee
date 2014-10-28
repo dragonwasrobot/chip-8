@@ -23,7 +23,11 @@ module.exports = (grunt) ->
           {
             src: 'app/views/index.html'
             dest: 'dist/index.html'
-          },
+          }
+          {
+            src: 'app/views/style.css'
+            dest: 'dist/style.css'
+          }
           {
             expand: true
             cwd: 'app/resources/'
@@ -37,6 +41,9 @@ module.exports = (grunt) ->
 
     coffee: {
       app: {
+        options: {
+          join: true
+        }
         files: {
           'dist/app.js': ['app/src/*.coffee']
         }
@@ -64,20 +71,16 @@ module.exports = (grunt) ->
       }
     }
 
-    nodeunit: {
-      app: ['test/src/*.coffee']
-      options: {
-        reporter: 'junit'
-        reporterOptions: {
-          output: 'test_out'
-        }
+    karma: {
+      unit: {
+        configFile: 'karma.conf.coffee'
       }
     }
 
     watch: {
       app: {
-        files: ['app/src/*.coffee', 'app/views/*.html']
-        tasks: ['analyze', 'build', 'nodeunit']
+        files: ['app/src/*.coffee', 'app/views/*.html', 'test/src/*.coffee']
+        tasks: ['analyze', 'build', 'karma']
         options: {
           atBegin: true
         }
@@ -92,9 +95,10 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-connect'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-copy'
-  grunt.loadNpmTasks 'grunt-contrib-nodeunit'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-docco'
+  grunt.loadNpmTasks 'grunt-karma'
+
 
   # Define tasks
   grunt.registerTask('analyze', ['coffeelint:app'])
