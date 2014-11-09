@@ -6,12 +6,12 @@ class FetchDecodeExecuteLoop
 
   tickLength: 1000 # should be 100ish
 
-  constructor: (@instructionSet, @display) ->
+  constructor: (@instructionSet) ->
 
   tick: () ->
-    @display.drawGrid()
+    @instructionSet.display.drawGrid()
     @fetchAndExecute()
-    @setTimeout(@tick, @tickLength)
+    setTimeout(@tick, @tickLength)
 
   handle0: (opcode) ->
     log('inside-handle0')

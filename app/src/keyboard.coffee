@@ -18,6 +18,6 @@ class Keyboard
   constructor: () ->
 
   # TODO: Figure out how to implement keyboard.
-  getKeyPresses = () -> [3, 15]
+  getKeysPressed = () -> [3, 15]
 
   waitForKeyPress = () -> 5

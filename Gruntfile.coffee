@@ -99,13 +99,12 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-docco'
   grunt.loadNpmTasks 'grunt-karma'
 
-
   # Define tasks
   grunt.registerTask('analyze', ['coffeelint:app'])
   grunt.registerTask('build', ['clean:app', 'copy:app', 'coffee:app'])
   grunt.registerTask('docs', ['docco:app'])
   grunt.registerTask('http', ['connect:app'])
 
-  grunt.registerTask('dev', ['analyze', 'build', 'http', 'watch:app'])
+  grunt.registerTask('dev', ['http', 'watch:app'])
 
   grunt.registerTask('package', ['analyse', 'build', 'docs'])

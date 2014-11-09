@@ -39,8 +39,10 @@ class InstructionSet
   # When the registers are non-zero, they are automatically decremented at a
   # rate of 60Hz.
 
-  DT: 0
-  ST: 0
+  # We've put the actual registers inside the delay and sound timers, which we
+  # will cover later.
+  delayTimer: undefined
+  soundTimer: undefined
 
   # The program counter (PC, 16-bit) and stack pointer (SP, 8-bit).
 
@@ -63,11 +65,12 @@ class InstructionSet
 
   reset: () ->
     @I = 0  # 'I' register
-    @DT = 0 # Delay timer
 
-    @ST = 0 # Sound timer
     @PC = 0 # Program counter
     @SP = 0 # Stack pointer
+
+    @delayTimer = new DelayTimer()
+    @soundTimer = new SoundTimer()
 
     @memory = (0 for i in [0...@memorySize])
     @registers = (0 for i in [0...@registerCount])
@@ -91,30 +94,30 @@ class InstructionSet
   # 0x1FF). Below is a listing of each character's bytes, in binary and
   # hexadecimal:
 
-  # Declare the built-in sprites
-  sprites: [
-    0xF0, 0x90, 0x90, 0x90, 0xF0, # 0: 0-4
-    0x20, 0x60, 0x20, 0x20, 0x70, # 1: 5-9
-    0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2: 10-14
-    0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3: 15-19
-    0x90, 0x90, 0xF0, 0x10, 0x10, # 4: 20-24
-    0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5: 25-29
-    0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6: 30-34
-    0xF0, 0x10, 0x20, 0x40, 0x40, # 7: 35-39
-    0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8: 40-44
-    0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9: 45-49
-    0xF0, 0x90, 0xF0, 0x90, 0x90, # A: 50-54
-    0xE0, 0x90, 0xE0, 0x90, 0xE0, # B: 55-59
-    0xF0, 0x80, 0x80, 0x80, 0xF0, # C: 60-64
-    0xE0, 0x90, 0x90, 0x90, 0xE0, # D: 65-69
-    0xF0, 0x80, 0xF0, 0x80, 0xF0, # E: 70-74
-    0xF0, 0x80, 0xF0, 0x80, 0x80  # F: 75-79
-  ]
-
-  # Put them into Chip-8 memory
+  # Declare the built-in sprites and put them into Chip-8 memory
 
   addSpritesToMemory: () ->
-    (@memory[i] = @sprites[i]) for i in [0...@sprites.length]
+
+    sprites = [
+      0xF0, 0x90, 0x90, 0x90, 0xF0, # 0: 0-4
+      0x20, 0x60, 0x20, 0x20, 0x70, # 1: 5-9
+      0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2: 10-14
+      0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3: 15-19
+      0x90, 0x90, 0xF0, 0x10, 0x10, # 4: 20-24
+      0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5: 25-29
+      0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6: 30-34
+      0xF0, 0x10, 0x20, 0x40, 0x40, # 7: 35-39
+      0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8: 40-44
+      0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9: 45-49
+      0xF0, 0x90, 0xF0, 0x90, 0x90, # A: 50-54
+      0xE0, 0x90, 0xE0, 0x90, 0xE0, # B: 55-59
+      0xF0, 0x80, 0x80, 0x80, 0xF0, # C: 60-64
+      0xE0, 0x90, 0x90, 0x90, 0xE0, # D: 65-69
+      0xF0, 0x80, 0xF0, 0x80, 0xF0, # E: 70-74
+      0xF0, 0x80, 0xF0, 0x80, 0x80  # F: 75-79
+    ]
+
+    (@memory[i] = sprites[i]) for i in [0...sprites.length]
 
   # ### Instructions
 
@@ -144,13 +147,13 @@ class InstructionSet
   #
   # This instruction is only used on the old computers on which Chip-8 was
   # originally implemented. It is ignored by modern interpreters.
-  inst_0nnn_SYS: (nnn) -> undefined
+  inst_0nnn_SYS: (addr) -> undefined
 
   # #### 00E0 - CLS
 
   # Clear the display.
   inst_00E0_CLS: () ->
-    log('inside-inst_00E0_CLS')
+    # log('inside inst_00E0_CLS')
     @display.clear()
 
   # #### 00EE - RET
@@ -160,8 +163,8 @@ class InstructionSet
   # The interpreter sets the program counter to the address at the top of the
   # stack, then subtracts 1 from the stack pointer.
   inst_00EE_RET: () ->
-    log('inside-inst_00EE_RET')
-    @PC = stack[SP]
+    log('inside inst_00EE_RET')
+    @PC = @stack[@SP]
     @SP -= 1
 
   # #### 1nnn - JP addr
@@ -170,7 +173,7 @@ class InstructionSet
   #
   # The interpreter sets the program counter to nnn.
   inst_1nnn_JP: (nnn) ->
-    log('inside-inst_1nnn_JP')
+    log('inside inst_1nnn_JP')
     @PC = nnn
 
   # #### 2nnn - CALL addr
@@ -180,7 +183,7 @@ class InstructionSet
   # The interpreter increments the stack pointer, then puts the current PC on
   # the top of the stack. The PC is then set to nnn.
   inst_2nnn_CALL: (nnn) ->
-    log('inside-inst_2nnn_CALL')
+    log('inside inst_2nnn_CALL')
     @SP += 1
     @stack[@SP] = @PC
     @PC = nnn
@@ -192,7 +195,7 @@ class InstructionSet
   # The interpreter compares register Vx to kk, and if they are equal,
   # increments the program counter by 2.
   inst_3xkk_SE: (x, kk) ->
-    log('inside-inst_3xkk_SE')
+    log('inside inst_3xkk_SE')
     (@PC += 2) if @registers[x] is kk
 
   # #### 4xkk - SNE Vx, byte
@@ -202,7 +205,7 @@ class InstructionSet
   # The interpreter compares register Vx to kk, and if they are not equal,
   # increments the program counter by 2.
   inst_4xkk_SNE: (x, kk) ->
-    log('inside-inst_4xkk_SNE')
+    log('inside inst_4xkk_SNE')
     (@PC += 2) if @registers[x] isnt kk
 
   # #### 5xy0 - SE Vx, Vy
@@ -212,7 +215,7 @@ class InstructionSet
   # The interpreter compares register Vx to register Vy, and if they are equal,
   # increments the program counter by 2.
   inst_5xy0_SE: (x, y) ->
-    log('inside-inst_5xy0_SE')
+    log('inside inst_5xy0_SE')
     (@PC += 2) if @registers[x] is @registers[y]
 
   # #### 6xkk - LD Vx, byte
@@ -221,7 +224,7 @@ class InstructionSet
   #
   # The interpreter puts the value kk into register Vx.
   inst_6xkk_LD: (x, kk) ->
-    log('inside-inst_6xkk_LD')
+    log('inside inst_6xkk_LD')
     @registers[x] = kk
 
   # #### 7xkk - ADD Vx, byte
@@ -230,7 +233,7 @@ class InstructionSet
   #
   # Adds the value kk to the value of register Vx, then stores the result in Vx.
   inst_7xkk_ADD: (x, kk) ->
-    log('inside-inst_7xkk_ADD')
+    log('inside inst_7xkk_ADD')
     @registers[x] = (@registers[x] + kk) % 256
 
   # #### 8xy0 - LD Vx, Vy
@@ -239,7 +242,7 @@ class InstructionSet
   #
   # Stores the value of register Vy in register Vx.
   inst_8xy0_LD: (x, y) ->
-    log('inside-inst_8xy0_LD')
+    log('inside inst_8xy0_LD')
     @registers[x] = @registers[y]
 
   # #### 8xy1 - OR Vx, Vy
@@ -249,7 +252,7 @@ class InstructionSet
   # Performs a bitwise OR on the values of Vx and Vy, then stores the result in
   # Vx.
   inst_8xy1_OR: (x, y) ->
-    log('inside-inst_8xy1_OR')
+    log('inside inst_8xy1_OR')
     @registers[x] |= @registers[y]
 
   # #### 8xy2 - AND Vx, Vy
@@ -259,7 +262,7 @@ class InstructionSet
   # Performs a bitwise AND on the values of Vx and Vy, then stores the result in
   # Vx.
   inst_8xy2_AND: (x, y) ->
-    log('inside-inst_8xy2_AND')
+    log('inside inst_8xy2_AND')
     @registers[x] &= @registers[y]
 
   # #### 8xy3 - XOR Vx, Vy
@@ -269,7 +272,7 @@ class InstructionSet
   # Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the
   # result in Vx.
   inst_8xy3_XOR: (x, y) ->
-    log('inside-inst_8xy3_XOR')
+    log('inside inst_8xy3_XOR')
     @registers[x] ^= @registers[y]
 
   # #### 8xy4 - ADD Vx, Vy
@@ -280,7 +283,7 @@ class InstructionSet
   # bits (i.e., > 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of
   # the result are kept, and stored in Vx.
   inst_8xy4_ADD: (x, y) ->
-    log('inside-inst_8xy4_ADD')
+    log('inside inst_8xy4_ADD')
     @registers[15] = if (@registers[x] + @registers[y]) > 255 then 1 else 0
     @registers[x] = (@registers[x] + @registers[y]) % 256
 
@@ -291,7 +294,7 @@ class InstructionSet
   # If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
   # and the results stored in Vx.
   inst_8xy5_SUB: (x, y) ->
-    log('inside-inst_8xy5_SUB')
+    log('inside inst_8xy5_SUB')
     @registers[15] = if @registers[x] > @registers[y] then 1 else 0
     @registers[x] = @registers[x] - @registers[y]
     if @registers[x] < 0 then @registers[x] += 256
@@ -303,10 +306,10 @@ class InstructionSet
   # If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
   # Then Vx is divided by 2.
   inst_8xy6_SHR: (x) ->
-    log('inside-inst_8xy6_SHR')
+    log('inside inst_8xy6_SHR')
     LSB = @registers[x] % 2
     @registers[15] = if LSB is 1 then 1 else 0
-    @registers[x] = @registers[x] / 2
+    @registers[x] = Math.floor(@registers[x] / 2)
 
   # #### 8xy7 - SUBN Vx, Vy
 
@@ -315,22 +318,22 @@ class InstructionSet
   # If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
   # and the results stored in Vx.
   inst_8xy7_SUBN: (x, y) ->
-    log('inside-inst_8xy7_SUBN')
+    log('inside inst_8xy7_SUBN')
     @registers[15] = if @registers[y] > @registers[x] then 1 else 0
     @registers[x] = @registers[y] - @registers[x]
     if @registers[x] < 0 then @registers[x] += 256
 
-  # #### 8xyE - SHL Vx ->, Vy
+  # #### 8xyE - SHL Vx
 
   # Set Vx = Vx SHL 1.
   #
   # If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
   # Then Vx is multiplied by 2.
   inst_8xyE_SHL: (x) ->
-    log('inside-inst_8xyE_SHL')
+    log('inside inst_8xyE_SHL')
     MSB = (@registers[x] >> 7)
     @registers[15] = if MSB is 1 then 1 else 0
-    @registers[x] = @registers[x] * 2
+    @registers[x] = (@registers[x] * 2) % 256
 
   # #### 9xy0 - SNE Vx, Vy
 
@@ -339,8 +342,7 @@ class InstructionSet
   # The values of Vx and Vy are compared, and if they are not equal, the program
   # counter is increased by 2.
   inst_9xy0_SNE: (x, y) ->
-    log('inside-inst_9xy0_SNE')
-    log("reg[x]: #{@registers[x]} vs reg[y]: #{@registers[y]}")
+    log('inside inst_9xy0_SNE')
     (@PC += 2) if (@registers[x] isnt @registers[y])
 
   # #### Annn - LD I, addr
@@ -349,7 +351,7 @@ class InstructionSet
   #
   # The value of register I is set to nnn.
   inst_Annn_LD: (nnn) ->
-    log('inside-inst_Annn_LD')
+    log('inside inst_Annn_LD')
     @I = nnn
 
   # #### Bnnn - JP V0, addr
@@ -358,7 +360,7 @@ class InstructionSet
   #
   # The program counter is set to nnn plus the value of V0.
   inst_Bnnn_JP: (nnn) ->
-    log('inside-inst_Bnnn_JP')
+    log('inside inst_Bnnn_JP')
     @inst_1nnn_JP(nnn + @registers[0])
 
   # #### Cxkk - RND Vx, byte
@@ -369,7 +371,7 @@ class InstructionSet
   # with the value kk. The results are stored in Vx. See instruction 8xy2 for
   # more information on AND.
   inst_Cxkk_RND: (x, kk) ->
-    log('inside-inst_Cxkk_RND')
+    log('inside inst_Cxkk_RND')
     random = Math.floor(Math.random() * 256)
     @registers[x] = random & kk
 
@@ -387,7 +389,7 @@ class InstructionSet
   # information on XOR, and section 2.4, Display, for more information on the
   # Chip-8 screen and sprites.
   inst_Dxyn_DRW: (x, y, n) ->
-    log('inside-inst_Dxyn_DRW')
+    log('inside inst_Dxyn_DRW')
 
     hexToBitPattern = (num) ->
       paddingByte = '00000000'
@@ -416,8 +418,8 @@ class InstructionSet
   # Checks the keyboard, and if the key corresponding to the value of Vx is
   # currently in the down position, PC is increased by 2.
   inst_Ex9E_SKP: (x) ->
-    log('inside-inst_Ex9E_SKP')
-    if @registers[x] in @getKeyPresses() then @PC += 2
+    log('inside inst_Ex9E_SKP')
+    if @registers[x] in @keyboard.getKeysPressed() then @PC += 2
 
   # #### ExA1 - SKNP Vx
 
@@ -427,8 +429,8 @@ class InstructionSet
   # currently in the up position, PC is increased by 2.
   #
   inst_ExA1_SKNP: (x) ->
-    log('inside-inst_ExA1_SKNP')
-    if @registers[x] not in @getKeyPresses() then @PC += 2
+    log('inside inst_ExA1_SKNP')
+    if @registers[x] not in @keyboard.getKeysPressed() then @PC += 2
 
   # #### Fx07 - LD Vx, DT
 
@@ -436,8 +438,8 @@ class InstructionSet
   #
   # The value of DT is placed into Vx.
   inst_Fx07_LD: (x) ->
-    log('inside-inst_Fx07_LD')
-    @registers[x] = @DT
+    log('inside inst_Fx07_LD')
+    @registers[x] = @delayTimer.get()
 
   # #### Fx0A - LD Vx, K
 
@@ -446,8 +448,8 @@ class InstructionSet
   # All execution stops until a key is pressed, then the value of that key is
   # stored in Vx.
   inst_Fx0A_LD: (x) ->
-    log('inside-inst_Fx0A_LD')
-    key = @waitForKeyPress()
+    log('inside inst_Fx0A_LD')
+    key = @keyboard.waitForKeyPress()
     @registers[x] = key
 
   # #### Fx15 - LD DT, Vx
@@ -456,8 +458,8 @@ class InstructionSet
   #
   # DT is set equal to the value of Vx.
   inst_Fx15_LD: (x) ->
-    log('inside-inst_Fx15_LD')
-    @DT = @registers[x]
+    log('inside inst_Fx15_LD')
+    @delayTimer.set(@registers[x])
 
   # #### Fx18 - LD ST, Vx
 
@@ -465,8 +467,8 @@ class InstructionSet
   #
   # ST is set equal to the value of Vx.
   inst_Fx18_LD: (x) ->
-    log('inside-inst_Fx18_LD')
-    @ST = @registers[x]
+    log('inside inst_Fx18_LD')
+    @soundTimer.set(@registers[x])
 
   # #### Fx1E - ADD I, Vx
 
@@ -474,7 +476,7 @@ class InstructionSet
   #
   # The values of I and Vx are added, and the results are stored in I.
   inst_Fx1E_ADD: (x) ->
-    log('inside-inst_Fx1E_ADD')
+    log('inside inst_Fx1E_ADD')
     @I += @registers[x]
 
   # #### Fx29 - LD F, Vx
@@ -485,7 +487,7 @@ class InstructionSet
   # corresponding to the value of Vx. See section 2.4, Display, for more
   # information on the Chip-8 hexadecimal font.
   inst_Fx29_LD: (x) ->
-    log('inside-inst_Fx29_LD')
+    log('inside inst_Fx29_LD')
     @I = x * 5 # as each sprite is 5 bytes and stored at address 0
 
   # #### Fx33 - LD B, Vx
@@ -496,10 +498,10 @@ class InstructionSet
   # in memory at location in I, the tens digit at location I+1, and the ones
   # digit at location I+2.
   inst_Fx33_LD: (x) ->
-    log('inside-inst_Fx33_LD')
-    @memory[I] = (@registers[x] / 100)
-    @memory[I + 1] = (@registers[x] % 100) / 10
-    @memory[I + 2] = (@registers[x] % 10)
+    log('inside inst_Fx33_LD')
+    @memory[@I] = Math.floor(@registers[x] / 100)
+    @memory[@I + 1] = Math.floor((@registers[x] % 100) / 10)
+    @memory[@I + 2] = (@registers[x] % 10)
 
   # #### Fx55 - LD [I], Vx
 
@@ -508,8 +510,8 @@ class InstructionSet
   # The interpreter copies the values of registers V0 through Vx into memory,
   # starting at the address in I.
   inst_Fx55_LD: (x) ->
-    log('inside-inst_Fx55_LD')
-    (@memory[I + i] = @registers[i]) for i in [0..x]
+    log('inside inst_Fx55_LD')
+    (@memory[@I + i] = @registers[i]) for i in [0..x]
 
   # #### Fx65 - LD Vx, [I]
 
@@ -518,16 +520,41 @@ class InstructionSet
   # The interpreter reads values from memory starting at location I into
   # registers V0 through Vx.
   inst_Fx65_LD: (x) ->
-    log('inside-inst_Fx65_LD')
-    (@registers[i] = @memory[I + i]) for i in [0..x]
+    log('inside inst_Fx65_LD')
+    (@registers[i] = @memory[@I + i]) for i in [0..x]
 
 # ### Timers and Sounds
 
   # Chip-8 provides 2 timers, a delay timer and a sound timer.
 
+class DelayTimer
+
   # The delay timer is active whenever the delay timer register (DT) is
   # non-zero. This timer does nothing more than subtract 1 from the value of DT
   # at a rate of 60Hz. When DT reaches 0, it deactivates.
+
+  _DT: 0
+  _running: false
+  _tickLength: 1 / 60 # 60 Hz
+
+  constructor: () ->
+
+  _tick: () ->
+    if @_running and @_DT > 0
+      @_DT -= 1
+      setTimeout(@_tick, @_tickLength)
+    else
+      @_running = false
+
+  set: (delay) ->
+    @_DT = delay
+    if @_running is false
+      @_running = true
+      @_tick()
+
+  get: () -> @_DT
+
+class SoundTimer
 
   # The sound timer is active whenever the sound timer register (ST) is
   # non-zero. This timer also decrements at a rate of 60Hz, however, as long as
@@ -538,3 +565,24 @@ class InstructionSet
   # frequency of this tone is decided by the author of the interpreter.
 
   # TODO
+
+  _ST: 0
+  _running: false
+  _tickLength: 1 / 60 # 60 Hz
+
+  constructor: () ->
+
+  _tick: () ->
+    if @_running and @_ST > 0
+      @_ST -= 1
+      setTimeout(@_tick, @_tickLength)
+    else
+      @_running = false
+
+  set: (delay) ->
+    @_ST = delay
+    if @_running is false
+      @_running = true
+      @_tick()
+
+  get: () -> @_ST
