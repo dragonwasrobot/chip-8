@@ -4,16 +4,16 @@ class FetchDecodeExecuteLoop
 
   # ### Fields
 
-  tickLength: 1000 # should be 100ish
+  tickLength: 100 # should be 100ish
 
   constructor: (@instructionSet) ->
 
-  tick: () ->
+  tick: () =>
     @instructionSet.display.drawGrid()
     @fetchAndExecute()
     setTimeout(@tick, @tickLength)
 
-  handle0: (opcode) ->
+  handle0: (opcode) =>
     log('inside-handle0')
     if opcode is 0x00E0
       @instructionSet.inst_00E0_CLS()
@@ -21,31 +21,31 @@ class FetchDecodeExecuteLoop
       @instructionSet.inst_00EE_RET()
     else throw new Error("Unknown instruction given: #{@toHex(opcode)}")
 
-  handle1: (opcode) ->
+  handle1: (opcode) =>
     log('inside-handle1')
     nibbles = opcode ^ 0x1000
     @instructionSet.inst_1nnn_JP(nibbles)
 
-  handle2: (opcode) ->
+  handle2: (opcode) =>
     log('inside-handle2')
     nibbles = opcode ^ 0x2000
     @instructionSet.inst_2nnn_CALL(nibbles)
 
-  handle3: (opcode) ->
+  handle3: (opcode) =>
     log('inside-handle3')
     nibbles = opcode ^ 0x3000
     x = nibbles >> 8
-    kk = nibbles ^ x
+    kk = nibbles ^ (x << 8)
     @instructionSet.inst_3xkk_SE(x, kk)
 
-  handle4: (opcode) ->
+  handle4: (opcode) =>
     log('inside-handle4')
     nibbles = opcode ^ 0x4000
     x = nibbles >> 8
     kk = nibbles ^ (x << 8)
     @instructionSet.inst_4xkk_SNE(x, kk)
 
-  handle5: (opcode) ->
+  handle5: (opcode) =>
     log('inside-handle5')
     if @toHex(opcode)[3] isnt '0'
       throw new Error("Unknown instruction given: #{@toHex(opcode)}")
@@ -54,21 +54,21 @@ class FetchDecodeExecuteLoop
     y = (nibbles ^ (x << 8)) >> 4
     @instructionSet.inst_5xy0_SE(x, y)
 
-  handle6: (opcode) ->
+  handle6: (opcode) =>
     log('inside-handle6')
     nibbles = opcode ^ 0x6000
     x = nibbles >> 8
     kk = nibbles ^ (x << 8)
     @instructionSet.inst_6xkk_LD(x, kk)
 
-  handle7: (opcode) ->
+  handle7: (opcode) =>
     log('inside-handle7')
     nibbles = opcode ^ 0x7000
     x = nibbles >> 8
     kk = nibbles ^ (x << 8)
     @instructionSet.inst_7xkk_ADD(x, kk)
 
-  handle8: (opcode) ->
+  handle8: (opcode) =>
     log('inside-handle8')
     nibbles = opcode ^ 0x8000
     x = nibbles >> 8
@@ -85,11 +85,11 @@ class FetchDecodeExecuteLoop
       E: @instructionSet.inst_8xyE_SHL
     }
     nibble = @toHex(opcode)[3]
-    log("{x: #{x}, y: #{y}, nibble: #{nibble})")
+    log("{x: #{x}, y: #{y}, nibble: #{nibble}}")
     if instDict[nibble]? then instDict[nibble](x, y)
     else throw new Error("Unknown instruction given: #{@toHex(opcode)}")
 
-  handle9: (opcode) ->
+  handle9: (opcode) =>
     log('inside-handle9')
     if @toHex(opcode)[3] isnt '0'
       throw new Error("Unknown instruction given: #{@toHex(opcode)}")
@@ -98,24 +98,24 @@ class FetchDecodeExecuteLoop
     y = (nibbles ^ (x << 8)) >> 4
     @instructionSet.inst_9xy0_SNE(x, y)
 
-  handleA: (opcode) ->
+  handleA: (opcode) =>
     log('inside-handleA')
     nibbles = opcode ^ 0xA000
     @instructionSet.inst_Annn_LD(nibbles)
 
-  handleB: (opcode) ->
+  handleB: (opcode) =>
     log('inside-handleB')
     nibbles = opcode ^ 0xB000
     @instructionSet.inst_Bnnn_JP(nibbles)
 
-  handleC: (opcode) ->
+  handleC: (opcode) =>
     log('inside-handleC')
     nibbles = opcode ^ 0xC000
     x = nibbles >> 8
     kk = nibbles ^ (x << 8)
     @instructionSet.inst_Cxkk_RND(x, kk)
 
-  handleD: (opcode) ->
+  handleD: (opcode) =>
     log('inside-handleD')
     nibbles = opcode ^ 0xD000
     x = nibbles >> 8
@@ -123,20 +123,20 @@ class FetchDecodeExecuteLoop
     n = (nibbles ^ (x << 8)) ^ (y << 4)
     @instructionSet.inst_Dxyn_DRW(x, y, n)
 
-  handleE: (opcode) ->
+  handleE: (opcode) =>
     log('inside-handleE')
     nibbles = opcode ^ 0xE000
     x = nibbles >> 8
     y = (nibbles ^ (x << 8)) >> 4
     n = (nibbles ^ (x << 8)) ^ (y << 4)
-    console.log("x: #{x}")
-    console.log("y: #{y}")
-    console.log("n: #{n}")
-    if y is 9 and n is 'E' then @instructionSet.inst_Ex9E_SKP x
-    else if y is 'A' and n is '1' then@instructionSet.inst_ExA1_SKNP x
+    console.log("x: #{x}, #{typeof x}")
+    console.log("y: #{y}, #{typeof y}")
+    console.log("n: #{n}, #{typeof n}")
+    if y is 9 and n is 14 then @instructionSet.inst_Ex9E_SKP x
+    else if y is 10 and n is 1 then @instructionSet.inst_ExA1_SKNP x
     else throw new Error("Unknown nibbles: #{@toHex(nibbles)}")
 
-  handleF: (opcode) ->
+  handleF: (opcode) =>
     log('inside-handleF')
     nibbles = opcode ^ 0xF000
     x = nibbles >> 8
@@ -156,14 +156,15 @@ class FetchDecodeExecuteLoop
     else if y is 6 and n is 5 then @instructionSet.inst_Fx65_LD x
     else throw new Error("Unknown nibbles: #{@toHex(nibbles)}")
 
-  fetchAndExecute: () ->
+  fetchAndExecute: () =>
 
     handleDict = {
       0: @handle0
       1: @handle1
       2: @handle2
       3: @handle3
-      4: @handle5
+      4: @handle4
+      5: @handle5
       6: @handle6
       7: @handle7
       8: @handle8
@@ -176,25 +177,19 @@ class FetchDecodeExecuteLoop
       F: @handleF
     }
 
-    console.log("stack: #{@instructionSet.stack}")
     console.log("PC: #{@instructionSet.PC}")
-    console.log("SP: #{@instructionSet.SP}")
     memory = @instructionSet.memory
     PC = @instructionSet.PC
     firstNibble = memory[PC]
     secondNibble = memory[PC + 1]
-    console.log("first int: #{firstNibble}")
-    console.log("second int: #{secondNibble}")
-    log("first nibble is:  #{@toHex(firstNibble)}")
-    log("second nibble is: #{@toHex(secondNibble)}")
 
     opcode = memory[PC] << 8 | memory[PC + 1]
     log("opcode is: #{@toHex(opcode)}")
     nibble = if @toHex(opcode).length is 4 then @toHex(opcode)[0] else 0
-    console.log("handleDict[#{nibble}]")
+    #console.log("handleDict[#{nibble}]")
     if handleDict[nibble]?
       handleDict[nibble](opcode)
-      @instructionSet.incrementPC
+      @instructionSet.incrementPC()
     else
       throw new Error("Unknown instruction given: #{@toHex(opcode)}")
 

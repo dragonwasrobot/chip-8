@@ -85,6 +85,13 @@ module.exports = (grunt) ->
           atBegin: true
         }
       }
+      noTest: {
+        files: ['app/src/*.coffee', 'app/views/*.html', 'test/src/*.coffee']
+        tasks: ['build']
+        options: {
+          atBegin: true
+        }
+      }
     }
 
   }
@@ -106,5 +113,6 @@ module.exports = (grunt) ->
   grunt.registerTask('http', ['connect:app'])
 
   grunt.registerTask('dev', ['http', 'watch:app'])
+  grunt.registerTask('dev-no-test', ['http', 'watch:noTest'])
 
   grunt.registerTask('package', ['analyse', 'build', 'docs'])

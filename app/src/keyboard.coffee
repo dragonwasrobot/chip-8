@@ -15,9 +15,13 @@ class Keyboard
   #     | A | 0 | B | F |
   #     |---|---|---|---|
 
+  # ### Constructors
+
   constructor: () ->
 
-  # TODO: Figure out how to implement keyboard.
-  getKeysPressed = () -> [3, 15]
+  # ### Methods
 
-  waitForKeyPress = () -> 5
+  # TODO: Figure out how to implement keyboard.
+  getKeysPressed: () -> []
+
+  waitForKeyPress: () -> 5

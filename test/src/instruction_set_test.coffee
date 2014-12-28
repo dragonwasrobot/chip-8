@@ -185,7 +185,16 @@ describe 'instruction_set', () ->
     instructionSet.inst_Cxkk_RND(5, 67)
     expect(instructionSet.registers[5]).toBe 66
 
-  # it 'inst_Dxyn_DRW should display sprites as expect', () ->
+  it 'inst_Dxyn_DRW should display sprites as expect', () ->
+    instructionSet.memory[746] = 128
+    instructionSet.memory[747] = 110
+    instructionSet.memory[748] = 87
+    instructionSet.memory[749] = 64
+    instructionSet.memory[750] = 42
+    instructionSet.memory[751] = 35
+    instructionSet.I = 746
+    instructionSet.inst_Dxyn_DRW(2,1,6)
+    # TODO: what to expect
 
   it 'inst_Ex9E_SKP should skip next instruction', () ->
     instructionSet.PC = 42

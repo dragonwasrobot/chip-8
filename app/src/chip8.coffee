@@ -2,7 +2,7 @@
 
 loadProgram = (fetchDecodeExecute) ->
   xhr = new XMLHttpRequest()
-  xhr.open('GET', 'roms/TETRIS', true)
+  xhr.open('GET', 'roms/15PUZZLE', true)
   xhr.responseType = 'arraybuffer'
   xhr.onload = () ->
     readProgram(new Uint8Array(xhr.response), fetchDecodeExecute)
@@ -11,14 +11,12 @@ loadProgram = (fetchDecodeExecute) ->
 readProgram = (program, fetchDecodeExecute) ->
   PROGRAM_START = 512
   memory = fetchDecodeExecute.instructionSet.memory
+  log(program)
   (memory[i + PROGRAM_START] = program[i]) for i in [0...program.length]
-  log((memory.slice(PROGRAM_START, program.length)).map (x) -> toHex(x))
-  startProgram(fetchDecodeExecute)
-
-startProgram = (fetchDecodeExecute) ->
+  log((memory.slice(PROGRAM_START, PROGRAM_START + program.length)).map (x) ->
+    x.toString(16).toUpperCase())
   fetchDecodeExecute.instructionSet.I = 0
-  fetchDecodeExecute.instructionSet.PC = 512
-  fetchDecodeExecute.instructionSet.display.createCanvas()
+  fetchDecodeExecute.instructionSet.PC = PROGRAM_START
   fetchDecodeExecute.tick()
 
 DEBUG = true

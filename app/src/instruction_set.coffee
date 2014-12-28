@@ -173,8 +173,8 @@ class InstructionSet
   #
   # The interpreter sets the program counter to nnn.
   inst_1nnn_JP: (nnn) ->
-    log('inside inst_1nnn_JP')
-    @PC = nnn
+    log("inside inst_1nnn_JP: Setting PC = #{nnn}")
+    @PC = nnn - 2
 
   # #### 2nnn - CALL addr
 
@@ -183,10 +183,10 @@ class InstructionSet
   # The interpreter increments the stack pointer, then puts the current PC on
   # the top of the stack. The PC is then set to nnn.
   inst_2nnn_CALL: (nnn) ->
-    log('inside inst_2nnn_CALL')
+    log("inside inst_2nnn_CALL: SP=#{@SP+1}, stack[#{@SP + 1}]=#{@PC} and PC=#{nnn}")
     @SP += 1
     @stack[@SP] = @PC
-    @PC = nnn
+    @PC = nnn - 2
 
   # #### 3xkk - SE Vx, byte
 
@@ -195,7 +195,7 @@ class InstructionSet
   # The interpreter compares register Vx to kk, and if they are equal,
   # increments the program counter by 2.
   inst_3xkk_SE: (x, kk) ->
-    log('inside inst_3xkk_SE')
+    log("inside inst_3xkk_SE: Skips next instruction if V#{x} (#{@registers[x]}) is #{kk}")
     (@PC += 2) if @registers[x] is kk
 
   # #### 4xkk - SNE Vx, byte
@@ -224,7 +224,7 @@ class InstructionSet
   #
   # The interpreter puts the value kk into register Vx.
   inst_6xkk_LD: (x, kk) ->
-    log('inside inst_6xkk_LD')
+    log("inside inst_6xkk_LD: Setting V#{x} = #{kk}")
     @registers[x] = kk
 
   # #### 7xkk - ADD Vx, byte
@@ -233,7 +233,7 @@ class InstructionSet
   #
   # Adds the value kk to the value of register Vx, then stores the result in Vx.
   inst_7xkk_ADD: (x, kk) ->
-    log('inside inst_7xkk_ADD')
+    log("inside inst_7xkk_ADD: Setting V#{x} = #{(@registers[x] + kk) % 256}")
     @registers[x] = (@registers[x] + kk) % 256
 
   # #### 8xy0 - LD Vx, Vy
@@ -241,7 +241,7 @@ class InstructionSet
   # Set Vx = Vy.
   #
   # Stores the value of register Vy in register Vx.
-  inst_8xy0_LD: (x, y) ->
+  inst_8xy0_LD: (x, y) =>
     log('inside inst_8xy0_LD')
     @registers[x] = @registers[y]
 
@@ -251,7 +251,7 @@ class InstructionSet
   #
   # Performs a bitwise OR on the values of Vx and Vy, then stores the result in
   # Vx.
-  inst_8xy1_OR: (x, y) ->
+  inst_8xy1_OR: (x, y) =>
     log('inside inst_8xy1_OR')
     @registers[x] |= @registers[y]
 
@@ -261,7 +261,7 @@ class InstructionSet
   #
   # Performs a bitwise AND on the values of Vx and Vy, then stores the result in
   # Vx.
-  inst_8xy2_AND: (x, y) ->
+  inst_8xy2_AND: (x, y) =>
     log('inside inst_8xy2_AND')
     @registers[x] &= @registers[y]
 
@@ -271,7 +271,7 @@ class InstructionSet
   #
   # Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the
   # result in Vx.
-  inst_8xy3_XOR: (x, y) ->
+  inst_8xy3_XOR: (x, y) =>
     log('inside inst_8xy3_XOR')
     @registers[x] ^= @registers[y]
 
@@ -282,7 +282,7 @@ class InstructionSet
   # The values of Vx and Vy are added together. If the result is greater than 8
   # bits (i.e., > 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of
   # the result are kept, and stored in Vx.
-  inst_8xy4_ADD: (x, y) ->
+  inst_8xy4_ADD: (x, y) =>
     log('inside inst_8xy4_ADD')
     @registers[15] = if (@registers[x] + @registers[y]) > 255 then 1 else 0
     @registers[x] = (@registers[x] + @registers[y]) % 256
@@ -293,7 +293,7 @@ class InstructionSet
   #
   # If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
   # and the results stored in Vx.
-  inst_8xy5_SUB: (x, y) ->
+  inst_8xy5_SUB: (x, y) =>
     log('inside inst_8xy5_SUB')
     @registers[15] = if @registers[x] > @registers[y] then 1 else 0
     @registers[x] = @registers[x] - @registers[y]
@@ -305,7 +305,7 @@ class InstructionSet
   #
   # If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
   # Then Vx is divided by 2.
-  inst_8xy6_SHR: (x) ->
+  inst_8xy6_SHR: (x) =>
     log('inside inst_8xy6_SHR')
     LSB = @registers[x] % 2
     @registers[15] = if LSB is 1 then 1 else 0
@@ -317,7 +317,7 @@ class InstructionSet
   #
   # If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
   # and the results stored in Vx.
-  inst_8xy7_SUBN: (x, y) ->
+  inst_8xy7_SUBN: (x, y) =>
     log('inside inst_8xy7_SUBN')
     @registers[15] = if @registers[y] > @registers[x] then 1 else 0
     @registers[x] = @registers[y] - @registers[x]
@@ -329,7 +329,7 @@ class InstructionSet
   #
   # If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
   # Then Vx is multiplied by 2.
-  inst_8xyE_SHL: (x) ->
+  inst_8xyE_SHL: (x) =>
     log('inside inst_8xyE_SHL')
     MSB = (@registers[x] >> 7)
     @registers[15] = if MSB is 1 then 1 else 0
@@ -351,7 +351,7 @@ class InstructionSet
   #
   # The value of register I is set to nnn.
   inst_Annn_LD: (nnn) ->
-    log('inside inst_Annn_LD')
+    log("inside inst_Annn_LD: Sets I = #{nnn}")
     @I = nnn
 
   # #### Bnnn - JP V0, addr
@@ -373,6 +373,7 @@ class InstructionSet
   inst_Cxkk_RND: (x, kk) ->
     log('inside inst_Cxkk_RND')
     random = Math.floor(Math.random() * 256)
+    log("Random: #{random}, KK: #{kk}, result: #{random & kk}")
     @registers[x] = random & kk
 
   # #### Dxyn - DRW Vx, Vy, nibble
@@ -390,6 +391,7 @@ class InstructionSet
   # Chip-8 screen and sprites.
   inst_Dxyn_DRW: (x, y, n) ->
     log('inside inst_Dxyn_DRW')
+    log("x: #{x}, y: #{y}, n: #{n}")
 
     hexToBitPattern = (num) ->
       paddingByte = '00000000'
@@ -398,18 +400,21 @@ class InstructionSet
         .split('') # turn into char array
         .map (char) -> parseInt(char) # parse chars into bits
 
-    setBit = (x, y, newValue) ->
+    setBit = (x, y, newValue) =>
       oldValue = @display.getCell(x, y).value
       @registers[15] = if oldValue is 1 and newValue is 1 then 1 else 0 # carry
-      x = if x > displayWidth - 1 then x - displayWidth else x # bounds x
-      y = if y > displayHeight - 1 then y - displayHeight else x # bounds y
+      x = if x > @display.displayWidth - 1 then x - @display.displayWidth else x
+      y = if y > @display.displayHeight - 1 then y - @display.displayHeight else y
       @display.setCell { column: x, row: y, value: oldValue ^ newValue }
 
     sprites = []
-    sprites[0...n] = memory[I...I + n]
-    for sprite in sprites
+    (sprites[i] = @memory[@I + i]) for i in [0...n]
+    for sprite, row in sprites
       bits = hexToBitPattern(sprite)
-      setBit(x + index, y, bit) for bit, index in bits
+      for bit, column in bits
+        regValueX = @registers[x]
+        regValueY = @registers[y]
+        setBit((regValueX + column) % 64, (regValueY + row) % 32, bit)
 
   # #### Ex9E - SKP Vx
 
@@ -419,6 +424,7 @@ class InstructionSet
   # currently in the down position, PC is increased by 2.
   inst_Ex9E_SKP: (x) ->
     log('inside inst_Ex9E_SKP')
+    log("x: #{x}")
     if @registers[x] in @keyboard.getKeysPressed() then @PC += 2
 
   # #### ExA1 - SKNP Vx
@@ -430,6 +436,7 @@ class InstructionSet
   #
   inst_ExA1_SKNP: (x) ->
     log('inside inst_ExA1_SKNP')
+    log("x: #{x}")
     if @registers[x] not in @keyboard.getKeysPressed() then @PC += 2
 
   # #### Fx07 - LD Vx, DT
@@ -476,7 +483,7 @@ class InstructionSet
   #
   # The values of I and Vx are added, and the results are stored in I.
   inst_Fx1E_ADD: (x) ->
-    log('inside inst_Fx1E_ADD')
+    log("inside inst_Fx1E_ADD: Sets I = #{@I + @registers[x]}")
     @I += @registers[x]
 
   # #### Fx29 - LD F, Vx
@@ -498,10 +505,13 @@ class InstructionSet
   # in memory at location in I, the tens digit at location I+1, and the ones
   # digit at location I+2.
   inst_Fx33_LD: (x) ->
-    log('inside inst_Fx33_LD')
+    log("inside inst_Fx33_LD: Stores BCD rep of V#{x} in memory[#{@I}]")
     @memory[@I] = Math.floor(@registers[x] / 100)
     @memory[@I + 1] = Math.floor((@registers[x] % 100) / 10)
     @memory[@I + 2] = (@registers[x] % 10)
+    log("memory[#{@I}] = #{@memory[@I]}")
+    log("memory[#{@I+1}] = #{@memory[@I+1]}")
+    log("memory[#{@I+2}] = #{@memory[@I+2]}")
 
   # #### Fx55 - LD [I], Vx
 
@@ -521,7 +531,10 @@ class InstructionSet
   # registers V0 through Vx.
   inst_Fx65_LD: (x) ->
     log('inside inst_Fx65_LD')
+    log("#{@registers[i] for i in [0..x]}")
+    log("#{@memory[@I + i] for i in [0..x]}")
     (@registers[i] = @memory[@I + i]) for i in [0..x]
+    log("#{@registers[i] for i in [0..x]}")
 
 # ### Timers and Sounds
 

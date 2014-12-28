@@ -31,7 +31,7 @@ class Display
 
   clear: () ->
     @display = ((0 for j in [0...@displayHeight]) for i in [0...@displayWidth])
-    @createCanvas()
+    @drawGrid()
 
   createCanvas: () ->
     @canvas = document.createElement 'canvas'
