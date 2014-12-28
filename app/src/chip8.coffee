@@ -2,7 +2,7 @@
 
 loadProgram = (fetchDecodeExecute) ->
   xhr = new XMLHttpRequest()
-  xhr.open('GET', 'roms/15PUZZLE', true)
+  xhr.open('GET', 'roms/INVADERS', true)
   xhr.responseType = 'arraybuffer'
   xhr.onload = () ->
     readProgram(new Uint8Array(xhr.response), fetchDecodeExecute)
@@ -19,7 +19,7 @@ readProgram = (program, fetchDecodeExecute) ->
   fetchDecodeExecute.instructionSet.PC = PROGRAM_START
   fetchDecodeExecute.tick()
 
-DEBUG = true
+DEBUG = false
 
 log = (string) ->
   if DEBUG then console.log(string)

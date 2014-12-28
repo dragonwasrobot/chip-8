@@ -4,7 +4,7 @@ class FetchDecodeExecuteLoop
 
   # ### Fields
 
-  tickLength: 100 # should be 100ish
+  tickLength: 50 # should be 100ish
 
   constructor: (@instructionSet) ->
 
@@ -129,9 +129,9 @@ class FetchDecodeExecuteLoop
     x = nibbles >> 8
     y = (nibbles ^ (x << 8)) >> 4
     n = (nibbles ^ (x << 8)) ^ (y << 4)
-    console.log("x: #{x}, #{typeof x}")
-    console.log("y: #{y}, #{typeof y}")
-    console.log("n: #{n}, #{typeof n}")
+    log("x: #{x}, #{typeof x}")
+    log("y: #{y}, #{typeof y}")
+    log("n: #{n}, #{typeof n}")
     if y is 9 and n is 14 then @instructionSet.inst_Ex9E_SKP x
     else if y is 10 and n is 1 then @instructionSet.inst_ExA1_SKNP x
     else throw new Error("Unknown nibbles: #{@toHex(nibbles)}")
@@ -142,9 +142,9 @@ class FetchDecodeExecuteLoop
     x = nibbles >> 8
     y = (nibbles ^ (x << 8)) >> 4
     n = (nibbles ^ (x << 8)) ^ (y << 4)
-    console.log("x: #{x}")
-    console.log("y: #{y}")
-    console.log("n: #{n}")
+    log("x: #{x}")
+    log("y: #{y}")
+    log("n: #{n}")
     if y is 0 and n is 7 then @instructionSet.inst_Fx07_LD x
     else if y is 0 and n is 10 then @instructionSet.inst_Fx0A_LD x
     else if y is 1 and n is 5 then @instructionSet.inst_Fx15_LD x
@@ -177,7 +177,7 @@ class FetchDecodeExecuteLoop
       F: @handleF
     }
 
-    console.log("PC: #{@instructionSet.PC}")
+    log("PC: #{@instructionSet.PC}")
     memory = @instructionSet.memory
     PC = @instructionSet.PC
     firstNibble = memory[PC]
@@ -186,7 +186,6 @@ class FetchDecodeExecuteLoop
     opcode = memory[PC] << 8 | memory[PC + 1]
     log("opcode is: #{@toHex(opcode)}")
     nibble = if @toHex(opcode).length is 4 then @toHex(opcode)[0] else 0
-    #console.log("handleDict[#{nibble}]")
     if handleDict[nibble]?
       handleDict[nibble](opcode)
       @instructionSet.incrementPC()

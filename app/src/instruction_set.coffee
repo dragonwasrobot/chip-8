@@ -392,6 +392,7 @@ class InstructionSet
   inst_Dxyn_DRW: (x, y, n) ->
     log('inside inst_Dxyn_DRW')
     log("x: #{x}, y: #{y}, n: #{n}")
+    @registers[15] = 0
 
     hexToBitPattern = (num) ->
       paddingByte = '00000000'
@@ -402,7 +403,8 @@ class InstructionSet
 
     setBit = (x, y, newValue) =>
       oldValue = @display.getCell(x, y).value
-      @registers[15] = if oldValue is 1 and newValue is 1 then 1 else 0 # carry
+      if @registers[15] is 0 and oldValue is 1 and newValue is 1
+        @registers[15] = 1
       x = if x > @display.displayWidth - 1 then x - @display.displayWidth else x
       y = if y > @display.displayHeight - 1 then y - @display.displayHeight else y
       @display.setCell { column: x, row: y, value: oldValue ^ newValue }
@@ -446,6 +448,7 @@ class InstructionSet
   # The value of DT is placed into Vx.
   inst_Fx07_LD: (x) ->
     log('inside inst_Fx07_LD')
+    log("DT: #{@delayTimer.get()}")
     @registers[x] = @delayTimer.get()
 
   # #### Fx0A - LD Vx, K
@@ -552,7 +555,8 @@ class DelayTimer
 
   constructor: () ->
 
-  _tick: () ->
+  _tick: () =>
+    log "Delaytimer tick: #{@_DT}"
     if @_running and @_DT > 0
       @_DT -= 1
       setTimeout(@_tick, @_tickLength)
