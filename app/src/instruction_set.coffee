@@ -426,7 +426,8 @@ class InstructionSet
   # currently in the down position, PC is increased by 2.
   inst_Ex9E_SKP: (x) ->
     log('inside inst_Ex9E_SKP')
-    log("x: #{x}")
+    log("x: #{x} -> #{@registers[x]}")
+    log("keys pressed: #{@keyboard.getKeysPressed()}")
     if @registers[x] in @keyboard.getKeysPressed() then @PC += 2
 
   # #### ExA1 - SKNP Vx
@@ -438,7 +439,8 @@ class InstructionSet
   #
   inst_ExA1_SKNP: (x) ->
     log('inside inst_ExA1_SKNP')
-    log("x: #{x}")
+    log("x: #{x} -> #{@registers[x]}")
+    log("keys pressed: #{@keyboard.getKeysPressed()}")
     if @registers[x] not in @keyboard.getKeysPressed() then @PC += 2
 
   # #### Fx07 - LD Vx, DT
@@ -458,7 +460,7 @@ class InstructionSet
   # All execution stops until a key is pressed, then the value of that key is
   # stored in Vx.
   inst_Fx0A_LD: (x) ->
-    log('inside inst_Fx0A_LD')
+    console.log('inside inst_Fx0A_LD')
     key = @keyboard.waitForKeyPress()
     @registers[x] = key
 

@@ -2,7 +2,7 @@
 
 loadProgram = (fetchDecodeExecute) ->
   xhr = new XMLHttpRequest()
-  xhr.open('GET', 'roms/INVADERS', true)
+  xhr.open('GET', 'roms/PONG', true)
   xhr.responseType = 'arraybuffer'
   xhr.onload = () ->
     readProgram(new Uint8Array(xhr.response), fetchDecodeExecute)
@@ -22,7 +22,7 @@ readProgram = (program, fetchDecodeExecute) ->
 DEBUG = false
 
 log = (string) ->
-  if DEBUG then console.log(string)
+  if DEBUG then console.log string
 
 main = () ->
   display = new Display()
@@ -30,13 +30,5 @@ main = () ->
   instructionSet = new InstructionSet(display, keyboard)
   fetchDecodeExecute = new FetchDecodeExecuteLoop(instructionSet)
   loadProgram(fetchDecodeExecute)
-
-  # display.setCell {column: 5, row: 4, value: 1}
-  # display.setCell {column: 5, row: 7, value: 1}
-  # display.setCell {column: 3, row: 2, value: 1}
-  # display.setCell {column: 8, row: 6, value: 1}
-  # display.setCell {column: 7, row: 14, value: 1}
-  # display.drawGrid()
-  # display.drawCell {column: 0, row: 0, value: 1}
 
 window.main = main

@@ -4,7 +4,7 @@ class FetchDecodeExecuteLoop
 
   # ### Fields
 
-  tickLength: 50 # should be 100ish
+  tickLength: 10 # should be 100ish
 
   constructor: (@instructionSet) ->
 
