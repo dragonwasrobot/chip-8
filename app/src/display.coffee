@@ -34,6 +34,13 @@ canvas = {}
 
 # ## Functions
 
+Display.initialize = () ->
+  canvas = document.getElementById 'visible-canvas'
+  canvas.height = cellSize * Display.height
+  canvas.width = cellSize * Display.width
+  context = canvas.getContext '2d'
+  Display.drawCells()
+
 Display.clearCells = () ->
   Display.cells = ((0 for j in [0...Display.height]) for i in [0...Display.width])
   Display.drawCells()
@@ -102,10 +109,3 @@ getRGB = (red, green, blue) -> "rgb(#{red}, #{green}, #{blue})"
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
 window.Chip8.Display = Display
-
-Display.initialize = () ->
-  canvas = document.getElementById 'visible-canvas'
-  canvas.height = cellSize * Display.height
-  canvas.width = cellSize * Display.width
-  context = canvas.getContext '2d'
-  Display.drawCells()

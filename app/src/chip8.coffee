@@ -28,7 +28,8 @@ readProgram = (program, fetchDecodeExecute) ->
 main = () ->
   display = Chip8.Display
   display.initialize()
-  keyboard = new Chip8.Keyboard()
+  keyboard = Chip8.Keyboard
+  keyboard.initialize()
   instructionSet = new Chip8.InstructionSet(display, keyboard)
   fetchDecodeExecute = new Chip8.FetchDecodeExecuteLoop(instructionSet)
   loadProgram(fetchDecodeExecute)
