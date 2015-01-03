@@ -1,88 +1,111 @@
+# # Display
+
 # author: Peter Urbak <peter@dragonwasrobot.com>
-# version: 2014-10-18
+# version: 2015-01-02
 
-class Display
+# ## Properties
 
-  # The original implementation of the Chip-8 language used a 64x32-pixel
-  # monochrome display with the format:
+log = window.Chip8.log
 
-  #     |------------------|
-  #     |( 0, 0)    (63, 0)|
-  #     |                  |
-  #     |( 0,31)    (63,31)|
-  #     |------------------|
+Display = {}
 
-  displayWidth: 64
-  displayHeight: 32
+# The original implementation of the Chip-8 language used a 64x32-pixel
+# monochrome display with the format:
 
-  # The display is rendered with 10x10 pixel cells, and we use a nice bright
-  # retro green for coloring the pixels.
+#     |------------------|
+#     |( 0, 0)    (63, 0)|
+#     |                  |
+#     |( 0,31)    (63,31)|
+#     |------------------|
 
-  cellSize: 10
-  cellColor: { red: 0, green: 255, blue: 0, trans: 0.1, gray: 38 }
+Display.width = 64
+Display.height = 32
+Display.cells = ((0 for j in [0...Display.height]) for i in [0...Display.width])
 
-  # ### Constructors
+# The display is rendered with 10x10 pixel cells and we use a bright retro green
+# for coloring the pixels.
 
-  constructor: () ->
-    @display = ((0 for j in [0...@displayHeight]) for i in [0...@displayWidth])
-    @createCanvas()
+cellSize = 10
+cellColor = { red: 0, green: 255, blue: 0, gray: 33 }
 
-  # ### Methods
+# Canvases and drawing contexts
+context = {}
+canvas = {}
 
-  clear: () ->
-    @display = ((0 for j in [0...@displayHeight]) for i in [0...@displayWidth])
-    @drawGrid()
+# ## Functions
 
-  createCanvas: () ->
-    @canvas = document.createElement 'canvas'
-    document.body.appendChild @canvas
-    @canvas.height = @cellSize * @displayHeight
-    @canvas.width = @cellSize * @displayWidth
-    @drawingContext = @canvas.getContext '2d'
+Display.clearCells = () ->
+  Display.cells = ((0 for j in [0...Display.height]) for i in [0...Display.width])
+  Display.drawCells()
 
-  drawGrid: () ->
-    for column in [0...@displayWidth]
-      for row in [0...@displayHeight]
-        @drawCell {
-          'column' : column
-          'row' : row
-          'value' : @display[column][row]
-        }
+Display.drawCells = (cells...) ->
+  log "drawCells"
+  buffer = document.createElement 'canvas'
+  buffer.height = cellSize * Display.height
+  buffer.width = cellSize * Display.width
+  bufferContext = buffer.getContext '2d'
 
-    @drawingContext.strokeStyle = @getRGB(@cellColor.red, @cellColor.green,
-    @cellColor.blue)
-    @drawingContext.strokeRect(0, 0, @cellSize * @displayWidth,
-      @cellSize * @displayHeight)
-
-  getCell: (x, y) -> { column: x, row: y, value: @display[x][y] }
-
-  setCell: (cell) ->
-    if cell.column < 0 or cell.column >= @displayWidth
-      throw new Error("Cell column out of bounds: #{cell.column},
-        should be 0 <= column < #{@displayWidth}.")
-    if cell.row < 0 or cell.row >= @displayHeight
-      throw new Error("Cell row out of bounds: #{cell.row},
-        should be 0 <= row < #{@displayWidth}.")
-    @display[cell.column][cell.row] = cell.value
-
-  drawCell: (cell) ->
-    x = cell.column * @cellSize
-    y = cell.row * @cellSize
+  drawCell = (cell) ->
+    x = cell.column * cellSize
+    y = cell.row * cellSize
 
     switch cell.value
-      when 1 then @drawingContext.fillStyle = @getRGB(@cellColor.red,
-        @cellColor.green, @cellColor.blue)
-      when 0 then @drawingContext.fillStyle = @getGrayscale(@cellColor.gray)
+      when 1 then bufferContext.fillStyle = getRGB(cellColor.red,
+      cellColor.green, cellColor.blue)
+      when 0 then bufferContext.fillStyle = getGrayscale(cellColor.gray)
       else throw new Error("Unknown cell value: #{cell.value}")
 
-    @drawingContext.strokeStyle = @getRGB(@cellColor.red, @cellColor.green,
-      @cellColor.blue) #, @cellColor.trans)
-    @drawingContext.strokeRect(x, y, @cellSize, @cellSize)
+    bufferContext.fillRect(x, y, cellSize, cellSize)
 
-    @drawingContext.fillRect(x, y, @cellSize, @cellSize)
+  columnStart = 0
+  columnEnd = Display.width
+  rowStart = 0
+  rowEnd = Display.height
 
-  getGrayscale: (gray) ->
-    "rgb(#{gray}, #{gray}, #{gray})"
+  if cells.length is 2
+    cellStart = cells[0]
+    cellEnd = cells[1]
+    columnStart = cellStart.column
+    rowStart = cellStart.row
+    columnEnd = cellEnd.column
+    rowEnd = cellEnd.row
 
-  getRGB: (red, green, blue) ->
-    "rgb(#{red}, #{green}, #{blue})"
+  for column in [columnStart...columnEnd]
+    for row in [rowStart...rowEnd]
+      value = Display.cells[column][row]
+      drawCell {
+        column: column
+        row: row
+        value: value
+      }
+
+  bufferContext.strokeStyle = getRGB(cellColor.red, cellColor.green,
+    cellColor.blue)
+  bufferContext.strokeRect(0, 0, cellSize * Display.width,
+    cellSize * Display.height)
+
+  context.drawImage(buffer, 0, 0)
+
+Display.getCell = (column, row) -> {
+  column: column,
+  row: row,
+  value: Display.cells[column][row]
+}
+
+Display.setCell = (cell) -> Display.cells[cell.column][cell.row] = cell.value
+
+getGrayscale = (gray) -> "rgb(#{gray}, #{gray}, #{gray})"
+
+getRGB = (red, green, blue) -> "rgb(#{red}, #{green}, #{blue})"
+
+# ## Export and initialize module
+
+window.Chip8 = if window.Chip8? then window.Chip8 else {}
+window.Chip8.Display = Display
+
+Display.initialize = () ->
+  canvas = document.getElementById 'visible-canvas'
+  canvas.height = cellSize * Display.height
+  canvas.width = cellSize * Display.width
+  context = canvas.getContext '2d'
+  Display.drawCells()

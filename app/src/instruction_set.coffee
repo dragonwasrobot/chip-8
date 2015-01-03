@@ -3,6 +3,8 @@
 # Reference material for the Chip-8 specification:
 # [Chip-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
 
+log = window.Chip8.log
+
 # ## Chip-8 Instruction set and memory
 
 class InstructionSet
@@ -154,7 +156,7 @@ class InstructionSet
   # Clear the display.
   inst_00E0_CLS: () ->
     # log('inside inst_00E0_CLS')
-    @display.clear()
+    @display.clearCells()
 
   # #### 00EE - RET
 
@@ -405,8 +407,8 @@ class InstructionSet
       oldValue = @display.getCell(x, y).value
       if @registers[15] is 0 and oldValue is 1 and newValue is 1
         @registers[15] = 1
-      x = if x > @display.displayWidth - 1 then x - @display.displayWidth else x
-      y = if y > @display.displayHeight - 1 then y - @display.displayHeight else y
+      x = if x > @display.width - 1 then x - @display.width else x
+      y = if y > @display.height - 1 then y - @display.height else y
       @display.setCell { column: x, row: y, value: oldValue ^ newValue }
 
     sprites = []
@@ -414,9 +416,10 @@ class InstructionSet
     for sprite, row in sprites
       bits = hexToBitPattern(sprite)
       for bit, column in bits
-        regValueX = @registers[x]
-        regValueY = @registers[y]
-        setBit((regValueX + column) % 64, (regValueY + row) % 32, bit)
+        setBit((@registers[x] + column) % @display.width,
+          (@registers[y] + row) % @display.height, bit)
+
+    @display.drawCells()
 
   # #### Ex9E - SKP Vx
 
@@ -460,7 +463,7 @@ class InstructionSet
   # All execution stops until a key is pressed, then the value of that key is
   # stored in Vx.
   inst_Fx0A_LD: (x) ->
-    console.log('inside inst_Fx0A_LD')
+    log('inside inst_Fx0A_LD')
     key = @keyboard.waitForKeyPress()
     @registers[x] = key
 
@@ -605,3 +608,9 @@ class SoundTimer
       @_tick()
 
   get: () -> @_ST
+
+# ## Export and initialize module
+
+window.Chip8 = if window.Chip8? then window.Chip8 else {}
+# Instructions = window.Chip8.Instructions = {}
+window.Chip8.InstructionSet = InstructionSet

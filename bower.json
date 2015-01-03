@@ -1,0 +1,11 @@
+{
+  "name": "chip-8",
+  "author": "Peter Urbak, peter<at>dragonwasrobot<dot>com",
+  "description": "A Chip-8 emulator",
+  "version": "0.8.0",
+  "repository": "https://github.com/dragonwasrobot/chip-8.git",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^2.1.1"
+  }
+}

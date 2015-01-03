@@ -1,8 +1,14 @@
 # # Main
 
+Chip8 = window.Chip8 = if window.Chip8? then window.Chip8 else {}
+
+DEBUG = false
+log = (string) ->
+  if DEBUG then console.log string
+
 loadProgram = (fetchDecodeExecute) ->
   xhr = new XMLHttpRequest()
-  xhr.open('GET', 'roms/PONG', true)
+  xhr.open('GET', 'roms/WIPEOFF', true)
   xhr.responseType = 'arraybuffer'
   xhr.onload = () ->
     readProgram(new Uint8Array(xhr.response), fetchDecodeExecute)
@@ -19,16 +25,13 @@ readProgram = (program, fetchDecodeExecute) ->
   fetchDecodeExecute.instructionSet.PC = PROGRAM_START
   fetchDecodeExecute.tick()
 
-DEBUG = false
-
-log = (string) ->
-  if DEBUG then console.log string
-
 main = () ->
-  display = new Display()
-  keyboard = new Keyboard()
-  instructionSet = new InstructionSet(display, keyboard)
-  fetchDecodeExecute = new FetchDecodeExecuteLoop(instructionSet)
+  display = Chip8.Display
+  display.initialize()
+  keyboard = new Chip8.Keyboard()
+  instructionSet = new Chip8.InstructionSet(display, keyboard)
+  fetchDecodeExecute = new Chip8.FetchDecodeExecuteLoop(instructionSet)
   loadProgram(fetchDecodeExecute)
 
-window.main = main
+window.Chip8.main = main
+window.Chip8.log = log

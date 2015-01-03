@@ -1,6 +1,8 @@
 <html>
   <head>
     <title>Chip-8</title>
+    <script type="text/javascript" src="jquery.js">
+    </script>
     <script type="text/javascript" src="app.js">
     </script>
 
@@ -18,7 +20,8 @@
   </head>
   <body>
     <script type="text/javascript">
-      main();
+      $(document).ready(function() { Chip8.main(); });
     </script>
+    <canvas id="visible-canvas" width="640" height="320"></canvas>
   </body>
 </html>

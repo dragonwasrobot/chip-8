@@ -1,17 +1,16 @@
 # # Fetch-decode-execute loop
 
+log = window.Chip8.log
+
 class FetchDecodeExecuteLoop
 
   # ### Fields
 
-  tickLength: 10 # should be 100ish
-
   constructor: (@instructionSet) ->
 
   tick: () =>
-    @instructionSet.display.drawGrid()
     @fetchAndExecute()
-    setTimeout(@tick, @tickLength)
+    window.requestAnimationFrame(@tick)
 
   handle0: (opcode) =>
     log('inside-handle0')
@@ -205,3 +204,9 @@ class FetchDecodeExecuteLoop
     if from not in [0...4] or to not in [0...4] or to < from
       throw new Error("Bit index out of bounds: from: #{from}, to: #{to}")
     else return [from...to].map (idx) -> @toHex(idx)
+
+# ## Export and initialize module
+
+window.Chip8 = if window.Chip8? then window.Chip8 else {}
+# FDX = window.Chip8.FDX = {} # FDX = Fetch-decode-execute cycle
+window.Chip8.FetchDecodeExecuteLoop = FetchDecodeExecuteLoop

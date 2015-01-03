@@ -8,6 +8,7 @@ docs
 
 # Modules
 node_modules
+app/bower_components
 
 # OS/X Garbage
 .DS_Store

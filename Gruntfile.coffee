@@ -29,6 +29,10 @@ module.exports = (grunt) ->
             dest: 'dist/style.css'
           }
           {
+            src: 'app/bower_components/jquery/dist/jquery.js'
+            dest: 'dist/jquery.js'
+          }
+          {
             expand: true
             cwd: 'app/resources/'
             src: 'roms/*'
@@ -36,14 +40,10 @@ module.exports = (grunt) ->
           }
         ]
       }
-
     }
 
     coffee: {
       app: {
-        options: {
-          join: true
-        }
         files: {
           'dist/app.js': ['app/src/*.coffee']
         }

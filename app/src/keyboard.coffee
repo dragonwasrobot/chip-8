@@ -79,7 +79,10 @@ class Keyboard
     filteredKeys = Object.keys(@keysPressed).
       filter( (keyCode) => @keysPressed[keyCode] is true ).
       map( (keyCode) -> parseInt(keyCode) )
-    console.log filteredKeys
-    filteredKeys
 
-  waitForKeyPress: () -> #TODO
+  waitForKeyPress: () => # TODO: Implement with setTimeout and avoid busy wait
+
+# ## Export and initialize module
+
+window.Chip8 = if window.Chip8? then window.Chip8 else {}
+window.Chip8.Keyboard = Keyboard
