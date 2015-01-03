@@ -1,7 +1,7 @@
 # # Display
 
 # author: Peter Urbak <peter@dragonwasrobot.com>
-# version: 2015-01-02
+# version: 2015-01-03
 
 # ## Properties
 
@@ -46,7 +46,7 @@ Display.clearCells = () ->
   Display.drawCells()
 
 Display.drawCells = (cells...) ->
-  log "drawCells"
+  log 'Display->drawCells'
   buffer = document.createElement 'canvas'
   buffer.height = cellSize * Display.height
   buffer.width = cellSize * Display.width

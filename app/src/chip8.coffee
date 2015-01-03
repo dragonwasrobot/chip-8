@@ -16,13 +16,13 @@ loadProgram = (fetchDecodeExecute) ->
 
 readProgram = (program, fetchDecodeExecute) ->
   PROGRAM_START = 512
-  memory = fetchDecodeExecute.instructionSet.memory
+  memory = fetchDecodeExecute.instructions.memory
   log(program)
   (memory[i + PROGRAM_START] = program[i]) for i in [0...program.length]
   log((memory.slice(PROGRAM_START, PROGRAM_START + program.length)).map (x) ->
     x.toString(16).toUpperCase())
-  fetchDecodeExecute.instructionSet.I = 0
-  fetchDecodeExecute.instructionSet.PC = PROGRAM_START
+  fetchDecodeExecute.instructions.I = 0
+  fetchDecodeExecute.instructions.PC = PROGRAM_START
   fetchDecodeExecute.tick()
 
 main = () ->
@@ -30,8 +30,9 @@ main = () ->
   display.initialize()
   keyboard = Chip8.Keyboard
   keyboard.initialize()
-  instructionSet = new Chip8.InstructionSet(display, keyboard)
-  fetchDecodeExecute = new Chip8.FetchDecodeExecuteLoop(instructionSet)
+  instructions = new Chip8.InstructionSet(display, keyboard)
+  fetchDecodeExecute = Chip8.FDX
+  fetchDecodeExecute.initialize(instructions)
   loadProgram(fetchDecodeExecute)
 
 window.Chip8.main = main
