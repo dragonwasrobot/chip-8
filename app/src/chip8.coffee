@@ -1,10 +1,18 @@
-# # Main
+# # Chip8
 
-Chip8 = window.Chip8 = if window.Chip8? then window.Chip8 else {}
+# author: Peter Urbak <peter@dragonwasrobot.com>
+# version: 2015-01-03
 
-DEBUG = false
-log = (string) ->
-  if DEBUG then console.log string
+# Reference material for the Chip-8 specification:
+# [Chip-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
+
+# ## Properties
+
+debug = false
+
+# ## Functions
+
+log = (string) -> if debug then console.log string
 
 loadProgram = (fetchDecodeExecute) ->
   xhr = new XMLHttpRequest()
@@ -15,25 +23,34 @@ loadProgram = (fetchDecodeExecute) ->
   xhr.send()
 
 readProgram = (program, fetchDecodeExecute) ->
-  PROGRAM_START = 512
+  programStart = 512
   memory = fetchDecodeExecute.instructions.memory
   log(program)
-  (memory[i + PROGRAM_START] = program[i]) for i in [0...program.length]
-  log((memory.slice(PROGRAM_START, PROGRAM_START + program.length)).map (x) ->
+  (memory[i + programStart] = program[i]) for i in [0...program.length]
+  log((memory.slice(programStart, programStart + program.length)).map (x) ->
     x.toString(16).toUpperCase())
   fetchDecodeExecute.instructions.I = 0
-  fetchDecodeExecute.instructions.PC = PROGRAM_START
+  fetchDecodeExecute.instructions.PC = programStart
   fetchDecodeExecute.tick()
 
 main = () ->
+
   display = Chip8.Display
   display.initialize()
+
   keyboard = Chip8.Keyboard
   keyboard.initialize()
-  instructions = new Chip8.InstructionSet(display, keyboard)
+
+  instructions = Chip8.Instructions
+  instructions.initialize(display, keyboard)
+
   fetchDecodeExecute = Chip8.FDX
   fetchDecodeExecute.initialize(instructions)
+
   loadProgram(fetchDecodeExecute)
 
+# ## Export and initialize module
+
+Chip8 = window.Chip8 = if window.Chip8? then window.Chip8 else {}
 window.Chip8.main = main
 window.Chip8.log = log
