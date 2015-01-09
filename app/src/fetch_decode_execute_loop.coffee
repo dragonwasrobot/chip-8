@@ -1,7 +1,7 @@
 # # Fetch-decode-execute loop
 
 # author: Peter Urbak <peter@dragonwasrobot.com>
-# version: 2015-01-03
+# version: 2015-01-08
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
 window.Chip8.FDX = (instructions) ->

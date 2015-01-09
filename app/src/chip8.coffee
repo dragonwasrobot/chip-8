@@ -46,8 +46,7 @@ main = () ->
   display = Chip8.Display()
 #  display.initialize()
 
-  keyboard = Chip8.Keyboard
-  keyboard.initialize()
+  keyboard = Chip8.Keyboard()
 
   instructions = Chip8.Instructions
   instructions.initialize(display, keyboard)
