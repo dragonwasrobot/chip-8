@@ -55,7 +55,7 @@ module.exports = (grunt) ->
       app: {
         options: {
           port: 8000,
-          hostname: 'localhost',
+          hostname: '*',
           base: 'dist'
         }
       }

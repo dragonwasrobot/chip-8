@@ -84,6 +84,9 @@ Instructions.initialize = (aDisplay, aKeyboard) ->
 Instructions.incrementPC = () ->
   Instructions.PC += 2
 
+Instructions.decrementPC = () ->
+  Instructions.PC -= 2
+
 # ### Display
 
 # Chip-8 draws graphics on screen through the use of sprites. A sprite is a
@@ -175,8 +178,9 @@ Instructions.inst_00EE_RET = () ->
 #
 # The interpreter sets the program counter to nnn.
 Instructions.inst_1nnn_JP = (nnn) ->
-  log "inside inst_1nnn_JP: Setting PC = #{nnn}"
-  Instructions.PC = nnn - 2
+  log "Instructions->inst_1nnn_JP: Setting PC = #{nnn}"
+  Instructions.PC = nnn
+  Instructions.decrementPC()
 
 # #### 2nnn - CALL addr
 
@@ -185,11 +189,12 @@ Instructions.inst_1nnn_JP = (nnn) ->
 # The interpreter increments the stack pointer, then puts the current PC on the
 # top of the stack. The PC is then set to nnn.
 Instructions.inst_2nnn_CALL = (nnn) ->
-  log "inside inst_2nnn_CALL: SP=#{Instructions.SP+1}, stack[#{Instructions.SP +
+  log "Instructions->inst_2nnn_CALL: SP=#{Instructions.SP+1}, stack[#{Instructions.SP +
   1}]=#{Instructions.PC} and PC=#{nnn}"
   Instructions.SP += 1
   Instructions.stack[Instructions.SP] = Instructions.PC
-  Instructions.PC = nnn - 2
+  Instructions.PC = nnn
+  Instructions.decrementPC()
 
 # #### 3xkk - SE Vx, byte
 
@@ -198,7 +203,7 @@ Instructions.inst_2nnn_CALL = (nnn) ->
 # The interpreter compares register Vx to kk, and if they are equal,
 # increments the program counter by 2.
 Instructions.inst_3xkk_SE = (x, kk) ->
-  log "inside inst_3xkk_SE: Skips next instruction if V#{x}
+  log "Instructions->inst_3xkk_SE: Skips next instruction if V#{x}
   (#{Instructions.registers[x]}) is #{kk}"
   (Instructions.PC += 2) if Instructions.registers[x] is kk
 
@@ -209,7 +214,7 @@ Instructions.inst_3xkk_SE = (x, kk) ->
 # The interpreter compares register Vx to kk, and if they are not equal,
 # increments the program counter by 2.
 Instructions.inst_4xkk_SNE = (x, kk) ->
-  log 'inside inst_4xkk_SNE'
+  log 'Instructions->inst_4xkk_SNE'
   (Instructions.PC += 2) if Instructions.registers[x] isnt kk
 
 # #### 5xy0 - SE Vx, Vy
@@ -219,7 +224,7 @@ Instructions.inst_4xkk_SNE = (x, kk) ->
 # The interpreter compares register Vx to register Vy, and if they are equal,
 # increments the program counter by 2.
 Instructions.inst_5xy0_SE = (x, y) ->
-  log 'inside inst_5xy0_SE'
+  log 'Instructions->inst_5xy0_SE'
   (Instructions.PC += 2) if Instructions.registers[x] is Instructions.registers[y]
 
 # #### 6xkk - LD Vx, byte
@@ -228,7 +233,7 @@ Instructions.inst_5xy0_SE = (x, y) ->
 #
 # The interpreter puts the value kk into register Vx.
 Instructions.inst_6xkk_LD = (x, kk) ->
-  log "inside inst_6xkk_LD: Setting V#{x} = #{kk}"
+  log "Instructions->inst_6xkk_LD: Setting V#{x} = #{kk}"
   Instructions.registers[x] = kk
 
 # #### 7xkk - ADD Vx, byte
@@ -237,7 +242,7 @@ Instructions.inst_6xkk_LD = (x, kk) ->
 #
 # Adds the value kk to the value of register Vx, then stores the result in Vx.
 Instructions.inst_7xkk_ADD = (x, kk) ->
-  log "inside inst_7xkk_ADD: Setting V#{x} = #{(Instructions.registers[x] + kk) % 256}"
+  log "Instructions->inst_7xkk_ADD: Setting V#{x} = #{(Instructions.registers[x] + kk) % 256}"
   Instructions.registers[x] = (Instructions.registers[x] + kk) % 256
 
 # #### 8xy0 - LD Vx, Vy
@@ -246,7 +251,7 @@ Instructions.inst_7xkk_ADD = (x, kk) ->
 #
 # Stores the value of register Vy in register Vx.
 Instructions.inst_8xy0_LD = (x, y) ->
-  log('inside inst_8xy0_LD')
+  log('Instructions->inst_8xy0_LD')
   Instructions.registers[x] = Instructions.registers[y]
 
 # #### 8xy1 - OR Vx, Vy
@@ -256,7 +261,7 @@ Instructions.inst_8xy0_LD = (x, y) ->
 # Performs a bitwise OR on the values of Vx and Vy, then stores the result in
 # Vx.
 Instructions.inst_8xy1_OR = (x, y) ->
-  log 'inside inst_8xy1_OR'
+  log 'Instructions->inst_8xy1_OR'
   Instructions.registers[x] |= Instructions.registers[y]
 
 # #### 8xy2 - AND Vx, Vy
@@ -266,7 +271,7 @@ Instructions.inst_8xy1_OR = (x, y) ->
 # Performs a bitwise AND on the values of Vx and Vy, then stores the result in
 # Vx.
 Instructions.inst_8xy2_AND = (x, y) ->
-  log 'inside inst_8xy2_AND'
+  log 'Instructions->inst_8xy2_AND'
   Instructions.registers[x] &= Instructions.registers[y]
 
 # #### 8xy3 - XOR Vx, Vy
@@ -276,7 +281,7 @@ Instructions.inst_8xy2_AND = (x, y) ->
 # Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the
 # result in Vx.
 Instructions.inst_8xy3_XOR = (x, y) ->
-  log 'inside inst_8xy3_XOR'
+  log 'Instructions->inst_8xy3_XOR'
   Instructions.registers[x] ^= Instructions.registers[y]
 
 # #### 8xy4 - ADD Vx, Vy
@@ -287,7 +292,7 @@ Instructions.inst_8xy3_XOR = (x, y) ->
 # bits (i.e., > 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of
 # the result are kept, and stored in Vx.
 Instructions.inst_8xy4_ADD = (x, y) ->
-  log 'inside inst_8xy4_ADD'
+  log 'Instructions->inst_8xy4_ADD'
   Instructions.registers[15] = if (Instructions.registers[x] + Instructions.registers[y]) > 255 then 1 else 0
   Instructions.registers[x] = (Instructions.registers[x] + Instructions.registers[y]) % 256
 
@@ -298,7 +303,7 @@ Instructions.inst_8xy4_ADD = (x, y) ->
 # If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
 # and the results stored in Vx.
 Instructions.inst_8xy5_SUB = (x, y) ->
-  log 'inside inst_8xy5_SUB'
+  log 'Instructions->inst_8xy5_SUB'
   Instructions.registers[15] = if Instructions.registers[x] > Instructions.registers[y] then 1 else 0
   Instructions.registers[x] = Instructions.registers[x] - Instructions.registers[y]
   if Instructions.registers[x] < 0 then Instructions.registers[x] += 256
@@ -310,7 +315,7 @@ Instructions.inst_8xy5_SUB = (x, y) ->
 # If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
 # Then Vx is divided by 2.
 Instructions.inst_8xy6_SHR = (x) ->
-  log 'inside inst_8xy6_SHR'
+  log 'Instructions->inst_8xy6_SHR'
   LSB = Instructions.registers[x] % 2
   Instructions.registers[15] = if LSB is 1 then 1 else 0
   Instructions.registers[x] = Math.floor(Instructions.registers[x] / 2)
@@ -322,7 +327,7 @@ Instructions.inst_8xy6_SHR = (x) ->
 # If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
 # and the results stored in Vx.
 Instructions.inst_8xy7_SUBN = (x, y) ->
-  log 'inside inst_8xy7_SUBN'
+  log 'Instructions->inst_8xy7_SUBN'
   Instructions.registers[15] = if Instructions.registers[y] > Instructions.registers[x] then 1 else 0
   Instructions.registers[x] = Instructions.registers[y] - Instructions.registers[x]
   if Instructions.registers[x] < 0 then Instructions.registers[x] += 256
@@ -334,7 +339,7 @@ Instructions.inst_8xy7_SUBN = (x, y) ->
 # If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
 # Then Vx is multiplied by 2.
 Instructions.inst_8xyE_SHL = (x) ->
-  log 'inside inst_8xyE_SHL'
+  log 'Instructions->inst_8xyE_SHL'
   MSB = (Instructions.registers[x] >> 7)
   Instructions.registers[15] = if MSB is 1 then 1 else 0
   Instructions.registers[x] = (Instructions.registers[x] * 2) % 256
@@ -346,7 +351,7 @@ Instructions.inst_8xyE_SHL = (x) ->
 # The values of Vx and Vy are compared, and if they are not equal, the program
 # counter is increased by 2.
 Instructions.inst_9xy0_SNE = (x, y) ->
-  log 'inside inst_9xy0_SNE'
+  log 'Instructions->inst_9xy0_SNE'
   (Instructions.PC += 2) if (Instructions.registers[x] isnt Instructions.registers[y])
 
 # #### Annn - LD I, addr
@@ -355,7 +360,7 @@ Instructions.inst_9xy0_SNE = (x, y) ->
 #
 # The value of register I is set to nnn.
 Instructions.inst_Annn_LD = (nnn) ->
-  log "inside inst_Annn_LD: Sets I = #{nnn}"
+  log "Instructions->inst_Annn_LD: Sets I = #{nnn}"
   Instructions.I = nnn
 
 # #### Bnnn - JP V0, addr
@@ -364,7 +369,7 @@ Instructions.inst_Annn_LD = (nnn) ->
 #
 # The program counter is set to nnn plus the value of V0.
 Instructions.inst_Bnnn_JP = (nnn) ->
-  log 'inside inst_Bnnn_JP'
+  log 'Instructions->inst_Bnnn_JP'
   Instructions.inst_1nnn_JP(nnn + Instructions.registers[0])
 
 # #### Cxkk - RND Vx, byte
@@ -375,7 +380,7 @@ Instructions.inst_Bnnn_JP = (nnn) ->
 # with the value kk. The results are stored in Vx. See instruction 8xy2 for
 # more information on AND.
 Instructions.inst_Cxkk_RND = (x, kk) ->
-  log 'inside inst_Cxkk_RND'
+  log 'Instructions->inst_Cxkk_RND'
   random = Math.floor(Math.random() * 256)
   log "Random: #{random}, KK: #{kk}, result: #{random & kk}"
   Instructions.registers[x] = random & kk
@@ -394,7 +399,7 @@ Instructions.inst_Cxkk_RND = (x, kk) ->
 # information on XOR, and section 2.4, Display, for more information on the
 # Chip-8 screen and sprites.
 Instructions.inst_Dxyn_DRW = (x, y, n) ->
-  log 'inside inst_Dxyn_DRW'
+  log 'Instructions->inst_Dxyn_DRW'
   log "x: #{x}, y: #{y}, n: #{n}"
   Instructions.registers[15] = 0
 
@@ -430,7 +435,7 @@ Instructions.inst_Dxyn_DRW = (x, y, n) ->
 # Checks the keyboard, and if the key corresponding to the value of Vx is
 # currently in the down position, PC is increased by 2.
 Instructions.inst_Ex9E_SKP = (x) ->
-  log 'inside inst_Ex9E_SKP'
+  log 'Instructions->inst_Ex9E_SKP'
   log "x: #{x} -> #{Instructions.registers[x]}"
   log "keys pressed: #{keyboard.getKeysPressed()}"
   if Instructions.registers[x] in keyboard.getKeysPressed() then Instructions.PC += 2
@@ -443,7 +448,7 @@ Instructions.inst_Ex9E_SKP = (x) ->
 # currently in the up position, PC is increased by 2.
 #
 Instructions.inst_ExA1_SKNP = (x) ->
-  log 'inside inst_ExA1_SKNP'
+  log 'Instructions->inst_ExA1_SKNP'
   log "x: #{x} -> #{Instructions.registers[x]}"
   log "keys pressed: #{keyboard.getKeysPressed()}"
   if Instructions.registers[x] not in keyboard.getKeysPressed() then Instructions.PC += 2
@@ -454,7 +459,7 @@ Instructions.inst_ExA1_SKNP = (x) ->
 #
 # The value of DT is placed into Vx.
 Instructions.inst_Fx07_LD = (x) ->
-  log 'inside inst_Fx07_LD'
+  log 'Instructions->inst_Fx07_LD'
   log "DT: #{delayTimer.get()}"
   Instructions.registers[x] = delayTimer.get()
 
@@ -465,7 +470,7 @@ Instructions.inst_Fx07_LD = (x) ->
 # All execution stops until a key is pressed, then the value of that key is
 # stored in Vx.
 Instructions.inst_Fx0A_LD = (x) ->
-  log 'inside inst_Fx0A_LD'
+  log 'Instructions->inst_Fx0A_LD'
   key = keyboard.waitForKeyPress()
   Instructions.registers[x] = key
 
@@ -475,7 +480,7 @@ Instructions.inst_Fx0A_LD = (x) ->
 #
 # DT is set equal to the value of Vx.
 Instructions.inst_Fx15_LD = (x) ->
-  log 'inside inst_Fx15_LD'
+  log 'Instructions->inst_Fx15_LD'
   delayTimer.set(Instructions.registers[x])
 
 # #### Fx18 - LD ST, Vx
@@ -484,7 +489,7 @@ Instructions.inst_Fx15_LD = (x) ->
 #
 # ST is set equal to the value of Vx.
 Instructions.inst_Fx18_LD = (x) ->
-  log 'inside inst_Fx18_LD'
+  log 'Instructions->inst_Fx18_LD'
   soundTimer.set(Instructions.registers[x])
 
 # #### Fx1E - ADD I, Vx
@@ -493,7 +498,7 @@ Instructions.inst_Fx18_LD = (x) ->
 #
 # The values of I and Vx are added, and the results are stored in I.
 Instructions.inst_Fx1E_ADD = (x) ->
-  log "inside inst_Fx1E_ADD: Sets I = #{Instructions.I + Instructions.registers[x]}"
+  log "Instructions->inst_Fx1E_ADD: Sets I = #{Instructions.I + Instructions.registers[x]}"
   Instructions.I += Instructions.registers[x]
 
 # #### Fx29 - LD F, Vx
@@ -504,7 +509,7 @@ Instructions.inst_Fx1E_ADD = (x) ->
 # corresponding to the value of Vx. See section 2.4, Display, for more
 # information on the Chip-8 hexadecimal font.
 Instructions.inst_Fx29_LD = (x) ->
-  log 'inside inst_Fx29_LD'
+  log 'Instructions->inst_Fx29_LD'
   Instructions.I = x * 5 # as each sprite is 5 bytes and stored at address 0
 
 # #### Fx33 - LD B, Vx
@@ -515,7 +520,7 @@ Instructions.inst_Fx29_LD = (x) ->
 # in memory at location in I, the tens digit at location I+1, and the ones
 # digit at location I+2.
 Instructions.inst_Fx33_LD = (x) ->
-  log "inside inst_Fx33_LD: Stores BCD rep of V#{x} in memory[#{Instructions.I}]"
+  log "Instructions->inst_Fx33_LD: Stores BCD rep of V#{x} in memory[#{Instructions.I}]"
   Instructions.memory[Instructions.I] = Math.floor(Instructions.registers[x] / 100)
   Instructions.memory[Instructions.I + 1] = Math.floor((Instructions.registers[x] % 100) / 10)
   Instructions.memory[Instructions.I + 2] = (Instructions.registers[x] % 10)
@@ -527,7 +532,7 @@ Instructions.inst_Fx33_LD = (x) ->
 # The interpreter copies the values of registers V0 through Vx into memory,
 # starting at the address in I.
 Instructions.inst_Fx55_LD = (x) ->
-  log 'inside inst_Fx55_LD'
+  log 'Instructions->inst_Fx55_LD'
   (Instructions.memory[Instructions.I + i] = Instructions.registers[i]) for i in [0..x]
 
 # #### Fx65 - LD Vx, [I]
@@ -537,7 +542,7 @@ Instructions.inst_Fx55_LD = (x) ->
 # The interpreter reads values from memory starting at location I into
 # registers V0 through Vx.
 Instructions.inst_Fx65_LD = (x) ->
-  log 'inside inst_Fx65_LD'
+  log 'Instructions->inst_Fx65_LD'
   log "#{Instructions.registers[i] for i in [0..x]}"
   log "#{Instructions.memory[Instructions.I + i] for i in [0..x]}"
   (Instructions.registers[i] = Instructions.memory[Instructions.I + i]) for i in [0..x]
@@ -598,8 +603,7 @@ soundTimer.set = (delay) ->
 
 soundTimer.get = () -> soundTimer.ST
 
-# ## Export and initialize module
+# ## Export module
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
-# Instructions = window.Chip8.Instructions = {}
 window.Chip8.Instructions = Instructions

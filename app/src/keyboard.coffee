@@ -3,11 +3,9 @@
 # author: Peter Urbak <peter@dragonwasrobot.com>
 # version: 2015-01-03
 
-# ## Properties
-
 log = window.Chip8.log
 
-Keyboard = {}
+# ## Properties
 
 # Computers using the Chip-8 language had a 16-key hexadecimal keypad with the
 # following layout:
@@ -65,7 +63,7 @@ keysPressed = {
 
 # ## Functions
 
-Keyboard.initialize = () ->
+initialize = () ->
   window.onkeydown = (e) ->
     code = if e.keyCode then e.keyCode else e.which
     addKeyPress code
@@ -80,14 +78,19 @@ addKeyPress = (keyCode) ->
 removeKeyPress = (keyCode) ->
   if keyCode of keyMapping then keysPressed[keyMapping[keyCode]] = false
 
-Keyboard.getKeysPressed = () ->
+getKeysPressed = () ->
   filteredKeys = Object.keys(keysPressed).
     filter( (keyCode) -> keysPressed[keyCode] is true ).
     map( (keyCode) -> parseInt(keyCode) )
 
-Keyboard.waitForKeyPress = () -> # TODO: Implement with setTimeout and avoid busy wait
+waitForKeyPress = () -> # TODO: Implement with setTimeout and avoid busy wait
 
-# ## Export and initialize module
+# ## Export module
+
+Keyboard = {}
+Keyboard.initialize = initialize
+Keyboard.getKeysPressed = getKeysPressed
+Keyboard.waitForKeyPress = waitForKeyPress
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
 window.Chip8.Keyboard = Keyboard
