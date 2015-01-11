@@ -527,6 +527,9 @@ window.Chip8.Instructions = (display, keyboard, state) ->
   soundTimer.tick = () ->
     log "soundTimer tick: #{state.ST}"
     if soundTimer.running and state.ST > 0
+      audio = new Audio('sounds/beep.mp3')
+      audio.play()
+      console.log "Beep!"
       state.ST -= 1
       setTimeout(soundTimer.tick, soundTimer.tickLength)
     else

@@ -12,6 +12,5 @@ specification](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM).
 
 - Add logic for waitForKeyPress
 - Move addSpritesToMemory
-- Add sound to soundTimer
 - Add some explanatory text and a better user interface
 - Add unit tests

@@ -6,6 +6,9 @@ dist
 # Documentation
 docs
 
+# Non-free stuff
+app/resources/sounds
+
 # Modules
 node_modules
 app/bower_components
