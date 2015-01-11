@@ -23,8 +23,8 @@ window.Chip8.Display = () ->
   height = 32
   cells = ((0 for j in [0...height]) for i in [0...width])
 
-  # The display is rendered with 10x10 pixel cells and we use a bright retro green
-  # for coloring the pixels.
+  # The display is rendered with 10x10 pixel cells and we use a bright retro
+  # green for coloring the pixels.
 
   cellSize = 10
   cellColor = { red: 0, green: 255, blue: 0, gray: 33 }
@@ -54,7 +54,7 @@ window.Chip8.Display = () ->
         when 1 then bufferContext.fillStyle = getRGB(cellColor.red,
         cellColor.green, cellColor.blue)
         when 0 then bufferContext.fillStyle = getGrayscale(cellColor.gray)
-        else throw new Error "Unknown cell value: #{cell.value}"
+        else throw new Error("Unknown cell value: #{cell.value}")
 
       bufferContext.fillRect(x, y, cellSize, cellSize)
 

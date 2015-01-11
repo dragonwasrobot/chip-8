@@ -4,7 +4,7 @@
 # version: 2015-01-08
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
-window.Chip8.FDX = (instructions) ->
+window.Chip8.FDX = (instructions, state) ->
 
   log = window.Chip8.log
 
@@ -20,7 +20,7 @@ window.Chip8.FDX = (instructions) ->
       instructions.inst_00E0_CLS()
     else if opcode is 0x00EE
       instructions.inst_00EE_RET()
-    else throw new Error "Unknown instruction given: #{toHex(opcode)}"
+    else throw new Error("Unknown instruction given: #{toHex(opcode)}")
 
   handle1 = (opcode) ->
     log 'FDX->handle1'
@@ -49,7 +49,7 @@ window.Chip8.FDX = (instructions) ->
   handle5 = (opcode) ->
     log 'FDX->handle5'
     if toHex(opcode)[3] isnt '0'
-      throw new Error "Unknown instruction given: #{toHex(opcode)}"
+      throw new Error("Unknown instruction given: #{toHex(opcode)}")
     nibbles = opcode ^ 0x5000
     x = nibbles >> 8
     y = (nibbles ^ (x << 8)) >> 4
@@ -88,12 +88,12 @@ window.Chip8.FDX = (instructions) ->
     nibble = toHex(opcode)[3]
     log "{x: #{x}, y: #{y}, nibble: #{nibble}}"
     if instDict[nibble]? then instDict[nibble](x, y)
-    else throw new Error "Unknown instruction given: #{toHex(opcode)}"
+    else throw new Error("Unknown instruction given: #{toHex(opcode)}")
 
   handle9 = (opcode) ->
     log 'FDX->handle9'
     if toHex(opcode)[3] isnt '0'
-      throw new Error "Unknown instruction given: #{toHex(opcode)}"
+      throw new Error("Unknown instruction given: #{toHex(opcode)}")
     nibbles = opcode ^ 0x9000
     x = nibbles >> 8
     y = (nibbles ^ (x << 8)) >> 4
@@ -135,7 +135,7 @@ window.Chip8.FDX = (instructions) ->
     log "n: #{n}, #{typeof n}"
     if y is 9 and n is 14 then instructions.inst_Ex9E_SKP x
     else if y is 10 and n is 1 then instructions.inst_ExA1_SKNP x
-    else throw new Error "Unknown nibbles: #{toHex(nibbles)}"
+    else throw new Error("Unknown nibbles: #{toHex(nibbles)}")
 
   handleF = (opcode) ->
     log 'FDX->handleF'
@@ -155,34 +155,34 @@ window.Chip8.FDX = (instructions) ->
     else if y is 3 and n is 3 then instructions.inst_Fx33_LD x
     else if y is 5 and n is 5 then instructions.inst_Fx55_LD x
     else if y is 6 and n is 5 then instructions.inst_Fx65_LD x
-    else throw new Error "Unknown nibbles: #{toHex(nibbles)}"
+    else throw new Error("Unknown nibbles: #{toHex(nibbles)}")
 
   fetchAndExecute = () ->
 
+    handleDict = {
+      0: handle0
+      1: handle1
+      2: handle2
+      3: handle3
+      4: handle4
+      5: handle5
+      6: handle6
+      7: handle7
+      8: handle8
+      9: handle9
+      A: handleA
+      B: handleB
+      C: handleC
+      D: handleD
+      E: handleE
+      F: handleF
+    }
+
     performCycle = () ->
 
-      handleDict = {
-        0: handle0
-        1: handle1
-        2: handle2
-        3: handle3
-        4: handle4
-        5: handle5
-        6: handle6
-        7: handle7
-        8: handle8
-        9: handle9
-        A: handleA
-        B: handleB
-        C: handleC
-        D: handleD
-        E: handleE
-        F: handleF
-      }
-
-      log "PC: #{instructions.PC}"
-      memory = instructions.memory
-      PC = instructions.PC
+      log "PC: #{state.PC}"
+      memory = state.memory
+      PC = state.PC
       firstNibble = memory[PC]
       secondNibble = memory[PC + 1]
 
@@ -191,9 +191,9 @@ window.Chip8.FDX = (instructions) ->
       nibble = if toHex(opcode).length is 4 then toHex(opcode)[0] else 0
       if handleDict[nibble]?
         handleDict[nibble](opcode)
-        instructions.incrementPC()
+        state.PC += 2
       else
-        throw new Error "Unknown instruction given: #{toHex(opcode)}"
+        throw new Error("Unknown instruction given: #{toHex(opcode)}")
 
     performCycle() for i in [0...10]
 
@@ -203,17 +203,18 @@ window.Chip8.FDX = (instructions) ->
   toDecimal = (hex) -> parseInt(hex, 16)
 
   getHexAtIndex = (int, i) ->
-    if i < 0 or i > 3 then throw new Error "Bit index out of bounds: #{i}"
+    if i < 0 or i > 3 then throw new Error("Bit index out of bounds: #{i}")
     else toHex(int)[i]
 
   getHexRange = (int, from, to) ->
     if from not in [0...4] or to not in [0...4] or to < from
-      throw new Error "Bit index out of bounds: from: #{from}, to: #{to}"
+      throw new Error("Bit index out of bounds: from: #{from}, to: #{to}")
     else return [from...to].map (idx) -> toHex(idx)
 
   # ## Export module
 
   {
     instructions: instructions
+    state: state
     tick: tick
   }

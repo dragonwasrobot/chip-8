@@ -20,7 +20,6 @@ game = 'INVADERS'
 
 log = (string) -> if debug then console.log string
 
-
 loadProgram = (fetchDecodeExecute) ->
   xhr = new XMLHttpRequest()
   xhr.open('GET', 'roms/' + game, true)
@@ -31,27 +30,20 @@ loadProgram = (fetchDecodeExecute) ->
 
 readProgram = (program, fetchDecodeExecute) ->
   programStart = 512
-  instructions = fetchDecodeExecute.instructions
-  memory = instructions.memory
-  log(program)
+  state = fetchDecodeExecute.state
+  memory = state.memory
   (memory[i + programStart] = program[i]) for i in [0...program.length]
-  log((memory.slice(programStart, programStart + program.length)).map (x) ->
-    x.toString(16).toUpperCase())
-  instructions.I = 0
-  instructions.PC = programStart
+  state.I = 0
+  state.PC = programStart
   fetchDecodeExecute.tick()
 
 main = () ->
 
   display = Chip8.Display()
-#  display.initialize()
-
   keyboard = Chip8.Keyboard()
-
-  instructions = Chip8.Instructions
-  instructions.initialize(display, keyboard)
-
-  fetchDecodeExecute = Chip8.FDX(instructions)
+  state = Chip8.State()
+  instructions = Chip8.Instructions(display, keyboard, state)
+  fetchDecodeExecute = Chip8.FDX(instructions, state)
 
   loadProgram(fetchDecodeExecute)
 
