@@ -146,16 +146,34 @@ window.Chip8.FDX = (instructions, state) ->
     log "x: #{x}"
     log "y: #{y}"
     log "n: #{n}"
-    if y is 0 and n is 7 then instructions.inst_Fx07_LD x
-    else if y is 0 and n is 10 then instructions.inst_Fx0A_LD x
-    else if y is 1 and n is 5 then instructions.inst_Fx15_LD x
-    else if y is 1 and n is 8 then instructions.inst_Fx18_LD x
-    else if y is 1 and n is 14 then instructions.inst_Fx1E_ADD x
-    else if y is 2 and n is 9 then instructions.inst_Fx29_LD x
-    else if y is 3 and n is 3 then instructions.inst_Fx33_LD x
-    else if y is 5 and n is 5 then instructions.inst_Fx55_LD x
-    else if y is 6 and n is 5 then instructions.inst_Fx65_LD x
-    else throw new Error("Unknown nibbles: #{toHex(nibbles)}")
+    instructionDict = {
+      0: {
+        7: instructions.inst_Fx07_LD
+        10: instructions.inst_Fx0A_LD
+      }
+      1: {
+        5: instructions.inst_Fx15_LD
+        8: instructions.inst_Fx18_LD
+        14: instructions.inst_Fx1E_ADD
+      }
+      2: {
+        9: instructions.inst_Fx29_LD
+      }
+      3: {
+        3: instructions.inst_Fx33_LD
+      }
+      5: {
+        5: instructions.inst_Fx55_LD
+      }
+      6: {
+        5: instructions.inst_Fx65_LD
+      }
+    }
+
+    if instructionDict[y]? and instructionDict[y][n]?
+      instructionDict[y][n](x)
+    else
+      throw new Error("Unknown nibbles: #{toHex(nibbles)}")
 
   fetchAndExecute = () ->
 

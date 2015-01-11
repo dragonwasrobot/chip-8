@@ -535,13 +535,6 @@ window.Chip8.Instructions = (display, keyboard, state) ->
   # ## Initialize and export module
 
   do () ->
-    #I = 0  # 'I' register
-    #PC = 0 # Program counter
-    #SP = 0 # Stack pointer
-
-    #memory = (0 for i in [0...memorySize])
-    #registers = (0 for i in [0...registerCount])
-    #stack = (0 for i in [0...stackSize])
     inst_00E0_CLS()
     addSpritesToMemory()
 
