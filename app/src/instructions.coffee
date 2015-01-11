@@ -8,44 +8,6 @@ window.Chip8.Instructions = (display, keyboard, state) ->
 
   log = window.Chip8.log
 
-  # ### Display
-
-  # Chip-8 draws graphics on screen through the use of sprites. A sprite is a
-  # group of bytes which are a binary representation of the desired
-  # picture. Chip-8 sprites may be up to 15 bytes, for a possible sprite size of
-  # 8x15.
-
-  # Programs may also refer to a group of sprites representing the hexadecimal
-  # digits 0 through F. These sprites are 5 bytes long, or 8x5 pixels. The data
-  # should be stored in the interpreter area of Chip-8 memory (0x000 to
-  # 0x1FF). Below is a listing of each character's bytes, in binary and
-  # hexadecimal:
-
-  # Declare the built-in sprites and put them into Chip-8 memory
-
-  addSpritesToMemory = () ->
-
-    sprites = [
-      0xF0, 0x90, 0x90, 0x90, 0xF0, # 0: 0-4
-      0x20, 0x60, 0x20, 0x20, 0x70, # 1: 5-9
-      0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2: 10-14
-      0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3: 15-19
-      0x90, 0x90, 0xF0, 0x10, 0x10, # 4: 20-24
-      0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5: 25-29
-      0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6: 30-34
-      0xF0, 0x10, 0x20, 0x40, 0x40, # 7: 35-39
-      0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8: 40-44
-      0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9: 45-49
-      0xF0, 0x90, 0xF0, 0x90, 0x90, # A: 50-54
-      0xE0, 0x90, 0xE0, 0x90, 0xE0, # B: 55-59
-      0xF0, 0x80, 0x80, 0x80, 0xF0, # C: 60-64
-      0xE0, 0x90, 0x90, 0x90, 0xE0, # D: 65-69
-      0xF0, 0x80, 0xF0, 0x80, 0xF0, # E: 70-74
-      0xF0, 0x80, 0xF0, 0x80, 0x80  # F: 75-79
-    ]
-
-    (state.memory[i] = sprites[i]) for i in [0...sprites.length]
-
   # ### Instructions
 
   # All instructions are 2 bytes long and are stored most-significant-byte
@@ -454,7 +416,7 @@ window.Chip8.Instructions = (display, keyboard, state) ->
   # in memory at location in I, the tens digit at location I+1, and the ones
   # digit at location I+2.
   inst_Fx33_LD = (x) ->
-    log "Instructions->inst_Fx33_LD: Stores BCD rep of V#{x} in memory[#{I}]"
+    log "Instructions->inst_Fx33_LD: Stores BCD rep of V#{x} in memory[#{state.I}]"
     state.memory[state.I] = Math.floor(state.registers[x] / 100)
     state.memory[state.I + 1] = Math.floor((state.registers[x] % 100) / 10)
     state.memory[state.I + 2] = (state.registers[x] % 10)
@@ -492,7 +454,7 @@ window.Chip8.Instructions = (display, keyboard, state) ->
 
   delayTimer = {}
   delayTimer.running = false
-  delayTimer.tickLength = 1 / 60 # 60 Hz
+  delayTimer.tickLength = (1 / 60) * 1000 # 60 Hz
 
   delayTimer.start = () ->
     if delayTimer.running is false
@@ -500,7 +462,6 @@ window.Chip8.Instructions = (display, keyboard, state) ->
       delayTimer.tick()
 
   delayTimer.tick = () ->
-    log "Delaytimer tick: #{state.DT}"
     if delayTimer.running and state.DT > 0
       state.DT -= 1
       setTimeout(delayTimer.tick, delayTimer.tickLength)
@@ -516,30 +477,26 @@ window.Chip8.Instructions = (display, keyboard, state) ->
   # frequency of this tone is decided by the author of the interpreter.
 
   soundTimer = {}
-  soundTimer.running = false
-  soundTimer.tickLength = 1 / 60 # 60 Hz
+  soundTimer.audioContext = undefined
+  soundTimer.tickLength = (1 / 60) * 1000 # 60 Hz
 
   soundTimer.start = () ->
-    if soundTimer.running is false
-      soundTimer.running = true
-      soundTimer.tick()
-
-  soundTimer.tick = () ->
-    log "soundTimer tick: #{state.ST}"
-    if soundTimer.running and state.ST > 0
-      audio = new Audio('sounds/beep.mp3')
-      audio.play()
-      console.log "Beep!"
-      state.ST -= 1
-      setTimeout(soundTimer.tick, soundTimer.tickLength)
+    if soundTimer.audioContext?
+      oscillator = soundTimer.audioContext.createOscillator()
+      oscillator.connect(soundTimer.audioContext.destination)
+      oscillator.type = oscillator.SQUARE
+      oscillator.noteOn(0)
+      setTimeout( (() ->
+        oscillator.noteOff(0)
+        state.ST = 0),
+        soundTimer.tickLength * state.ST)
     else
-      soundTimer.running = false
+      console.log "Beep!"
 
   # ## Initialize and export module
 
   do () ->
-    inst_00E0_CLS()
-    addSpritesToMemory()
+    if window.AudioContext? then soundTimer.audioContext = new AudioContext()
 
   {
     inst_0nnn_SYS: inst_0nnn_SYS

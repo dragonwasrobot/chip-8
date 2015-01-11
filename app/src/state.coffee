@@ -56,7 +56,50 @@ window.Chip8.State = () ->
   stackSize = 16
   stack = (0 for i in [0...stackSize])
 
-# ## Export module
+  # ## Display
+
+  # Chip-8 draws graphics on screen through the use of sprites. A sprite is a
+  # group of bytes which are a binary representation of the desired
+  # picture. Chip-8 sprites may be up to 15 bytes, for a possible sprite size of
+  # 8x15.
+
+  # Programs may also refer to a group of sprites representing the hexadecimal
+  # digits 0 through F. These sprites are 5 bytes long, or 8x5 pixels. The data
+  # should be stored in the interpreter area of Chip-8 memory (0x000 to
+  # 0x1FF). Below is a listing of each character's bytes, in binary and
+  # hexadecimal:
+
+  # Declare the built-in sprites and put them into Chip-8 memory
+
+  addSpritesToMemory = () ->
+
+    sprites = [
+      0xF0, 0x90, 0x90, 0x90, 0xF0, # 0: 0-4
+      0x20, 0x60, 0x20, 0x20, 0x70, # 1: 5-9
+      0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2: 10-14
+      0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3: 15-19
+      0x90, 0x90, 0xF0, 0x10, 0x10, # 4: 20-24
+      0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5: 25-29
+      0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6: 30-34
+      0xF0, 0x10, 0x20, 0x40, 0x40, # 7: 35-39
+      0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8: 40-44
+      0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9: 45-49
+      0xF0, 0x90, 0xF0, 0x90, 0x90, # A: 50-54
+      0xE0, 0x90, 0xE0, 0x90, 0xE0, # B: 55-59
+      0xF0, 0x80, 0x80, 0x80, 0xF0, # C: 60-64
+      0xE0, 0x90, 0x90, 0x90, 0xE0, # D: 65-69
+      0xF0, 0x80, 0xF0, 0x80, 0xF0, # E: 70-74
+      0xF0, 0x80, 0xF0, 0x80, 0x80  # F: 75-79
+    ]
+
+    (memory[i] = sprites[i]) for i in [0...sprites.length]
+
+
+
+# ## Initialize and export module
+
+  do () ->
+    addSpritesToMemory()
 
   {
     memory: memory

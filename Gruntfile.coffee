@@ -38,13 +38,6 @@ module.exports = (grunt) ->
             src: 'roms/*'
             dest: 'dist/'
           }
-          {
-            expand: true
-            cwd: 'app/resources/'
-            src: 'sounds/*'
-            dest: 'dist/'
-          }
-
         ]
       }
     }

@@ -14,7 +14,7 @@ games = [
   'INVADERS', 'KALEID', 'MAZE', 'MERLIN', 'MISSILE', 'PONG', 'PONG2', 'PUZZLE',
   'SYZYGY', 'TANK', 'TETRIS', 'TICTAC', 'UFO', 'VBRIX', 'VERS', 'WIPEOFF'
 ]
-game = 'INVADERS'
+game = 'PONG'
 
 # ## Functions
 
