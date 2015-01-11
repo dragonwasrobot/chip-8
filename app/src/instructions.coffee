@@ -4,7 +4,7 @@
 # version: 2015-01-10
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
-window.Chip8.Instructions = (display, keyboard, state) ->
+window.Chip8.Instructions = (display, keyboard, state, timers) ->
 
   log = window.Chip8.log
 
@@ -376,7 +376,7 @@ window.Chip8.Instructions = (display, keyboard, state) ->
   inst_Fx15_LD = (x) ->
     log 'Instructions->inst_Fx15_LD'
     state.DT = state.registers[x]
-    delayTimer.start()
+    timers.delay.start()
 
   # #### Fx18 - LD ST, Vx
 
@@ -386,7 +386,7 @@ window.Chip8.Instructions = (display, keyboard, state) ->
   inst_Fx18_LD = (x) ->
     log 'Instructions->inst_Fx18_LD'
     state.ST = state.registers[x]
-    soundTimer.start()
+    timers.sound.start()
 
   # #### Fx1E - ADD I, Vx
 
@@ -416,7 +416,8 @@ window.Chip8.Instructions = (display, keyboard, state) ->
   # in memory at location in I, the tens digit at location I+1, and the ones
   # digit at location I+2.
   inst_Fx33_LD = (x) ->
-    log "Instructions->inst_Fx33_LD: Stores BCD rep of V#{x} in memory[#{state.I}]"
+    log "Instructions->inst_Fx33_LD: Stores BCD rep of V#{x} in
+      memory[#{state.I}]"
     state.memory[state.I] = Math.floor(state.registers[x] / 100)
     state.memory[state.I + 1] = Math.floor((state.registers[x] % 100) / 10)
     state.memory[state.I + 2] = (state.registers[x] % 10)
@@ -444,59 +445,7 @@ window.Chip8.Instructions = (display, keyboard, state) ->
     (state.registers[i] = state.memory[state.I + i]) for i in [0..x]
     log "#{state.registers[i] for i in [0..x]}"
 
-  # ### Timers and Sounds
-
-  # Chip-8 provides 2 timers, a delay timer and a sound timer.
-
-  # The delay timer is active whenever the delay timer register (DT) is
-  # non-zero. This timer does nothing more than subtract 1 from the value of DT
-  # at a rate of 60Hz. When DT reaches 0, it deactivates.
-
-  delayTimer = {}
-  delayTimer.running = false
-  delayTimer.tickLength = (1 / 60) * 1000 # 60 Hz
-
-  delayTimer.start = () ->
-    if delayTimer.running is false
-      delayTimer.running = true
-      delayTimer.tick()
-
-  delayTimer.tick = () ->
-    if delayTimer.running and state.DT > 0
-      state.DT -= 1
-      setTimeout(delayTimer.tick, delayTimer.tickLength)
-    else
-      delayTimer.running = false
-
-  # The sound timer is active whenever the sound timer register (ST) is
-  # non-zero. This timer also decrements at a rate of 60Hz, however, as long as
-  # ST's value is greater than zero, the Chip-8 buzzer will sound. When ST
-  # reaches zero, the sound timer deactivates.
-
-  # The sound produced by the Chip-8 interpreter has only one tone. The
-  # frequency of this tone is decided by the author of the interpreter.
-
-  soundTimer = {}
-  soundTimer.audioContext = undefined
-  soundTimer.tickLength = (1 / 60) * 1000 # 60 Hz
-
-  soundTimer.start = () ->
-    if soundTimer.audioContext?
-      oscillator = soundTimer.audioContext.createOscillator()
-      oscillator.connect(soundTimer.audioContext.destination)
-      oscillator.type = oscillator.SQUARE
-      oscillator.noteOn(0)
-      setTimeout( (() ->
-        oscillator.noteOff(0)
-        state.ST = 0),
-        soundTimer.tickLength * state.ST)
-    else
-      console.log "Beep!"
-
-  # ## Initialize and export module
-
-  do () ->
-    if window.AudioContext? then soundTimer.audioContext = new AudioContext()
+  # ## Export module
 
   {
     inst_0nnn_SYS: inst_0nnn_SYS

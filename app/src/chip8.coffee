@@ -1,10 +1,7 @@
 # # Chip8
 
-# author: Peter Urbak <peter@dragonwasrobot.com>
+# author: Peter Urbak <peter@dragonwasrobot.com> <br/>
 # version: 2015-01-03
-
-# Reference material for the Chip-8 specification:
-# [Chip-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
 
 # ## Properties
 
@@ -42,7 +39,8 @@ main = () ->
   display = Chip8.Display()
   keyboard = Chip8.Keyboard()
   state = Chip8.State()
-  instructions = Chip8.Instructions(display, keyboard, state)
+  timers = Chip8.Timers(state)
+  instructions = Chip8.Instructions(display, keyboard, state, timers)
   fetchDecodeExecute = Chip8.FDX(instructions, state)
 
   loadProgram(fetchDecodeExecute)
