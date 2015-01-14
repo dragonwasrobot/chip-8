@@ -197,6 +197,7 @@ window.Chip8.FDX = (instructions, state) ->
     }
 
     performCycle = () ->
+      if state.waitingForInput then return
 
       log "PC: #{state.PC}"
       memory = state.memory

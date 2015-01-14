@@ -11,7 +11,7 @@ games = [
   'INVADERS', 'KALEID', 'MAZE', 'MERLIN', 'MISSILE', 'PONG', 'PONG2', 'PUZZLE',
   'SYZYGY', 'TANK', 'TETRIS', 'TICTAC', 'UFO', 'VBRIX', 'VERS', 'WIPEOFF'
 ]
-game = 'PONG'
+game = 'INVADERS'
 
 # ## Functions
 
@@ -36,9 +36,9 @@ readProgram = (program, fetchDecodeExecute) ->
 
 main = () ->
 
-  display = Chip8.Display()
-  keyboard = Chip8.Keyboard()
   state = Chip8.State()
+  display = Chip8.Display()
+  keyboard = Chip8.Keyboard(state)
   timers = Chip8.Timers(state)
   instructions = Chip8.Instructions(display, keyboard, state, timers)
   fetchDecodeExecute = Chip8.FDX(instructions, state)

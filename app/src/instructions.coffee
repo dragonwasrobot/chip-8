@@ -365,8 +365,10 @@ window.Chip8.Instructions = (display, keyboard, state, timers) ->
   # stored in Vx.
   inst_Fx0A_LD = (x) ->
     log 'Instructions->inst_Fx0A_LD'
-    key = keyboard.waitForKeyPress()
-    state.registers[x] = key
+    state.waitingForInput = true
+    key = keyboard.waitForKeyPress( (key) ->
+      state.registers[x] = key
+      state.waitingForInput = false)
 
   # #### Fx15 - LD DT, Vx
 

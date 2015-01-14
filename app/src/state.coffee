@@ -94,7 +94,8 @@ window.Chip8.State = () ->
 
     (memory[i] = sprites[i]) for i in [0...sprites.length]
 
-
+  # Flag used later when waiting for input
+  waitingForInput = false
 
 # ## Initialize and export module
 
@@ -110,4 +111,5 @@ window.Chip8.State = () ->
     PC: PC
     SP: SP
     stack: stack
+    waitingForInput: waitingForInput
   }

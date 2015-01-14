@@ -14,6 +14,5 @@ in JavaScript.
 
 ## TODO
 
-- Add logic for waitForKeyPress
 - Add some explanatory text and a better user interface
 - Add unit tests

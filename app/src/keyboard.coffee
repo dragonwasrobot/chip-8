@@ -4,7 +4,7 @@
 # version: 2015-01-08
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
-window.Chip8.Keyboard = () ->
+window.Chip8.Keyboard = (state) ->
 
   log = window.Chip8.log
 
@@ -77,7 +77,13 @@ window.Chip8.Keyboard = () ->
       filter( (keyCode) -> keysPressed[keyCode] is true ).
       map( (keyCode) -> parseInt(keyCode) )
 
-  waitForKeyPress = () -> # TODO: Implement with setTimeout and avoid busy wait
+  waitForKeyPress = (callback) ->
+    keysPressed = getKeysPressed()
+    if keysPressed.length > 0
+      callback(keysPressed[0])
+    else
+      waitLength = 100
+      setTimeout((-> waitForKeyPress(callback)), waitLength)
 
   # ## Initialize and export module
 
