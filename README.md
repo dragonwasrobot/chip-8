@@ -12,6 +12,8 @@ This project is somewhat inspired by Alexander Dickson's
 [Chip-8 emulator](https://github.com/alexanderdickson/Chip-8-Emulator) written
 in JavaScript.
 
+Fancy pants [Github page](http://dragonwasrobot.github.io/chip-8/).
+
 ## TODO
 
 - Add some explanatory text and a better user interface
