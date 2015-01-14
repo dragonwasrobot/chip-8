@@ -4,7 +4,7 @@
 # version: 2015-01-08
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
-window.Chip8.Keyboard = (state) ->
+window.Chip8.Keyboard = () ->
 
   log = window.Chip8.log
 
@@ -44,6 +44,8 @@ window.Chip8.Keyboard = (state) ->
     66: 11 # B -> B
     78: 15 # N -> F
   }
+
+  # Note: left arrow = 37, up arrow = 38, right arrow = 39, down arrow = 40
 
   keysPressed = {
     0: false

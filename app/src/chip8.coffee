@@ -38,7 +38,7 @@ main = () ->
 
   state = Chip8.State()
   display = Chip8.Display()
-  keyboard = Chip8.Keyboard(state)
+  keyboard = Chip8.Keyboard()
   timers = Chip8.Timers(state)
   instructions = Chip8.Instructions(display, keyboard, state, timers)
   fetchDecodeExecute = Chip8.FDX(instructions, state)
