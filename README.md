@@ -17,4 +17,3 @@ Fancy pants [Github page](http://dragonwasrobot.github.io/chip-8/).
 ## TODO
 
 - Add some explanatory text and a better user interface
-- Add unit tests

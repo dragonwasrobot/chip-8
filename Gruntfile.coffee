@@ -71,23 +71,10 @@ module.exports = (grunt) ->
       }
     }
 
-    karma: {
-      unit: {
-        configFile: 'karma.conf.coffee'
-      }
-    }
-
     watch: {
       app: {
-        files: ['app/src/*.coffee', 'app/views/*.html', 'test/src/*.coffee']
-        tasks: ['analyze', 'build', 'karma']
-        options: {
-          atBegin: true
-        }
-      }
-      noTest: {
-        files: ['app/src/*.coffee', 'app/views/*.html', 'test/src/*.coffee']
-        tasks: ['build']
+        files: ['app/src/*.coffee', 'app/views/*.html']
+        tasks: ['analyze', 'build']
         options: {
           atBegin: true
         }
@@ -104,7 +91,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-docco'
-  grunt.loadNpmTasks 'grunt-karma'
 
   # Define tasks
   grunt.registerTask('analyze', ['coffeelint:app'])
@@ -113,6 +99,5 @@ module.exports = (grunt) ->
   grunt.registerTask('http', ['connect:app'])
 
   grunt.registerTask('dev', ['http', 'watch:app'])
-  grunt.registerTask('dev-no-test', ['http', 'watch:noTest'])
 
   grunt.registerTask('package', ['analyse', 'build', 'docs'])
