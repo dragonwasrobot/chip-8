@@ -1,27 +1,44 @@
 <html>
   <head>
     <title>Chip-8</title>
-    <script type="text/javascript" src="jquery.js">
-    </script>
-    <script type="text/javascript" src="app.js">
-    </script>
+    <link rel="stylesheet" type="text/css" href="style.css" media="screen">
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function() {
 
-    <style type="text/css">
-      body {
-        background-color: rgb(38, 38, 38);
-      }
+        var gamesSelector = $("#game-selector");
+        gamesSelector.append($('<option>').append("SELECT GAME"));
+        Chip8.games.forEach(function(game) {
+          var gameOption = $('<option>');
+          gameOption.attr("value", game);
+          gameOption.append(game);
+          gamesSelector.append(gameOption);
+        });
+        gamesSelector.change(function() {
+          var selectedGame = gamesSelector.val();
+          if (selectedGame !== undefined && selectedGame !== null) {
+            console.log(selectedGame);
+            Chip8.run(selectedGame);
+          }
+        });
 
-      canvas {
-        border: 1px solid rgba(255, 0, 0, 0.1);
-        margin: 50px auto 0 auto;
-        display: block;
-      }
-    </style>
+        var reloadButton = $("#reload");
+        reloadButton.click(function() {
+          var selectedGame = gamesSelector.val();
+          if (selectedGame !== undefined && selectedGame !== null) {
+            console.log(selectedGame);
+            Chip8.run(selectedGame);
+          }
+        });
+      });
+    </script>
   </head>
   <body>
-    <script type="text/javascript">
-      $(document).ready(function() { Chip8.main(); });
-    </script>
     <canvas id="visible-canvas" width="640" height="320"></canvas>
+    <div id="games-container">
+        <select id="game-selector"></select>
+        <button id="reload">Reload</button>
+    </div>
   </body>
 </html>
