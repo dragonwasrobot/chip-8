@@ -3,36 +3,8 @@
     <title>Chip-8</title>
     <link rel="stylesheet" type="text/css" href="style.css" media="screen">
     <script type="text/javascript" src="jquery.js"></script>
-    <script type="text/javascript" src="app.js"></script>
-    <script type="text/javascript">
-      $(document).ready(function() {
-
-        var gamesSelector = $("#game-selector");
-        gamesSelector.append($('<option>').append("SELECT GAME"));
-        Chip8.games.forEach(function(game) {
-          var gameOption = $('<option>');
-          gameOption.attr("value", game);
-          gameOption.append(game);
-          gamesSelector.append(gameOption);
-        });
-        gamesSelector.change(function() {
-          var selectedGame = gamesSelector.val();
-          if (selectedGame !== undefined && selectedGame !== null) {
-            console.log(selectedGame);
-            Chip8.run(selectedGame);
-          }
-        });
-
-        var reloadButton = $("#reload");
-        reloadButton.click(function() {
-          var selectedGame = gamesSelector.val();
-          if (selectedGame !== undefined && selectedGame !== null) {
-            console.log(selectedGame);
-            Chip8.run(selectedGame);
-          }
-        });
-      });
-    </script>
+    <script type="text/javascript" src="chip8.js"></script>
+    <script type="text/javascript" src="interface.js"></script>
   </head>
   <body>
     <canvas id="visible-canvas" width="640" height="320"></canvas>

@@ -6,7 +6,7 @@ module.exports = (grunt) ->
 
     # Pre-build
     coffeelint: {
-      app: ['app/src/*.coffee', 'Gruntfile.coffee']
+      app: ['app/src/**/*.coffee', 'Gruntfile.coffee']
       options: {
         configFile: 'coffeelint.json'
       }
@@ -45,7 +45,8 @@ module.exports = (grunt) ->
     coffee: {
       app: {
         files: {
-          'dist/app.js': ['app/src/*.coffee']
+          'dist/chip8.js': ['app/src/chip8/*.coffee']
+          'dist/interface.js': ['app/src/interface/*.coffee']
         }
       }
     }
@@ -73,7 +74,7 @@ module.exports = (grunt) ->
 
     watch: {
       app: {
-        files: ['app/src/*.coffee', 'app/views/*.html']
+        files: ['app/src/**/*.coffee', 'app/views/*.html']
         tasks: ['analyze', 'build']
         options: {
           atBegin: true

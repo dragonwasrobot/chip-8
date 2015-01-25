@@ -1,7 +1,7 @@
 # # Chip8
 
 # author: Peter Urbak <peter@dragonwasrobot.com> <br/>
-# version: 2015-01-03
+# version: 2015-01-25
 
 # ## Properties
 
