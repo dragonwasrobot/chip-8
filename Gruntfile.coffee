@@ -74,7 +74,7 @@ module.exports = (grunt) ->
 
     watch: {
       app: {
-        files: ['app/src/**/*.coffee', 'app/views/*.html']
+        files: ['app/src/**/*.coffee', 'app/views/*.html', 'app/views/*.css']
         tasks: ['analyze', 'build']
         options: {
           atBegin: true

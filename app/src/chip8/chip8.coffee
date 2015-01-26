@@ -6,32 +6,79 @@
 # ## Properties
 
 debug = false
-games = [
+
+games = { # title: keyMapping
+  'BLINKY': {
+    37: 7 # left
+    38: 3 # up
+    39: 8 # right
+    40: 6 # down
+  }
+  'BRIX': {
+    37: 4 # left
+    39: 6 # right
+  }
+  'CONNECT4': {
+    37: 4 # left
+    32: 5 # place piece
+    39: 6 # right
+  }
+  'HIDDEN': {
+    37: 4 # left
+    32: 5 # choose card
+    39: 6 # right
+    40: 8 # down
+    38: 2 # up
+  }
+  'INVADERS': {
+    37: 4 # left
+    32: 5 # place piece
+    39: 6 # right
+  }
+  'PONG': {
+    87: 1 # W = left player up
+    83: 4 # S = left player down
+    73: 12 # I = right player up
+    75: 13 # K = right player down
+  }
+  'TETRIS': {
+    37: 5 # left
+    39: 6 # right
+    32: 4 # rotate
+    40: 7 # down
+  }
+  'TICTAC': {
+    # top row
+    53:  1
+    54:  2
+    55:  3
+    # middle row
+    82:  4
+    84:  5
+    89:  6
+    # bottom row
+    70:  7
+    71:  8
+    72:  9
+  }
+
   #'15PUZZLE' # Each of the 16 buttons map to a block in the game. boring.
-  'BLINKY' # F = left, G = right, Y = down 7 = up.
   #'BLITZ' # Basically unplayable.
-  'BRIX' # R = left, Y = right.
-  'CONNECT4' # R = left, T = place button, Y = right.
   #'GUESS' # I don't get it.
-  'HIDDEN' # R = left, T = choose card, Y = right, g = DOWN, 6 = up.
   #'IBM' # Just an IBM logo, nothing to see here.
-  'INVADERS' # R = left, T = fire, Y = right.
   #'KALEID' # Kaleidescope demo, pretty cool.
   #'MAZE' # Random maze generator, also cool.
   #'MERLIN' # R = upper left, T = upper right, F = lower left, G = lower right.
   #'MISSILE' # G = fire.
-  'PONG' # R = down left, 5 = up left, U = down right, 8 = up right.
   #'PONG2' # R = down left, 5 = up left, U = down right, 8 = up right.
   #'PUZZLE' # Can't be bothered.
   #'SYZYGY' # F = left, G = right, Y = down 7 = up, J = start. Broken snake.
   #'TANK' # Shit.
-  'TETRIS' # T = left, Y = right, R = rotate, F = down.
-  'TICTAC' # 567 = top row, RTY = middle row, FGH = bottom row.
   #'UFO' # Meh.
   #'VBRIX' # Meh.
   #'VERS' # Meh.
   #'WIPEOFF' # Meh.
-]
+}
 
 # ## Functions
 
@@ -55,10 +102,10 @@ readProgram = (program, fetchDecodeExecute) ->
   fetchDecodeExecute.tick()
 
 run = (game) ->
-
+  keyMapping = games[game]
   state = Chip8.State()
   display = Chip8.Display()
-  keyboard = Chip8.Keyboard()
+  keyboard = Chip8.Keyboard(keyMapping)
   timers = Chip8.Timers(state)
   instructions = Chip8.Instructions(display, keyboard, state, timers)
   fetchDecodeExecute = Chip8.FDX(instructions, state)

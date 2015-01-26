@@ -4,7 +4,7 @@
 # version: 2015-01-08
 
 window.Chip8 = if window.Chip8? then window.Chip8 else {}
-window.Chip8.Keyboard = () ->
+window.Chip8.Keyboard = (keyMapping) ->
 
   log = window.Chip8.log
 
@@ -23,29 +23,7 @@ window.Chip8.Keyboard = () ->
   #     | A | 0 | B | F |
   #     |---|---|---|---|
 
-  keyMapping = {
-    53:  1 # 5 -> 1
-    54:  2 # 6 -> 2
-    55:  3 # 7 -> 3
-    56: 12 # 8 -> C
-
-    82:  4 # R -> 4
-    84:  5 # T -> 5
-    89:  6 # Y -> 6
-    85: 13 # U -> D
-
-    70:  7 # F -> 7
-    71:  8 # G -> 8
-    72:  9 # H -> 9
-    74: 14 # J -> E
-
-    67: 10 # C -> A
-    86:  0 # V -> 0
-    66: 11 # B -> B
-    78: 15 # N -> F
-  }
-
-  # Note: left arrow = 37, up arrow = 38, right arrow = 39, down arrow = 40
+  # We create a specific mapping per game, since the 16-key keypad is unusual.
 
   keysPressed = {
     0: false
