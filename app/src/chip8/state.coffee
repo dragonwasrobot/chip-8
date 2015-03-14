@@ -94,10 +94,24 @@ window.Chip8.State = () ->
 
     (memory[i] = sprites[i]) for i in [0...sprites.length]
 
-  # Flag used later when waiting for input
+  # Flags
   waitingForInput = false
+  running = false
 
-# ## Initialize and export module
+  clear = () ->
+    waitingForInput = false
+    window.Chip8.runtime.state.running = false
+    I = 0
+    window.Chip8.runtime.state.DT = 0
+    ST = 0
+    PC = 0
+    SP = 0
+    memory = (0 for i in [0...memorySize])
+    registers = (0 for i in [0...registerCount])
+    stack = (0 for i in [0...stackSize])
+    addSpritesToMemory()
+
+  # ## Initialize and export module
 
   do () ->
     addSpritesToMemory()
@@ -112,4 +126,6 @@ window.Chip8.State = () ->
     SP: SP
     stack: stack
     waitingForInput: waitingForInput
+    running: running
+    clear: clear
   }

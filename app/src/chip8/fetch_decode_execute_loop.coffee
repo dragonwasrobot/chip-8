@@ -11,8 +11,9 @@ window.Chip8.FDX = (instructions, state) ->
   # ## Functions
 
   tick = () ->
-    fetchAndExecute()
-    window.requestAnimationFrame tick
+    if state.running
+      fetchAndExecute()
+      window.requestAnimationFrame tick
 
   handle0 = (opcode) ->
     log 'FDX->handle0'
@@ -214,7 +215,7 @@ window.Chip8.FDX = (instructions, state) ->
       else
         throw new Error("Unknown instruction given: #{toHex(opcode)}")
 
-    performCycle() for i in [0...10]
+    (performCycle() if state.running) for i in [0...10]
 
   # ### Utility functions
 

@@ -80,6 +80,8 @@ games = { # title: keyMapping
   #'WIPEOFF' # Meh.
 }
 
+runtime = {}
+
 # ## Functions
 
 log = (string) -> if debug then console.log string
@@ -99,18 +101,35 @@ readProgram = (program, fetchDecodeExecute) ->
   (memory[i + programStart] = program[i]) for i in [0...program.length]
   state.I = 0
   state.PC = programStart
+  state.running = true
   fetchDecodeExecute.tick()
 
-run = (game) ->
-  keyMapping = games[game]
-  state = Chip8.State()
-  display = Chip8.Display()
-  keyboard = Chip8.Keyboard(keyMapping)
-  timers = Chip8.Timers(state)
-  instructions = Chip8.Instructions(display, keyboard, state, timers)
-  fetchDecodeExecute = Chip8.FDX(instructions, state)
+clearRuntime = () ->
+  runtime.state?.clear()
+  runtime.display?.clearCells()
 
-  loadProgram(fetchDecodeExecute, game)
+run = (game) ->
+  clearRuntime()
+
+  initialize = () ->
+    keyMapping = games[game]
+    state = Chip8.State()
+    display = Chip8.Display()
+    keyboard = Chip8.Keyboard(state, keyMapping)
+    timers = Chip8.Timers(state)
+    instructions = Chip8.Instructions(display, keyboard, state, timers)
+    fetchDecodeExecute = Chip8.FDX(instructions, state)
+
+    runtime.state = state
+    runtime.display = display
+    runtime.keyboard = keyboard
+    runtime.timers = timers
+    runtime.instructions = instructions
+    runtime.fetchDecodeExecute = fetchDecodeExecute
+
+    loadProgram(fetchDecodeExecute, game)
+
+  setTimeout(initialize, 200);
 
 # ## Export module
 
@@ -118,3 +137,4 @@ Chip8 = window.Chip8 = if window.Chip8? then window.Chip8 else {}
 window.Chip8.run = run
 window.Chip8.log = log
 window.Chip8.games = games
+window.Chip8.runtime = runtime
