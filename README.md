@@ -1,6 +1,8 @@
 # Chip-8
 
-This is an implementation of a CHIP-8 emulator written in CoffeeScript.
+This is an implementation of a CHIP-8 emulator written in Elm.
+
+![Screenshot](/images/screenshot.png)
 
 A range of ROMS are already included - all of which are in public domain.
 
@@ -11,4 +13,4 @@ This project is somewhat inspired by Alexander
 Dickson's [Chip-8 emulator](https://github.com/alexanderdickson/Chip-8-Emulator)
 written in JavaScript.
 
-Fancy pants [Github page](http://dragonwasrobot.github.io/chip-8/).
+You can try a running version of the emulator [here](http://dragonwasrobot.github.io/chip-8/).
