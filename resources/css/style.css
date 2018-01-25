@@ -17,6 +17,27 @@ canvas {
     margin-top: 2em;
 }
 
+#game-selector {
+  font-family: 'courier new';
+  color: #00FF00;
+  background-color: #262626;
+  font-size: 2em;
+  border-color: #00FF00;
+  border-style: solid;
+  margin-right: 0.25em;
+}
+
+#game-reload {
+  font-family: 'courier new';
+  color: #00FF00;
+  background-color: #262626;
+  font-size: 2em;
+  border-color: #00FF00;
+  border-style: solid;
+  border-radius: 0.125em;
+  margin-left: 0.25em;
+}
+
 #key-mapping-container {
     text-align: center;
 }
@@ -24,6 +45,8 @@ canvas {
 h3 {
     color: #00FF00;
     font-family: courier new;
+    font-size: 2em;
+    font-weight: normal;
 }
 
 ul {
@@ -34,4 +57,5 @@ ul {
 li {
     color: #00FF00;
     font-family: courier new;
+    font-size: 1.5em;
 }

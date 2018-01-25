@@ -1,14 +1,6 @@
-# dot-gitignore
+# Elm
+elm-stuff/
+elm.js
 
-# Compiled
-dist
-
-# Documentation
-docs
-
-# Modules
-node_modules
-app/bower_components
-
-# OS/X Garbage
+# OS/X
 .DS_Store
