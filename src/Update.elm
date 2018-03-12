@@ -56,9 +56,9 @@ removeKeyCode model keyCode =
 
 waitForKeyPress :
     Model
-    -> (Maybe KeyCode -> ( Flags, Registers ) -> ( Flags, Registers ))
+    -> Value8Bit
     -> ( Model, Cmd Msg )
-waitForKeyPress model callback =
+waitForKeyPress model registerX =
     let
         flags =
             model |> Model.getFlags
@@ -70,7 +70,7 @@ waitForKeyPress model callback =
             model |> Model.getKeypad
 
         ( ( newFlags, newRegisters ), cmd ) =
-            Keypad.waitForKeyPress keypad ( flags, registers ) callback
+            Keypad.waitForKeyPress keypad ( flags, registers ) registerX
     in
         ( model |> Model.setFlags newFlags |> Model.setRegisters newRegisters
         , cmd
@@ -91,11 +91,20 @@ delayTick model =
 clockTick : Model -> ( Model, Cmd Msg )
 clockTick model =
     let
+        flags =
+            model |> Model.getFlags
+
         running =
-            model |> Model.getFlags |> Flags.isRunning
+            flags |> Flags.isRunning
+
+        waitingForInput =
+            flags |> Flags.isWaitingForInput
+
+        speed =
+            2
     in
-        if running == True then
-            model |> FetchDecodeExecuteLoop.tick 1
+        if running == True && waitingForInput == False then
+            model |> FetchDecodeExecuteLoop.tick speed
         else
             ( model, Cmd.none )
 
@@ -178,19 +187,14 @@ update msg model =
         KeyPress keyCode ->
             ( model, Cmd.none )
 
-        WaitForKeyPress callback ->
-            -- TODO: I should probably ignore all clock ticks while waiting for
-            -- key press!
-            waitForKeyPress model callback
+        WaitForKeyPress registerX ->
+            waitForKeyPress model registerX
 
         DelayTick ->
             delayTick model
 
         ClockTick t ->
-            if (model |> Model.getFlags |> Flags.isWaitingForInput) == True then
-                ( model, Cmd.none )
-            else
-                clockTick model
+            clockTick model
 
         Step steps ->
             FetchDecodeExecuteLoop.tick steps model

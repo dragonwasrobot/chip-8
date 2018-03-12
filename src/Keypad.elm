@@ -34,6 +34,7 @@ import Flags exposing (Flags)
 import Registers exposing (Registers)
 import Keyboard exposing (KeyCode)
 import Utils exposing (setTimeout)
+import Types exposing (Value8Bit)
 
 
 type alias Keypad =
@@ -83,9 +84,9 @@ getKeysPressed keyPad =
 waitForKeyPress :
     Keypad
     -> ( Flags, Registers )
-    -> (Maybe KeyCode -> ( Flags, Registers ) -> ( Flags, Registers ))
+    -> Value8Bit
     -> ( ( Flags, Registers ), Cmd Msg )
-waitForKeyPress keypad ( flags, registers ) callback =
+waitForKeyPress keypad ( flags, registers ) registerX =
     let
         waitLength =
             100
@@ -98,12 +99,26 @@ waitForKeyPress keypad ( flags, registers ) callback =
 
         updatedFlags =
             { flags | waitingForInput = not isKeyPressed }
+
+        checkKey maybeKey ( updatedFlags, registers ) =
+            let
+                newRegisters =
+                    case maybeKey of
+                        Just key ->
+                            registers |> Registers.setDataRegister registerX key
+
+                        Nothing ->
+                            registers
+            in
+                ( updatedFlags |> Flags.setWaitingForInput False
+                , newRegisters
+                )
     in
         if isKeyPressed then
-            ( callback (List.head keysPressed) ( updatedFlags, registers )
+            ( checkKey (List.head keysPressed) ( updatedFlags, registers )
             , Cmd.none
             )
         else
             ( ( flags, registers )
-            , setTimeout waitLength (WaitForKeyPress callback)
+            , setTimeout waitLength (WaitForKeyPress registerX)
             )

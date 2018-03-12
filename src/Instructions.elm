@@ -797,27 +797,13 @@ stored in Vx.
 waitForKeyPress : Model -> Int -> ( Model, Cmd Msg )
 waitForKeyPress model registerX =
     let
-        callback maybeKey ( flags, registers ) =
-            let
-                newRegisters =
-                    case maybeKey of
-                        Just key ->
-                            registers |> Registers.setDataRegister registerX key
-
-                        Nothing ->
-                            registers
-            in
-                ( flags |> Flags.setWaitingForInput False
-                , newRegisters
-                )
-
         ( ( newFlags, newRegisters ), cmd ) =
             Keypad.waitForKeyPress
                 (model |> Model.getKeypad)
                 ( model |> Model.getFlags |> Flags.setWaitingForInput True
                 , model |> Model.getRegisters
                 )
-                callback
+                registerX
     in
         ( model |> Model.setFlags newFlags |> Model.setRegisters newRegisters
         , cmd

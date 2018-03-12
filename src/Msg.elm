@@ -5,17 +5,14 @@ import Keyboard exposing (KeyCode)
 import Flags exposing (Flags)
 import Registers exposing (Registers)
 import Time exposing (Time)
+import Types exposing (Value8Bit)
 
 
 type Msg
     = KeyUp KeyCode
     | KeyDown KeyCode
     | KeyPress KeyCode
-    | WaitForKeyPress
-        (Maybe KeyCode
-         -> ( Flags, Registers )
-         -> ( Flags, Registers )
-        )
+    | WaitForKeyPress Value8Bit
     | DelayTick
     | ClockTick Time
     | SelectGame String

@@ -65,13 +65,13 @@ getByte opcode =
 fetchOpcode : Memory -> Value16Bit -> Value16Bit
 fetchOpcode memory programCounter =
     let
-        firstNibble =
+        firstByte =
             memory |> Memory.getCell programCounter
 
-        secondNibble =
+        secondByte =
             memory |> Memory.getCell (programCounter + 1)
     in
-        Bitwise.or (Bitwise.shiftLeftBy 8 firstNibble) secondNibble
+        Bitwise.or (Bitwise.shiftLeftBy 8 firstByte) secondByte
 
 
 {-| Drops the first nibble in 16-bit opcode
