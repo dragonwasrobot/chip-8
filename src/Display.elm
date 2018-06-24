@@ -1,4 +1,4 @@
-module Display
+port module Display
     exposing
         ( Display
         , initDisplay
@@ -8,7 +8,6 @@ module Display
         )
 
 import Array exposing (Array)
-import Ports
 
 
 {-| Display
@@ -34,7 +33,10 @@ initDisplay =
 
 drawDisplay : Display -> Cmd msg
 drawDisplay =
-    Ports.drawCells
+    drawCells
+
+
+port drawCells : Array (Array Bool) -> Cmd msg
 
 
 type alias Cell =

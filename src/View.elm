@@ -10,9 +10,79 @@ import Html.Events exposing (onClick, on, targetValue)
 import Json.Decode as Decode
 
 
+view : Model -> Html Msg
+view model =
+    div []
+        [ viewHeader
+        , viewCanvas
+        , viewGameSelector model
+        , viewKeyMapping model
+        ]
+
+
+viewHeader : Html msg
+viewHeader =
+    h1 [] [ text "CHIP-8 emulator" ]
+
+
+viewCanvas : Html Msg
+viewCanvas =
+    canvas [ id "visible-canvas" ] []
+
+
+viewGameSelector : Model -> Html Msg
+viewGameSelector model =
+    let
+        gameOption game =
+            option [ value game.name ] [ text game.name ]
+
+        gameOptions =
+            (option [ value "" ] [ text "SELECT GAME" ])
+                :: (List.map (\game -> gameOption game) model.games)
+    in
+        div [ id "games-container" ]
+            [ select
+                [ id "game-selector"
+                , onChange SelectGame
+                ]
+                gameOptions
+            , button
+                [ id "game-reload"
+                , onClick ReloadGame
+                ]
+                [ text "Reload" ]
+            ]
+
+
 onChange : (String -> msg) -> Attribute msg
 onChange tagger =
     on "change" (Decode.map tagger targetValue)
+
+
+viewKeyMapping : Model -> Html Msg
+viewKeyMapping model =
+    let
+        keyMapping =
+            case model.selectedGame of
+                Just game ->
+                    Dict.toList game.controls
+
+                Nothing ->
+                    []
+
+        toListItems ( keyCode, keyPadValue ) acc =
+            case Dict.get keyCode keyMap of
+                Just keyName ->
+                    (li [] [ text keyName ]) :: acc
+
+                Nothing ->
+                    acc
+    in
+        div [ id "key-mapping-container" ]
+            [ h3 [] [ text "Controls" ]
+            , ul [ id "key-mapping" ]
+                (List.foldl toListItems [] keyMapping)
+            ]
 
 
 keyMap : Dict KeyCode String
@@ -36,67 +106,3 @@ keyMap =
         |> Dict.insert 84 "T"
         |> Dict.insert 87 "W"
         |> Dict.insert 89 "Y"
-
-
-keyMappingView : Model -> Html Msg
-keyMappingView model =
-    let
-        selectedGame =
-            model.selectedGame
-
-        keyMapping =
-            case selectedGame of
-                Just game ->
-                    Dict.toList game.controls
-
-                Nothing ->
-                    []
-
-        toListItems ( keyCode, keyPadValue ) acc =
-            case Dict.get keyCode keyMap of
-                Just keyName ->
-                    (li [] [ text keyName ]) :: acc
-
-                Nothing ->
-                    acc
-    in
-        div [ id "key-mapping-container" ]
-            [ h3 [] [ text "Controls" ]
-            , ul [ id "key-mapping" ]
-                (List.foldl toListItems [] keyMapping)
-            ]
-
-
-gameSelectorView : Model -> Html Msg
-gameSelectorView model =
-    let
-        games =
-            model.games
-
-        gameOption game =
-            option [ value game.name ] [ text game.name ]
-
-        gameOptions =
-            (option [ value "" ] [ text "SELECT GAME" ])
-                :: (List.map (\game -> gameOption game) games)
-    in
-        div [ id "games-container" ]
-            [ select
-                [ id "game-selector"
-                , onChange SelectGame
-                ]
-                gameOptions
-            , button
-                [ id "game-reload"
-                , onClick ReloadGame
-                ]
-                [ text "Reload" ]
-            ]
-
-
-view : Model -> Html Msg
-view model =
-    div []
-        [ gameSelectorView model
-        , keyMappingView model
-        ]

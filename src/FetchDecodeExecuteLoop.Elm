@@ -17,6 +17,7 @@ import Memory exposing (Memory)
 import Msg exposing (Msg(..))
 import Registers exposing (Registers)
 import Types exposing (Value4Bit, Value8Bit, Value12Bit, Value16Bit)
+import Utils exposing (noCmd)
 
 
 {-| Gets the n'th nibble of a 16 bit word
@@ -402,8 +403,8 @@ executeOpcode model opcode =
 
 performCycle : Flags -> Model -> ( Model, Cmd Msg )
 performCycle flags model =
-    if flags.waitingForInput == True then
-        ( model, Cmd.none )
+    if flags |> Flags.isWaitingForInput then
+        model |> noCmd
     else
         let
             memory =

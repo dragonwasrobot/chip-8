@@ -1,4 +1,4 @@
-module Timers
+port module Timers
     exposing
         ( Timers
         , initTimers
@@ -21,7 +21,6 @@ module Timers
 import Registers exposing (Registers)
 import Msg exposing (Msg(..))
 import Utils exposing (setTimeout)
-import Ports
 
 
 type alias Delay =
@@ -111,6 +110,4 @@ tick registers timers =
 
 {-| Start playing the sound
 -}
-playSound : Int -> Cmd Msg
-playSound soundTime =
-    Ports.playSound soundTime
+port playSound : Int -> Cmd msg

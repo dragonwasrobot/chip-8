@@ -1,4 +1,4 @@
-module Utils exposing (setTimeout, getWithDefault)
+module Utils exposing (setTimeout, getWithDefault, noCmd)
 
 import Array exposing (Array)
 import Time exposing (Time)
@@ -15,3 +15,8 @@ setTimeout : Time -> msg -> Cmd msg
 setTimeout time msg =
     Process.sleep time
         |> Task.perform (\_ -> msg)
+
+
+noCmd : model -> ( model, Cmd msg )
+noCmd model =
+    ( model, Cmd.none )

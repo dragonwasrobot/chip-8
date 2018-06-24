@@ -39,6 +39,7 @@ import ParseInt
 import Random
 import Timers
 import Types exposing (Value4Bit, Value8Bit, Value12Bit, Value16Bit)
+import Utils exposing (noCmd)
 
 
 {-| 0nnn - SYS addr (Jump to a machine code routine at nnn)
@@ -797,17 +798,14 @@ stored in Vx.
 waitForKeyPress : Model -> Int -> ( Model, Cmd Msg )
 waitForKeyPress model registerX =
     let
-        ( ( newFlags, newRegisters ), cmd ) =
-            Keypad.waitForKeyPress
-                (model |> Model.getKeypad)
-                ( model |> Model.getFlags |> Flags.setWaitingForInput True
-                , model |> Model.getRegisters
-                )
-                registerX
+        newFlags =
+            model
+                |> Model.getFlags
+                |> Flags.setWaitingForInputRegister (Just registerX)
     in
-        ( model |> Model.setFlags newFlags |> Model.setRegisters newRegisters
-        , cmd
-        )
+        model
+            |> Model.setFlags newFlags
+            |> noCmd
 
 
 {-| Fx15 - LD DT, Vx (Set delay timer = Vx)

@@ -169,9 +169,8 @@ initGames : List Game
 initGames =
     [ blinky
     , brix
-
-    -- , connect4
-    -- , hidden
+    , connect4
+    , hidden
     , invaders
     , pong
     , tetris

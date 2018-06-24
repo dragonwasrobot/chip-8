@@ -3,10 +3,14 @@ module Flags
         ( Flags
         , initFlags
         , isWaitingForInput
-        , setWaitingForInput
+        , getWaitingForInputRegister
+        , setWaitingForInputRegister
         , isRunning
         , setRunning
         )
+
+import Types exposing (Value8Bit)
+
 
 {-| Flags
 
@@ -14,29 +18,37 @@ module Flags
   - Running
 
 -}
-
-
 type alias Flags =
-    { waitingForInput : Bool
+    { waitingForInputRegister : Maybe Value8Bit
     , running : Bool
     }
 
 
 initFlags : Flags
 initFlags =
-    { waitingForInput = False
+    { waitingForInputRegister = Nothing
     , running = False
     }
 
 
 isWaitingForInput : Flags -> Bool
 isWaitingForInput flags =
-    flags.waitingForInput
+    case flags.waitingForInputRegister of
+        Just _ ->
+            True
+
+        Nothing ->
+            False
 
 
-setWaitingForInput : Bool -> Flags -> Flags
-setWaitingForInput waitingForInput flags =
-    { flags | waitingForInput = waitingForInput }
+getWaitingForInputRegister : Flags -> Maybe Value8Bit
+getWaitingForInputRegister flags =
+    flags.waitingForInputRegister
+
+
+setWaitingForInputRegister : Maybe Value8Bit -> Flags -> Flags
+setWaitingForInputRegister waitingForInputRegister flags =
+    { flags | waitingForInputRegister = waitingForInputRegister }
 
 
 isRunning : Flags -> Bool

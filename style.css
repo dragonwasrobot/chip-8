@@ -4,7 +4,7 @@ body {
 
 canvas {
   border: 1px solid #B5E852;
-  margin: 50px auto 0 auto;
+  margin: 0 auto 0 auto;
   width: 640px;
   height: 320px;
   display: block;
@@ -40,6 +40,15 @@ canvas {
 
 #key-mapping-container {
   text-align: center;
+}
+
+h1 {
+  text-align: center;
+  color: #B5E852;
+  font-family: courier new;
+  font-size: 2em;
+  font-weight: normal;
+  padding-top: 1em;
 }
 
 h3 {
