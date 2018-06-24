@@ -195,7 +195,7 @@ readProgram programBytes model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "msg" msg of
+    case msg of
         KeyDown keyCode ->
             addKeyCode keyCode model
 
@@ -203,7 +203,6 @@ update msg model =
             removeKeyCode keyCode model
 
         KeyPress keyCode ->
-            -- checkIfWaitingForKeyPress keyCode model
             model |> noCmd
 
         DelayTick ->
