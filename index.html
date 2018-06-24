@@ -184,7 +184,7 @@
          var loadGame = function(game) {
 
              xhr = new XMLHttpRequest();
-             xhr.open('GET', 'http://localhost:7000/roms/' + game, true);
+             xhr.open('GET', 'roms/' + game, true);
              xhr.responseType = 'arraybuffer';
              xhr.onload = function() {
                  var gameBytes = Array.from(new Uint8Array(xhr.response));
