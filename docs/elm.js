@@ -11027,7 +11027,7 @@ var _dragonwasrobot$chip_8$Update$reloadGame = function (model) {
 };
 var _dragonwasrobot$chip_8$Update$update = F2(
 	function (msg, model) {
-		var _p7 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		var _p7 = msg;
 		switch (_p7.ctor) {
 			case 'KeyDown':
 				return A2(_dragonwasrobot$chip_8$Update$addKeyCode, _p7._0, model);

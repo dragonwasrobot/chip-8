@@ -417,10 +417,6 @@ performCycle flags model =
                 programCounter |> fetchOpcode memory
 
             ( resultModel, cmd ) =
-                -- let
-                --     _ =
-                --         Debug.log "(PC, opcode)" ( programCounter, toHex opcode )
-                -- in
                 executeOpcode model opcode
 
             newRegisters =
