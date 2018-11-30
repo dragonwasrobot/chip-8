@@ -1,13 +1,15 @@
 port module Update exposing (update)
 
+--import Keyboard exposing (KeyCode)
+
 import Array exposing (Array)
-import FetchDecodeExecuteLoop
 import Dict
 import Display
+import FetchDecodeExecuteLoop
 import Flags exposing (Flags)
-import List.Extra exposing (find, indexedFoldl)
-import Keyboard exposing (KeyCode)
+import KeyCode exposing (KeyCode)
 import Keypad
+import List.Extra exposing (find, indexedFoldl)
 import Memory
 import Model exposing (Model)
 import Msg exposing (Msg(..))
@@ -29,9 +31,9 @@ addKeyCode keyCode model =
                             keyCode
                             game.controls
             in
-                model
-                    |> Model.setKeypad newKeypad
-                    |> checkIfWaitingForKeyPress keyCode
+            model
+                |> Model.setKeypad newKeypad
+                |> checkIfWaitingForKeyPress keyCode
 
         Nothing ->
             model
@@ -52,8 +54,8 @@ removeKeyCode keyCode model =
                                 keyCode
                                 game.controls
                 in
-                    model
-                        |> Model.setKeypad newKeypad
+                model
+                    |> Model.setKeypad newKeypad
             )
         |> Maybe.withDefault model
         |> noCmd
@@ -67,7 +69,7 @@ checkIfWaitingForKeyPress keyCode model =
             |> Flags.getWaitingForInputRegister
         , model
             |> Model.getSelectedGame
-            |> Maybe.andThen (.controls >> Dict.get keyCode)
+            |> Maybe.andThen (.controls >> Dict.get (KeyCode.intValue keyCode))
         )
     of
         ( Just registerX, Just chip8KeyCode ) ->
@@ -82,10 +84,10 @@ checkIfWaitingForKeyPress keyCode model =
                         |> Model.getRegisters
                         |> Registers.setDataRegister registerX chip8KeyCode
             in
-                model
-                    |> Model.setFlags newFlags
-                    |> Model.setRegisters newRegisters
-                    |> noCmd
+            model
+                |> Model.setFlags newFlags
+                |> Model.setRegisters newRegisters
+                |> noCmd
 
         _ ->
             model
@@ -100,11 +102,11 @@ delayTick model =
                 (model |> Model.getRegisters)
                 (model |> Model.getTimers)
     in
-        ( model
-            |> Model.setRegisters newRegisters
-            |> Model.setTimers newTimers
-        , cmd
-        )
+    ( model
+        |> Model.setRegisters newRegisters
+        |> Model.setTimers newTimers
+    , cmd
+    )
 
 
 clockTick : Model -> ( Model, Cmd Msg )
@@ -122,10 +124,11 @@ clockTick model =
         speed =
             2
     in
-        if running == True && waitingForInput == False then
-            model |> FetchDecodeExecuteLoop.tick speed
-        else
-            ( model, Cmd.none )
+    if running == True && waitingForInput == False then
+        model |> FetchDecodeExecuteLoop.tick speed
+
+    else
+        ( model, Cmd.none )
 
 
 selectGame : String -> Model -> ( Model, Cmd Msg )
@@ -134,10 +137,10 @@ selectGame gameName model =
         selectedGame =
             find (.name >> (==) gameName) model.games
     in
-        ( Model.initModel
-            |> Model.setSelectedGame selectedGame
-        , loadGame gameName
-        )
+    ( Model.initModel
+        |> Model.setSelectedGame selectedGame
+    , loadGame gameName
+    )
 
 
 port loadGame : String -> Cmd msg
@@ -154,12 +157,12 @@ reloadGame model =
                 ( newModel, cmd ) =
                     selectGame game.name freshModel
             in
-                ( newModel
-                , Cmd.batch
-                    [ freshModel |> Model.getDisplay |> Display.drawDisplay
-                    , cmd
-                    ]
-                )
+            ( newModel
+            , Cmd.batch
+                [ freshModel |> Model.getDisplay |> Display.drawDisplay
+                , cmd
+                ]
+            )
 
         Nothing ->
             model |> noCmd
@@ -173,7 +176,7 @@ readProgram programBytes model =
 
         newMemory =
             indexedFoldl
-                (\idx val acc -> Memory.setCell (programStart + idx) val acc)
+                (\idx -> Memory.setCell (programStart + idx))
                 (model |> Model.getMemory)
                 (programBytes |> Array.toList)
 
@@ -186,21 +189,21 @@ readProgram programBytes model =
         newFlags =
             model |> Model.getFlags |> Flags.setRunning True
     in
-        model
-            |> Model.setMemory newMemory
-            |> Model.setRegisters newRegisters
-            |> Model.setFlags newFlags
-            |> noCmd
+    model
+        |> Model.setMemory newMemory
+        |> Model.setRegisters newRegisters
+        |> Model.setFlags newFlags
+        |> noCmd
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         KeyDown keyCode ->
-            addKeyCode keyCode model
+            addKeyCode (Debug.log "keyDown" keyCode) model
 
         KeyUp keyCode ->
-            removeKeyCode keyCode model
+            removeKeyCode (Debug.log "keyUp" keyCode) model
 
         KeyPress keyCode ->
             model |> noCmd

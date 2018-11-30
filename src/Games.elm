@@ -1,4 +1,4 @@
-module Games exposing (KeyMapping, Game, initGames)
+module Games exposing (Game, KeyMapping, initGames)
 
 {-| Games
 
@@ -8,13 +8,17 @@ emulator.
 -}
 
 import Dict exposing (Dict)
-import Keyboard exposing (KeyCode)
+import KeyCode exposing (KeyCode(..))
+
+
+
+-- import Keyboard exposing (KeyCode)
 
 
 {-| Mapping from standard keyboard codes to CHIP-8 keypad codes
 -}
 type alias KeyMapping =
-    Dict KeyCode Int
+    Dict Int Int
 
 
 type alias Game =
@@ -53,9 +57,9 @@ blinky =
                 |> Dict.insert 39 8
                 |> Dict.insert 40 6
     in
-        { name = "BLINKY"
-        , controls = controls
-        }
+    { name = "BLINKY"
+    , controls = controls
+    }
 
 
 brix : Game
@@ -66,9 +70,9 @@ brix =
                 |> Dict.insert 37 4
                 |> Dict.insert 39 6
     in
-        { name = "BRIX"
-        , controls = controls
-        }
+    { name = "BRIX"
+    , controls = controls
+    }
 
 
 connect4 : Game
@@ -80,9 +84,9 @@ connect4 =
                 |> Dict.insert 32 5
                 |> Dict.insert 39 6
     in
-        { name = "CONNECT4"
-        , controls = controls
-        }
+    { name = "CONNECT4"
+    , controls = controls
+    }
 
 
 hidden : Game
@@ -96,9 +100,9 @@ hidden =
                 |> Dict.insert 40 8
                 |> Dict.insert 38 2
     in
-        { name = "HIDDEN"
-        , controls = controls
-        }
+    { name = "HIDDEN"
+    , controls = controls
+    }
 
 
 invaders : Game
@@ -110,9 +114,9 @@ invaders =
                 |> Dict.insert 32 5
                 |> Dict.insert 39 6
     in
-        { name = "INVADERS"
-        , controls = controls
-        }
+    { name = "INVADERS"
+    , controls = controls
+    }
 
 
 pong : Game
@@ -120,14 +124,15 @@ pong =
     let
         controls =
             Dict.empty
+                -- W,S and K,I
                 |> Dict.insert 87 1
                 |> Dict.insert 83 4
                 |> Dict.insert 73 12
                 |> Dict.insert 75 13
     in
-        { name = "PONG"
-        , controls = controls
-        }
+    { name = "PONG"
+    , controls = controls
+    }
 
 
 tetris : Game
@@ -140,9 +145,9 @@ tetris =
                 |> Dict.insert 32 4
                 |> Dict.insert 40 7
     in
-        { name = "TETRIS"
-        , controls = controls
-        }
+    { name = "TETRIS"
+    , controls = controls
+    }
 
 
 tictac : Game
@@ -150,6 +155,7 @@ tictac =
     let
         controls =
             Dict.empty
+                -- Y,T,R,H,G,F,7,6,5
                 |> Dict.insert 53 1
                 |> Dict.insert 54 2
                 |> Dict.insert 55 3
@@ -160,9 +166,9 @@ tictac =
                 |> Dict.insert 71 8
                 |> Dict.insert 72 9
     in
-        { name = "TICTAC"
-        , controls = controls
-        }
+    { name = "TICTAC"
+    , controls = controls
+    }
 
 
 initGames : List Game

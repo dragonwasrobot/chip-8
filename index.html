@@ -9,11 +9,12 @@
     </head>
 
     <body>
-        <div id="elm-area"></div>
+        <div id="elm-main"></div>
         <script src="elm.js"></script>
         <script>
-         var node = document.getElementById('elm-area');
-         var app = Elm.Main.embed(node);
+         var app = Elm.Main.init({
+             node: document.getElementById('elm-main')
+         });
 
          /* Ports */
 

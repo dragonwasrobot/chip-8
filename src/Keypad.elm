@@ -1,11 +1,10 @@
-module Keypad
-    exposing
-        ( Keypad
-        , initKeypad
-        , addKeyPress
-        , removeKeyPress
-        , getKeysPressed
-        )
+module Keypad exposing
+    ( Keypad
+    , addKeyPress
+    , getKeysPressed
+    , initKeypad
+    , removeKeyPress
+    )
 
 {-| Keypad
 
@@ -26,15 +25,19 @@ We create a specific mapping per game, since the 16-key keypad is unusual.
 
 -}
 
-import Games exposing (KeyMapping)
 import Dict exposing (Dict)
 import Flags exposing (Flags)
+import Games exposing (KeyMapping)
+import KeyCode exposing (KeyCode)
 import Registers exposing (Registers)
-import Keyboard exposing (KeyCode)
+
+
+
+-- import Keyboard exposing (KeyCode)
 
 
 type alias Keypad =
-    Dict KeyCode Bool
+    Dict Int Bool
 
 
 initKeypad : Keypad
@@ -49,7 +52,7 @@ initKeypad =
 
 addKeyPress : KeyCode -> KeyMapping -> Keypad -> Keypad
 addKeyPress keyCode keyMapping keysPressed =
-    case Dict.get keyCode keyMapping of
+    case Dict.get (KeyCode.intValue keyCode) keyMapping of
         Just chip8KeyCode ->
             keysPressed
                 |> Dict.insert chip8KeyCode True
@@ -60,7 +63,7 @@ addKeyPress keyCode keyMapping keysPressed =
 
 removeKeyPress : KeyCode -> KeyMapping -> Keypad -> Keypad
 removeKeyPress keyCode keyMapping keysPressed =
-    case Dict.get keyCode keyMapping of
+    case Dict.get (KeyCode.intValue keyCode) keyMapping of
         Just chip8KeyCode ->
             keysPressed
                 |> Dict.insert chip8KeyCode False
@@ -69,7 +72,7 @@ removeKeyPress keyCode keyMapping keysPressed =
             keysPressed
 
 
-getKeysPressed : Keypad -> List KeyCode
+getKeysPressed : Keypad -> List Int
 getKeysPressed keyPad =
     keyPad
         |> Dict.toList

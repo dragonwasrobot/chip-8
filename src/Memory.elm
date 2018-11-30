@@ -1,4 +1,4 @@
-module Memory exposing (Memory, initMemory, getCell, setCell)
+module Memory exposing (Memory, getCell, initMemory, setCell)
 
 {-| Memory
 
@@ -12,7 +12,7 @@ bytes (0x200) are reserved for the CHIP-8 interpreter:
 -}
 
 import Array exposing (Array)
-import Types exposing (Value8Bit, Value16Bit)
+import Types exposing (Value16Bit, Value8Bit)
 
 
 type alias Memory =
@@ -28,14 +28,15 @@ initMemory =
         emptyMemory =
             Array.initialize memorySize (\_ -> 0)
     in
-        emptyMemory
-            |> addSpritesToMemory
+    emptyMemory
+        |> addSpritesToMemory
 
 
 getCell : Int -> Memory -> Value8Bit
 getCell index memory =
     if index > 4095 then
-        Debug.crash "Memory index out of bounds"
+        Debug.todo "Memory index out of bounds"
+
     else
         memory
             |> Array.get index
@@ -45,7 +46,8 @@ getCell index memory =
 setCell : Int -> Value8Bit -> Memory -> Memory
 setCell index value memory =
     if index > 4095 then
-        Debug.crash "Memory index out of bounds"
+        Debug.todo "Memory index out of bounds"
+
     else
         memory
             |> Array.set index value
@@ -134,22 +136,22 @@ hardcodedSprites =
         spriteF =
             [ 0xF0, 0x80, 0xF0, 0x80, 0x80 ]
     in
-        sprite0
-            ++ sprite1
-            ++ sprite2
-            ++ sprite3
-            ++ sprite4
-            ++ sprite5
-            ++ sprite6
-            ++ sprite7
-            ++ sprite8
-            ++ sprite9
-            ++ spriteA
-            ++ spriteB
-            ++ spriteC
-            ++ spriteD
-            ++ spriteE
-            ++ spriteF
+    sprite0
+        ++ sprite1
+        ++ sprite2
+        ++ sprite3
+        ++ sprite4
+        ++ sprite5
+        ++ sprite6
+        ++ sprite7
+        ++ sprite8
+        ++ sprite9
+        ++ spriteA
+        ++ spriteB
+        ++ spriteC
+        ++ spriteD
+        ++ spriteE
+        ++ spriteF
 
 
 addSpritesToMemory : Memory -> Memory
@@ -158,18 +160,20 @@ addSpritesToMemory memory =
         sprites =
             Array.fromList hardcodedSprites
 
-        copySpriteCell idx memory =
-            case Array.get idx sprites of
-                Just spriteValue ->
-                    setCell idx spriteValue memory
-
-                Nothing ->
-                    memory
-
         rangeToUpdate =
             List.range 0 <| Array.length sprites
     in
-        List.foldl
-            (\idx accMemory -> copySpriteCell idx accMemory)
+    List.foldl
+        (copySpriteCell sprites)
+        memory
+        rangeToUpdate
+
+
+copySpriteCell : Array Value8Bit -> Int -> Memory -> Memory
+copySpriteCell sprites idx memory =
+    case Array.get idx sprites of
+        Just spriteValue ->
+            setCell idx spriteValue memory
+
+        Nothing ->
             memory
-            rangeToUpdate

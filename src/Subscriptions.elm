@@ -1,8 +1,12 @@
 port module Subscriptions exposing (subscriptions)
 
+-- import Keyboard
+
 import Array exposing (Array)
+import Browser.Events as Events
 import Flags
-import Keyboard
+import Json.Decode as Decode exposing (Decoder)
+import KeyCode exposing (KeyCode)
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Time
@@ -16,10 +20,11 @@ subscriptions model =
 
         keyboardSubscriptions =
             if Flags.isRunning flags then
-                [ Keyboard.ups KeyUp
-                , Keyboard.downs KeyDown
-                , Keyboard.presses KeyPress
+                [ Events.onKeyUp (Decode.map KeyUp KeyCode.decoder)
+                , Events.onKeyDown (Decode.map KeyDown KeyCode.decoder)
+                , Events.onKeyPress (Decode.map KeyPress KeyCode.decoder)
                 ]
+
             else
                 []
 
@@ -29,8 +34,9 @@ subscriptions model =
                     || (flags |> Flags.isRunning |> not)
             then
                 []
+
             else
-                [ Time.every ((1000 / 600) * Time.millisecond) ClockTick ]
+                [ Time.every (1000 / 600) ClockTick ]
 
         gameSubscriptions =
             [ loadedGame LoadedGame ]
@@ -38,7 +44,7 @@ subscriptions model =
         subscriptionList =
             keyboardSubscriptions ++ clockSubscriptions ++ gameSubscriptions
     in
-        Sub.batch subscriptionList
+    Sub.batch subscriptionList
 
 
 port loadedGame : (Array Int -> msg) -> Sub msg

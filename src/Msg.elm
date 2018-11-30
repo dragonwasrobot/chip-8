@@ -1,8 +1,8 @@
 module Msg exposing (Msg(..))
 
 import Array exposing (Array)
-import Keyboard exposing (KeyCode)
-import Time exposing (Time)
+import KeyCode exposing (KeyCode)
+import Time exposing (Posix)
 
 
 type Msg
@@ -10,7 +10,7 @@ type Msg
     | KeyDown KeyCode
     | KeyPress KeyCode
     | DelayTick
-    | ClockTick Time
+    | ClockTick Posix
     | SelectGame String
     | ReloadGame
     | LoadedGame (Array Int)

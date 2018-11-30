@@ -1,13 +1,18 @@
 module View exposing (view)
 
+-- import Keyboard exposing (KeyCode)
+
 import Dict exposing (Dict)
-import Model exposing (Model)
-import Msg exposing (Msg(..))
-import Keyboard exposing (KeyCode)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, on, targetValue)
+import Html.Events exposing (on, onClick, targetValue)
 import Json.Decode as Decode
+import Model exposing (Model)
+import Msg exposing (Msg(..))
+
+
+type alias KeyCode =
+    Int
 
 
 view : Model -> Html Msg
@@ -37,21 +42,21 @@ viewGameSelector model =
             option [ value game.name ] [ text game.name ]
 
         gameOptions =
-            (option [ value "" ] [ text "SELECT GAME" ])
-                :: (List.map (\game -> gameOption game) model.games)
+            option [ value "" ] [ text "SELECT GAME" ]
+                :: List.map (\game -> gameOption game) model.games
     in
-        div [ id "games-container" ]
-            [ select
-                [ id "game-selector"
-                , onChange SelectGame
-                ]
-                gameOptions
-            , button
-                [ id "game-reload"
-                , onClick ReloadGame
-                ]
-                [ text "Reload" ]
+    div [ id "games-container" ]
+        [ select
+            [ id "game-selector"
+            , onChange SelectGame
             ]
+            gameOptions
+        , button
+            [ id "game-reload"
+            , onClick ReloadGame
+            ]
+            [ text "Reload" ]
+        ]
 
 
 onChange : (String -> msg) -> Attribute msg
@@ -73,16 +78,16 @@ viewKeyMapping model =
         toListItems ( keyCode, keyPadValue ) acc =
             case Dict.get keyCode keyMap of
                 Just keyName ->
-                    (li [] [ text keyName ]) :: acc
+                    li [] [ text keyName ] :: acc
 
                 Nothing ->
                     acc
     in
-        div [ id "key-mapping-container" ]
-            [ h3 [] [ text "Controls" ]
-            , ul [ id "key-mapping" ]
-                (List.foldl toListItems [] keyMapping)
-            ]
+    div [ id "key-mapping-container" ]
+        [ h3 [] [ text "Controls" ]
+        , ul [ id "key-mapping" ]
+            (List.foldl toListItems [] keyMapping)
+        ]
 
 
 keyMap : Dict KeyCode String
