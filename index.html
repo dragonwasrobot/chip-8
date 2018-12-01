@@ -2,10 +2,8 @@
 <html>
     <head>
         <title>CHIP-8 emulator</title>
-        <link rel="stylesheet"
-              type="text/css"
-              href="style.css"
-              media="screen">
+        <link href="https://unpkg.com/nes.css/css/nes.min.css" rel="stylesheet" />
+        <link rel="stylesheet" type="text/css" href="style.css" media="screen">
     </head>
 
     <body>
@@ -19,10 +17,6 @@
 
          /* Ports */
 
-         var exists = function(obj) {
-             return typeof obj !== 'undefined' && obj !== null;
-         };
-
          /** Sounds
           *
           * The sound timer is active whenever the sound timer register (ST) is
@@ -33,6 +27,10 @@
           * The sound produced by the Chip-8 interpreter has only one tone. The
           * frequency of this tone is decided by the author of the interpreter.
           */
+
+         var exists = function(obj) {
+             return typeof obj !== 'undefined' && obj !== null;
+         };
 
          var sound = {
              audioContext: undefined,

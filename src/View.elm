@@ -20,7 +20,7 @@ type alias KeyCode =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ Attr.style "margin-top" "1em" ]
         [ viewHeader
         , viewCanvas model
         , viewGameSelector model
@@ -30,16 +30,11 @@ view model =
 
 viewHeader : Html msg
 viewHeader =
-    h1 [] [ text "CHIP-8 emulator" ]
+    h1 [] [ text "CHIP-8 Emulator" ]
 
 
 
-{- Canvas and Drawing
-
-   The display is rendered with 10x10 pixel cells and we use a
-   bright retro green for coloring the pixels.
-
--}
+{- Canvas and Drawing -}
 
 
 cellSize =
@@ -55,10 +50,16 @@ height =
 
 
 cellColor =
-    { red = 181
-    , green = 232
-    , blue = 82
-    , gray = 38
+    { red = 33
+    , green = 37
+    , blue = 41
+    }
+
+
+backgroundColor =
+    { red = 253
+    , green = 246
+    , blue = 227
     }
 
 
@@ -73,7 +74,6 @@ viewCanvas model =
         height
         []
         (Canvas.empty
-            |> Canvas.strokeStyle (Color.rgba cellColor.red cellColor.green cellColor.blue 1)
             |> Canvas.clearRect 0 0 width height
             |> renderDisplay display
         )
@@ -101,7 +101,7 @@ renderCell rowIdx columnIdx cellValue commands =
                 Color.rgba cellColor.red cellColor.green cellColor.blue 1
 
             else
-                Color.rgba cellColor.gray cellColor.gray cellColor.gray 1
+                Color.rgba backgroundColor.red backgroundColor.green backgroundColor.blue 1
 
         ( x, y ) =
             ( toFloat rowIdx * cellSize, toFloat columnIdx * cellSize )
@@ -121,14 +121,21 @@ viewGameSelector model =
             option [ Attr.value "" ] [ text "SELECT GAME" ]
                 :: List.map (\game -> gameOption game) model.games
     in
-    div [ Attr.id "games-container" ]
+    section
+        [ Attr.id "games-container"
+        ]
         [ select
             [ Attr.id "game-selector"
+            , Attr.class "btn is-success"
+            , Attr.style "margin-right" "0.5em"
+            , Attr.style "height" "3em"
             , onChange SelectGame
             ]
             gameOptions
         , button
             [ Attr.id "game-reload"
+            , Attr.class "btn is-success"
+            , Attr.style "margin-left" "0.5em"
             , Events.onClick ReloadGame
             ]
             [ text "Reload" ]
