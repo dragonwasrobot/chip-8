@@ -2,14 +2,18 @@
 <html>
     <head>
         <title>CHIP-8 emulator</title>
-        <link href="https://unpkg.com/nes.css/css/nes.min.css" rel="stylesheet" />
-        <link rel="stylesheet" type="text/css" href="style.css" media="screen">
+        <link href="https://unpkg.com/nes.css/css/nes.min.css"
+              rel="stylesheet"
+              type="text/css" />
+        <link href="style.css"
+              rel="stylesheet"
+              type="text/css" />
+        <script src="https://unpkg.com/elm-canvas@2.0.0/elm-canvas.js"></script>
+        <script src="elm.js"></script>
     </head>
 
     <body>
         <div id="elm-main"></div>
-        <script src="https://unpkg.com/elm-canvas@2.0.0/elm-canvas.js"></script>
-        <script src="elm.js"></script>
         <script>
          var app = Elm.Main.init({
              node: document.getElementById('elm-main')
@@ -38,7 +42,7 @@
          };
 
          if (exists(window.AudioContext)) {
-            sound.audioContext = new AudioContext();
+             sound.audioContext = new AudioContext();
          }
 
          var playSound = function(st) {

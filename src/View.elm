@@ -30,7 +30,7 @@ view model =
 
 viewHeader : Html msg
 viewHeader =
-    h1 [] [ text "CHIP-8 Emulator" ]
+    h1 [] [ text "CHIP-8 EMULATOR" ]
 
 
 
@@ -49,6 +49,14 @@ height =
     32 * cellSize
 
 
+type alias Color =
+    { red : Int
+    , green : Int
+    , blue : Int
+    }
+
+
+cellColor : Color
 cellColor =
     { red = 33
     , green = 37
@@ -56,6 +64,7 @@ cellColor =
     }
 
 
+backgroundColor : Color
 backgroundColor =
     { red = 253
     , green = 246
@@ -65,17 +74,13 @@ backgroundColor =
 
 viewCanvas : Model -> Html Msg
 viewCanvas model =
-    let
-        display =
-            model.display
-    in
     Canvas.element
         width
         height
         []
         (Canvas.empty
             |> Canvas.clearRect 0 0 width height
-            |> renderDisplay display
+            |> renderDisplay model.display
         )
 
 
@@ -119,14 +124,13 @@ viewGameSelector model =
 
         gameOptions =
             option [ Attr.value "" ] [ text "SELECT GAME" ]
-                :: List.map (\game -> gameOption game) model.games
+                :: List.map gameOption model.games
     in
     section
-        [ Attr.id "games-container"
-        ]
+        [ Attr.id "games-container" ]
         [ select
             [ Attr.id "game-selector"
-            , Attr.class "btn is-success"
+            , Attr.class "btn is-warning"
             , Attr.style "margin-right" "0.5em"
             , Attr.style "height" "3em"
             , onChange SelectGame
@@ -134,11 +138,11 @@ viewGameSelector model =
             gameOptions
         , button
             [ Attr.id "game-reload"
-            , Attr.class "btn is-success"
+            , Attr.class "btn is-warning"
             , Attr.style "margin-left" "0.5em"
             , Events.onClick ReloadGame
             ]
-            [ text "Reload" ]
+            [ text "RELOAD" ]
         ]
 
 
@@ -162,7 +166,7 @@ viewKeyMapping model =
             li [] [ keyStr |> prettyPrintKey |> text ] :: acc
     in
     div [ Attr.id "key-mapping-container" ]
-        [ h3 [] [ text "Controls" ]
+        [ h3 [] [ text "CONTROLS" ]
         , ul [ Attr.id "key-mapping" ]
             (List.foldl toListItems [] keyMapping)
         ]
@@ -172,19 +176,19 @@ prettyPrintKey : String -> String
 prettyPrintKey keyStr =
     case keyStr of
         " " ->
-            "Space"
+            "SPACE"
 
         "ArrowLeft" ->
-            "Left arrow"
+            "LEFT ARROW"
 
         "ArrowUp" ->
-            "Up arrow"
+            "UP ARROW"
 
         "ArrowRight" ->
-            "Right arrow"
+            "RIGHT ARROW"
 
         "ArrowDown" ->
-            "Down arrow"
+            "DOWN ARROW"
 
         alphaNumeric ->
             String.toUpper alphaNumeric

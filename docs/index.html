@@ -2,137 +2,24 @@
 <html>
     <head>
         <title>CHIP-8 emulator</title>
-        <link rel="stylesheet"
-              type="text/css"
-              href="style.css"
-              media="screen">
+        <link href="https://unpkg.com/nes.css/css/nes.min.css"
+              rel="stylesheet"
+              type="text/css" />
+        <link href="style.css"
+              rel="stylesheet"
+              type="text/css" />
+        <script src="https://unpkg.com/elm-canvas@2.0.0/elm-canvas.js"></script>
+        <script src="elm.js"></script>
     </head>
 
     <body>
-        <div id="elm-area"></div>
-        <script src="elm.js"></script>
+        <div id="elm-main"></div>
         <script>
-         var node = document.getElementById('elm-area');
-         var app = Elm.Main.embed(node);
+         var app = Elm.Main.init({
+             node: document.getElementById('elm-main')
+         });
 
          /* Ports */
-
-         var exists = function(obj) {
-             return typeof obj !== 'undefined' && obj !== null;
-         };
-
-         /* Canvas and Drawing
-          *
-          * The display is rendered with 10x10 pixel cells and we use a
-          * bright retro green for coloring the pixels.
-          */
-         var cellSize = 10;
-         var cellColor = {
-             red: 181,
-             green: 232,
-             blue: 82,
-             gray: 38
-         };
-
-         var width = 64;
-         var height = 32;
-
-         var displayInitialized = false;
-         var cells, buffer, context, bufferContext;
-
-         var initializeDisplay = function() {
-
-             var canvas = document.getElementById('visible-canvas');
-
-             if (!exists(canvas)) {
-                 console.log("Canvas did not exist, display not initialized");
-                 return false;
-             }
-
-             canvas.height = cellSize * height;
-             canvas.width = cellSize * width;
-             context = canvas.getContext('2d');
-
-             buffer = document.createElement('canvas');
-             buffer.height = cellSize * height;
-             buffer.width = cellSize * width;
-             bufferContext = buffer.getContext('2d');
-
-             cells = [];
-             for (var column = 0; column < width; column++) {
-                 cells[column] = [];
-                 for (var row = 0; row < height; row++) {
-                     cells[column][row] = false;
-                 }
-             }
-
-             console.log("Display initialized");
-             return true;
-         };
-
-         var actuallyDrawCells = function(cells) {
-
-             var getGrayscale = function(gray) {
-                 return "rgb(" + gray + ", " + gray + ", " + gray + ")";
-             };
-
-             var getRGB = function(red, green, blue) {
-                 return "rgb(" + red + ", " + green + ", " + blue + ")";
-             };
-
-             var drawCell = function(cell) {
-
-                 var x = cell.column * cellSize;
-                 var y = cell.row * cellSize;
-
-                 switch (cell.value) {
-                     case true:
-                         bufferContext.fillStyle = getRGB(
-                             cellColor.red, cellColor.green, cellColor.blue);
-                         break;
-
-                     case false:
-                         bufferContext.fillStyle = getGrayscale(cellColor.gray);
-                         break;
-                 }
-
-                 bufferContext.fillRect(x, y, cellSize, cellSize);
-             }
-
-             // We need to ensure the display is initialized
-             if (!displayInitialized) {
-                 displayInitialized = initializeDisplay();
-                 return;
-             }
-
-             for (var column = 0; column < width; column++) {
-                 for (var row = 0; row < height; row++) {
-                     value = cells[column][row]
-                     drawCell({
-                         column: column,
-                         row: row,
-                         value: value
-                     });
-                 }
-             }
-
-             bufferContext.strokeStyle =
-                 getRGB(cellColor.red, cellColor.green, cellColor.blue);
-             bufferContext.strokeRect(
-                 0, 0, cellSize * width, cellSize * height);
-             context.drawImage(buffer, 0, 0);
-         };
-
-         var renderCells = function() {
-             actuallyDrawCells(cells);
-             requestAnimationFrame(renderCells);
-         }
-         requestAnimationFrame(renderCells);
-
-         var drawCells = function(newCells) {
-             cells = newCells;
-         };
-         app.ports.drawCells.subscribe(drawCells);
 
          /** Sounds
           *
@@ -145,13 +32,17 @@
           * frequency of this tone is decided by the author of the interpreter.
           */
 
+         var exists = function(obj) {
+             return typeof obj !== 'undefined' && obj !== null;
+         };
+
          var sound = {
              audioContext: undefined,
              tickLength: (1 / 60) * 1000 // 60 Hz
          };
 
          if (exists(window.AudioContext)) {
-            sound.audioContext = new AudioContext();
+             sound.audioContext = new AudioContext();
          }
 
          var playSound = function(st) {
@@ -178,21 +69,6 @@
              }
          };
          app.ports.playSound.subscribe(playSound);
-
-         /* Load game */
-
-         var loadGame = function(game) {
-
-             xhr = new XMLHttpRequest();
-             xhr.open('GET', 'roms/' + game, true);
-             xhr.responseType = 'arraybuffer';
-             xhr.onload = function() {
-                 var gameBytes = Array.from(new Uint8Array(xhr.response));
-                 app.ports.loadedGame.send(gameBytes);
-             };
-             xhr.send();
-         };
-         app.ports.loadGame.subscribe(loadGame);
         </script>
     </body>
 </html>
