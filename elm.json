@@ -16,6 +16,7 @@
             "elm/time": "1.0.0",
             "elm-community/list-extra": "8.1.0",
             "fredcy/elm-parseint": "2.0.1",
+            "joakin/elm-canvas": "2.1.1",
             "rtfeldman/elm-hex": "1.0.0"
         },
         "indirect": {

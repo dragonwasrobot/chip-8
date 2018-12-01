@@ -1,7 +1,7 @@
 port module Timers exposing
     ( Timers
+    , init
     , initDelay
-    , initTimers
     , playSound
     , startDelayTimer
     , tick
@@ -54,8 +54,8 @@ type alias Timers =
     { delay : Delay }
 
 
-initTimers : Timers
-initTimers =
+init : Timers
+init =
     { delay = initDelay }
 
 

@@ -1,4 +1,4 @@
-module Games exposing (Game, initGames)
+module Games exposing (Game, init)
 
 {-| Games
 
@@ -113,10 +113,10 @@ pong : Game
 pong =
     let
         controls =
-            [ ( "W", KeyCode 1 )
-            , ( "S", KeyCode 4 )
-            , ( "I", KeyCode 12 )
-            , ( "K", KeyCode 13 )
+            [ ( "w", KeyCode 1 )
+            , ( "s", KeyCode 4 )
+            , ( "i", KeyCode 12 )
+            , ( "k", KeyCode 13 )
             ]
     in
     { name = "PONG"
@@ -146,12 +146,12 @@ tictac =
             [ ( "5", KeyCode 1 )
             , ( "6", KeyCode 2 )
             , ( "7", KeyCode 3 )
-            , ( "R", KeyCode 4 )
-            , ( "T", KeyCode 5 )
-            , ( "Y", KeyCode 6 )
-            , ( "F", KeyCode 7 )
-            , ( "G", KeyCode 8 )
-            , ( "H", KeyCode 9 )
+            , ( "r", KeyCode 4 )
+            , ( "t", KeyCode 5 )
+            , ( "y", KeyCode 6 )
+            , ( "f", KeyCode 7 )
+            , ( "g", KeyCode 8 )
+            , ( "h", KeyCode 9 )
             ]
     in
     { name = "TICTAC"
@@ -159,8 +159,8 @@ tictac =
     }
 
 
-initGames : List Game
-initGames =
+init : List Game
+init =
     [ blinky
     , brix
     , connect4

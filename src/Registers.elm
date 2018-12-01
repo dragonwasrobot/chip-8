@@ -10,7 +10,7 @@ module Registers exposing
     , getStackPointer
     , incrementProgramCounter
     , incrementStackPointer
-    , initRegisters
+    , init
     , setAddressRegister
     , setDataRegister
     , setDelayTimer
@@ -63,8 +63,8 @@ type alias Registers =
     }
 
 
-initRegisters : Registers
-initRegisters =
+init : Registers
+init =
     { dataRegisters = initDataRegisters
     , addressRegister = 0
     , delayTimer = 0

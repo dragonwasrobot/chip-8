@@ -11,14 +11,7 @@ import View exposing (view)
 
 init : () -> ( Model, Cmd Msg )
 init flags =
-    let
-        model =
-            initModel
-
-        cmd =
-            model |> Model.getDisplay |> Display.drawDisplay
-    in
-    ( model, cmd )
+    ( initModel, Cmd.none )
 
 
 main : Program () Model Msg

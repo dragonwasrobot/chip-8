@@ -143,12 +143,7 @@ reloadGame model =
                 ( newModel, cmd ) =
                     selectGame game.name freshModel
             in
-            ( newModel
-            , Cmd.batch
-                [ freshModel |> Model.getDisplay |> Display.drawDisplay
-                , cmd
-                ]
-            )
+            ( newModel, cmd )
 
         Nothing ->
             model |> noCmd

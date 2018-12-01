@@ -2,7 +2,7 @@ module Keypad exposing
     ( Keypad
     , addKeyPress
     , getKeysPressed
-    , initKeypad
+    , init
     , removeKeyPress
     )
 
@@ -33,8 +33,8 @@ type alias Keypad =
     Dict Int Bool
 
 
-initKeypad : Keypad
-initKeypad =
+init : Keypad
+init =
     List.range 0 16
         |> List.foldl (\idx -> Dict.insert idx False) Dict.empty
 

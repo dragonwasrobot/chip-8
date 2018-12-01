@@ -1,4 +1,4 @@
-module Stack exposing (Stack, initStack, pop, put)
+module Stack exposing (Stack, init, pop, put)
 
 {-| Stack
 
@@ -16,8 +16,8 @@ type alias Stack =
     Array Value16Bit
 
 
-initStack : Stack
-initStack =
+init : Stack
+init =
     let
         stackSize =
             16

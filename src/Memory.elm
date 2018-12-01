@@ -1,4 +1,4 @@
-module Memory exposing (Memory, getCell, initMemory, setCell)
+module Memory exposing (Memory, getCell, init, setCell)
 
 {-| Memory
 
@@ -19,8 +19,8 @@ type alias Memory =
     Array Value8Bit
 
 
-initMemory : Memory
-initMemory =
+init : Memory
+init =
     let
         memorySize =
             4096

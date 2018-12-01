@@ -1,10 +1,15 @@
 module View exposing (view)
 
+import Array exposing (Array)
+import Canvas exposing (Commands)
+import CanvasColor as Color
 import Dict exposing (Dict)
+import Display exposing (Cell, Display)
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (on, onClick, targetValue)
+import Html.Attributes as Attr
+import Html.Events as Events
 import Json.Decode as Decode
+import List.Extra as List
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 
@@ -17,7 +22,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ viewHeader
-        , viewCanvas
+        , viewCanvas model
         , viewGameSelector model
         , viewKeyMapping model
         ]
@@ -28,30 +33,103 @@ viewHeader =
     h1 [] [ text "CHIP-8 emulator" ]
 
 
-viewCanvas : Html Msg
-viewCanvas =
-    canvas [ id "visible-canvas" ] []
+
+{- Canvas and Drawing
+
+   The display is rendered with 10x10 pixel cells and we use a
+   bright retro green for coloring the pixels.
+
+-}
+
+
+cellSize =
+    10
+
+
+width =
+    64 * cellSize
+
+
+height =
+    32 * cellSize
+
+
+cellColor =
+    { red = 181
+    , green = 232
+    , blue = 82
+    , gray = 38
+    }
+
+
+viewCanvas : Model -> Html Msg
+viewCanvas model =
+    let
+        display =
+            model.display
+    in
+    Canvas.element
+        width
+        height
+        []
+        (Canvas.empty
+            |> Canvas.strokeStyle (Color.rgba cellColor.red cellColor.green cellColor.blue 1)
+            |> Canvas.clearRect 0 0 width height
+            |> renderDisplay display
+        )
+
+
+renderDisplay : Display -> Commands -> Commands
+renderDisplay displayCells commands =
+    displayCells
+        |> Array.toList
+        |> List.indexedFoldl renderCellRow commands
+
+
+renderCellRow : Int -> Array Bool -> Commands -> Commands
+renderCellRow rowIdx rowCells commands =
+    rowCells
+        |> Array.toList
+        |> List.indexedFoldl (renderCell rowIdx) commands
+
+
+renderCell : Int -> Int -> Bool -> Commands -> Commands
+renderCell rowIdx columnIdx cellValue commands =
+    let
+        color =
+            if cellValue == True then
+                Color.rgba cellColor.red cellColor.green cellColor.blue 1
+
+            else
+                Color.rgba cellColor.gray cellColor.gray cellColor.gray 1
+
+        ( x, y ) =
+            ( toFloat rowIdx * cellSize, toFloat columnIdx * cellSize )
+    in
+    commands
+        |> Canvas.fillStyle color
+        |> Canvas.fillRect x y cellSize cellSize
 
 
 viewGameSelector : Model -> Html Msg
 viewGameSelector model =
     let
         gameOption game =
-            option [ value game.name ] [ text game.name ]
+            option [ Attr.value game.name ] [ text game.name ]
 
         gameOptions =
-            option [ value "" ] [ text "SELECT GAME" ]
+            option [ Attr.value "" ] [ text "SELECT GAME" ]
                 :: List.map (\game -> gameOption game) model.games
     in
-    div [ id "games-container" ]
+    div [ Attr.id "games-container" ]
         [ select
-            [ id "game-selector"
+            [ Attr.id "game-selector"
             , onChange SelectGame
             ]
             gameOptions
         , button
-            [ id "game-reload"
-            , onClick ReloadGame
+            [ Attr.id "game-reload"
+            , Events.onClick ReloadGame
             ]
             [ text "Reload" ]
         ]
@@ -59,7 +137,7 @@ viewGameSelector model =
 
 onChange : (String -> msg) -> Attribute msg
 onChange tagger =
-    on "change" (Decode.map tagger targetValue)
+    Events.on "change" (Decode.map tagger Events.targetValue)
 
 
 viewKeyMapping : Model -> Html Msg
@@ -76,9 +154,9 @@ viewKeyMapping model =
         toListItems ( keyStr, keyPadValue ) acc =
             li [] [ keyStr |> prettyPrintKey |> text ] :: acc
     in
-    div [ id "key-mapping-container" ]
+    div [ Attr.id "key-mapping-container" ]
         [ h3 [] [ text "Controls" ]
-        , ul [ id "key-mapping" ]
+        , ul [ Attr.id "key-mapping" ]
             (List.foldl toListItems [] keyMapping)
         ]
 

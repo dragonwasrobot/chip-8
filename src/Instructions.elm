@@ -64,10 +64,10 @@ and their implementations.
 
 import Array exposing (Array)
 import Bitwise
-import Display exposing (initDisplay)
+import Display
 import Flags exposing (Flags)
 import Keypad
-import List.Extra exposing (indexedFoldl)
+import List.Extra as List
 import Memory
 import Model exposing (Model)
 import Msg exposing (Msg(..))
@@ -95,7 +95,7 @@ jumpSys model =
 -}
 clearDisplay : Model -> ( Model, Cmd Msg )
 clearDisplay model =
-    ( model |> Model.setDisplay initDisplay, Cmd.none )
+    ( model |> Model.setDisplay Display.init, Cmd.none )
 
 
 {-| 00EE - RET (Return from a subroutine)
@@ -649,7 +649,7 @@ displaySprite model registerX registerY n =
                     )
 
         newModel =
-            indexedFoldl
+            List.indexedFoldl
                 (\row sprite accModel ->
                     setBitsForRow
                         display
@@ -664,14 +664,12 @@ displaySprite model registerX registerY n =
                 )
                 sprites
     in
-    ( newModel
-    , newModel |> Model.getDisplay |> Display.drawDisplay
-    )
+    ( newModel, Cmd.none )
 
 
 setBitsForRow : ( Int, Int ) -> ( Int, Int ) -> Int -> List Bool -> Model -> Model
 setBitsForRow display registers row bits model =
-    indexedFoldl
+    List.indexedFoldl
         (setBitForRowColumn display registers row)
         model
         bits
