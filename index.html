@@ -179,21 +179,6 @@
              }
          };
          app.ports.playSound.subscribe(playSound);
-
-         /* Load game */
-
-         var loadGame = function(game) {
-
-             xhr = new XMLHttpRequest();
-             xhr.open('GET', 'roms/' + game, true);
-             xhr.responseType = 'arraybuffer';
-             xhr.onload = function() {
-                 var gameBytes = Array.from(new Uint8Array(xhr.response));
-                 app.ports.loadedGame.send(gameBytes);
-             };
-             xhr.send();
-         };
-         app.ports.loadGame.subscribe(loadGame);
         </script>
     </body>
 </html>

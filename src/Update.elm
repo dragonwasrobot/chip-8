@@ -1,12 +1,13 @@
-port module Update exposing (update)
-
---import Keyboard exposing (KeyCode)
+module Update exposing (update)
 
 import Array exposing (Array)
+import Bytes exposing (Bytes)
+import Bytes.Decode as Decode exposing (Decoder, Step(..))
 import Dict
 import Display
 import FetchDecodeExecuteLoop
 import Flags exposing (Flags)
+import Http exposing (Metadata, Response(..))
 import KeyCode exposing (KeyCode)
 import Keypad
 import List.Extra as List
@@ -127,7 +128,55 @@ selectGame gameName model =
     )
 
 
-port loadGame : String -> Cmd msg
+loadGame : String -> Cmd Msg
+loadGame game =
+    Http.get
+        { url = "/roms/" ++ game
+        , expect = Http.expectBytesResponse LoadedGame decodeBytesResponse
+        }
+
+
+decodeBytesResponse : Response Bytes -> Result Http.Error (Array Value8Bit)
+decodeBytesResponse response =
+    case response of
+        Http.BadUrl_ url ->
+            Err (Http.BadUrl url)
+
+        Http.Timeout_ ->
+            Err Http.Timeout
+
+        Http.NetworkError_ ->
+            Err Http.NetworkError
+
+        Http.BadStatus_ metadata body ->
+            Err (Http.BadStatus metadata.statusCode)
+
+        Http.GoodStatus_ metadata bytes ->
+            case Decode.decode (romDecoder (Bytes.width bytes)) bytes of
+                Just rom ->
+                    Ok rom
+
+                Nothing ->
+                    Err (Http.BadBody "Could not decode byte payload")
+
+
+romDecoder : Int -> Decoder (Array Value8Bit)
+romDecoder width =
+    Decode.map Array.fromList <| byteListDecoder Decode.unsignedInt8 width
+
+
+byteListDecoder : Decoder a -> Int -> Decoder (List a)
+byteListDecoder decoder width =
+    Decode.loop ( width, [] ) (listStep decoder)
+
+
+listStep : Decoder a -> ( Int, List a ) -> Decoder (Step ( Int, List a ) (List a))
+listStep decoder ( n, xs ) =
+    if n <= 0 then
+        Decode.succeed (Done (List.reverse xs))
+
+    else
+        Decode.map (\x -> Loop ( n - 1, x :: xs )) decoder
 
 
 reloadGame : Model -> ( Model, Cmd Msg )
@@ -152,32 +201,38 @@ reloadGame model =
             model |> noCmd
 
 
-readProgram : Array Value8Bit -> Model -> ( Model, Cmd Msg )
-readProgram programBytes model =
-    let
-        programStart =
-            512
+readProgram : Result Http.Error (Array Value8Bit) -> Model -> ( Model, Cmd Msg )
+readProgram programBytesResult model =
+    case programBytesResult of
+        Err error ->
+            -- TODO: Report error
+            ( model, Cmd.none )
 
-        newMemory =
-            List.indexedFoldl
-                (\idx -> Memory.setCell (programStart + idx))
-                (model |> Model.getMemory)
-                (programBytes |> Array.toList)
+        Ok programBytes ->
+            let
+                programStart =
+                    512
 
-        newRegisters =
+                newMemory =
+                    List.indexedFoldl
+                        (\idx -> Memory.setCell (programStart + idx))
+                        (model |> Model.getMemory)
+                        (programBytes |> Array.toList)
+
+                newRegisters =
+                    model
+                        |> Model.getRegisters
+                        |> Registers.setAddressRegister 0
+                        |> Registers.setProgramCounter programStart
+
+                newFlags =
+                    model |> Model.getFlags |> Flags.setRunning True
+            in
             model
-                |> Model.getRegisters
-                |> Registers.setAddressRegister 0
-                |> Registers.setProgramCounter programStart
-
-        newFlags =
-            model |> Model.getFlags |> Flags.setRunning True
-    in
-    model
-        |> Model.setMemory newMemory
-        |> Model.setRegisters newRegisters
-        |> Model.setFlags newFlags
-        |> noCmd
+                |> Model.setMemory newMemory
+                |> Model.setRegisters newRegisters
+                |> Model.setFlags newFlags
+                |> noCmd
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -204,5 +259,5 @@ update msg model =
         ReloadGame ->
             model |> reloadGame
 
-        LoadedGame gameBytes ->
-            model |> readProgram gameBytes
+        LoadedGame gameBytesResult ->
+            model |> readProgram gameBytesResult

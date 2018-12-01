@@ -1,7 +1,5 @@
 module View exposing (view)
 
--- import Keyboard exposing (KeyCode)
-
 import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)

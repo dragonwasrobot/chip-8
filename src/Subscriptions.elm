@@ -1,7 +1,5 @@
 port module Subscriptions exposing (subscriptions)
 
--- import Keyboard
-
 import Array exposing (Array)
 import Browser.Events as Events
 import Flags exposing (Flags)
@@ -22,21 +20,8 @@ subscriptions model =
         maybeGame =
             model |> Model.getSelectedGame
 
-        clockSubscriptions =
-            if
-                (flags |> Flags.isWaitingForInput)
-                    || (flags |> Flags.isRunning |> not)
-            then
-                []
-
-            else
-                [ Time.every (1000 / 600) ClockTick ]
-
-        gameSubscriptions =
-            [ loadedGame LoadedGame ]
-
         subscriptionList =
-            keyboardSubscriptions flags maybeGame ++ clockSubscriptions ++ gameSubscriptions
+            keyboardSubscriptions flags maybeGame ++ clockSubscriptions flags
     in
     Sub.batch subscriptionList
 
@@ -60,4 +45,13 @@ keyboardSubscriptions flags maybeGame =
             []
 
 
-port loadedGame : (Array Int -> msg) -> Sub msg
+clockSubscriptions : Flags -> List (Sub Msg)
+clockSubscriptions flags =
+    if
+        (flags |> Flags.isWaitingForInput)
+            || (flags |> Flags.isRunning |> not)
+    then
+        []
+
+    else
+        [ Time.every (1000 / 600) ClockTick ]
