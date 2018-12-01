@@ -1,12 +1,11 @@
-port module Timers
-    exposing
-        ( Timers
-        , initTimers
-        , startDelayTimer
-        , tick
-        , playSound
-        , initDelay
-        )
+port module Timers exposing
+    ( Timers
+    , init
+    , initDelay
+    , playSound
+    , startDelayTimer
+    , tick
+    )
 
 {-| Timers and Sounds
 
@@ -18,8 +17,8 @@ port module Timers
 
 -}
 
-import Registers exposing (Registers)
 import Msg exposing (Msg(..))
+import Registers exposing (Registers)
 import Utils exposing (setTimeout)
 
 
@@ -55,8 +54,8 @@ type alias Timers =
     { delay : Delay }
 
 
-initTimers : Timers
-initTimers =
+init : Timers
+init =
     { delay = initDelay }
 
 
@@ -76,13 +75,17 @@ startDelayTimer : Registers -> Timers -> ( ( Registers, Timers ), Cmd Msg )
 startDelayTimer registers timers =
     if not (timers |> getDelay |> isRunning) then
         let
+            flip f a b =
+                f b a
+
             updatedTimers =
                 timers
                     |> getDelay
                     |> setRunning True
                     |> (setDelay |> flip) timers
         in
-            tick registers updatedTimers
+        tick registers updatedTimers
+
     else
         ( ( registers, timers ), Cmd.none )
 
@@ -98,14 +101,15 @@ tick registers timers =
         delayTimer =
             registers |> Registers.getDelayTimer
     in
-        if isRunning delay && delayTimer > 0 then
-            ( ( registers |> Registers.setDelayTimer (delayTimer - 1), timers )
-            , setTimeout delay.tickLength DelayTick
-            )
-        else
-            ( ( registers, setDelay (setRunning False delay) timers )
-            , Cmd.none
-            )
+    if isRunning delay && delayTimer > 0 then
+        ( ( registers |> Registers.setDelayTimer (delayTimer - 1), timers )
+        , setTimeout delay.tickLength DelayTick
+        )
+
+    else
+        ( ( registers, setDelay (setRunning False delay) timers )
+        , Cmd.none
+        )
 
 
 {-| Start playing the sound

@@ -1,4 +1,42 @@
-module Instructions exposing (..)
+module Instructions exposing
+    ( addToAddressRegister
+    , addToRegister
+    , callSubroutine
+    , clearDisplay
+    , displaySprite
+    , hexToBitPattern
+    , jumpAbsolute
+    , jumpRelative
+    , jumpSys
+    , readRegistersFromAddressRegister
+    , returnFromSubroutine
+    , setAddressRegisterToConstant
+    , setAddressRegisterToSpriteLocation
+    , setBit
+    , setDelayTimerToRegisterValue
+    , setRegisterAdd
+    , setRegisterAnd
+    , setRegisterOr
+    , setRegisterRandom
+    , setRegisterShiftLeft
+    , setRegisterShiftRight
+    , setRegisterSub
+    , setRegisterSubFlipped
+    , setRegisterToConstant
+    , setRegisterToDelayTimer
+    , setRegisterToRegister
+    , setRegisterXor
+    , setSoundTimerToRegisterValue
+    , skipNextIfEqualConstant
+    , skipNextIfKeyNotPressed
+    , skipNextIfKeyPressed
+    , skipNextIfNotEqualConstant
+    , skipNextIfRegistersEqual
+    , skipNextIfRegistersNotEqual
+    , storeBcdOfRegister
+    , storeRegistersAtAddressRegister
+    , waitForKeyPress
+    )
 
 {-| Instructions
 
@@ -26,19 +64,19 @@ and their implementations.
 
 import Array exposing (Array)
 import Bitwise
-import Display exposing (initDisplay)
+import Display
 import Flags exposing (Flags)
 import Keypad
-import List.Extra exposing (indexedFoldl)
-import Model exposing (Model)
+import List.Extra as List
 import Memory
-import Stack
-import Registers
+import Model exposing (Model)
 import Msg exposing (Msg(..))
 import ParseInt
 import Random
+import Registers exposing (Registers)
+import Stack
 import Timers
-import Types exposing (Value4Bit, Value8Bit, Value12Bit, Value16Bit)
+import Types exposing (Value12Bit, Value16Bit, Value4Bit, Value8Bit)
 import Utils exposing (noCmd)
 
 
@@ -57,7 +95,7 @@ jumpSys model =
 -}
 clearDisplay : Model -> ( Model, Cmd Msg )
 clearDisplay model =
-    ( model |> Model.setDisplay initDisplay, Cmd.none )
+    ( model |> Model.setDisplay Display.init, Cmd.none )
 
 
 {-| 00EE - RET (Return from a subroutine)
@@ -81,7 +119,7 @@ returnFromSubroutine model =
                 |> Registers.setProgramCounter addressAtTopOfStack
                 |> Registers.decrementStackPointer
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 1nnn - JP addr (Jump to location nnn)
@@ -98,7 +136,7 @@ jumpAbsolute model location =
                 |> Registers.setProgramCounter location
                 |> Registers.decrementProgramCounter
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 2nnn - CALL addr (Call subroutine at nnn)
@@ -127,9 +165,9 @@ callSubroutine model location =
                     (Registers.getStackPointer newRegisters)
                     oldProgramCounter
     in
-        ( model |> Model.setRegisters newRegisters |> Model.setStack newStack
-        , Cmd.none
-        )
+    ( model |> Model.setRegisters newRegisters |> Model.setStack newStack
+    , Cmd.none
+    )
 
 
 {-| 3xkk - SE Vx, byte (Skip next instruction if Vx = kk)
@@ -147,10 +185,11 @@ skipNextIfEqualConstant model register byte =
         newRegisters =
             if registerValue == byte then
                 model |> Model.getRegisters |> Registers.incrementProgramCounter
+
             else
                 model |> Model.getRegisters
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 4xkk - SNE Vx, byte (Skip next instruction if Vx != kk)
@@ -168,10 +207,11 @@ skipNextIfNotEqualConstant model register value =
         newRegisters =
             if registerValue /= value then
                 model |> Model.getRegisters |> Registers.incrementProgramCounter
+
             else
                 model |> Model.getRegisters
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 5xy0 - SE Vx, Vy (Skip next instruction if Vx = Vy)
@@ -192,10 +232,11 @@ skipNextIfRegistersEqual model registerX registerY =
         newRegisters =
             if registerValueX == registerValueY then
                 model |> Model.getRegisters |> Registers.incrementProgramCounter
+
             else
                 model |> Model.getRegisters
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 6xkk - LD Vx, byte (Set Vx = kk)
@@ -211,7 +252,7 @@ setRegisterToConstant model register value =
                 |> Model.getRegisters
                 |> Registers.setDataRegister register value
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 7xkk - ADD Vx, byte (Set Vx = Vx + kk)
@@ -226,14 +267,14 @@ addToRegister model register value =
             model |> Model.getRegisters |> Registers.getDataRegister register
 
         newRegisterValue =
-            (currentRegisterValue + value) % 256
+            modBy 256 (currentRegisterValue + value)
 
         newRegisters =
             model
                 |> Model.getRegisters
                 |> Registers.setDataRegister register newRegisterValue
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy0 - LD Vx, Vy (Set Vx = Vy)
@@ -252,7 +293,7 @@ setRegisterToRegister model registerX registerY =
                 |> Model.getRegisters
                 |> Registers.setDataRegister registerX newRegisterXValue
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy1 - OR Vx, Vy (Set Vx = Vx OR Vy)
@@ -277,7 +318,7 @@ setRegisterOr model registerX registerY =
                     registerX
                     (Bitwise.or registerXValue registerYValue)
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy2 - AND Vx, Vy (Set Vx = Vx AND Vy)
@@ -302,7 +343,7 @@ setRegisterAnd model registerX registerY =
                     registerX
                     (Bitwise.and registerXValue registerYValue)
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy3 - XOR Vx, Vy (Set Vx = Vx XOR Vy)
@@ -327,7 +368,7 @@ setRegisterXor model registerX registerY =
                     registerX
                     (Bitwise.xor registerXValue registerYValue)
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy4 - ADD Vx, Vy (Set Vx = Vx + Vy, set VF = carry)
@@ -352,16 +393,17 @@ setRegisterAdd model registerX registerY =
         carryValue =
             if registerSum > 255 then
                 1
+
             else
                 0
 
         newRegisters =
             model
                 |> Model.getRegisters
-                |> Registers.setDataRegister registerX (registerSum % 256)
+                |> Registers.setDataRegister registerX (modBy 256 registerSum)
                 |> Registers.setDataRegister 15 carryValue
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy5 - SUB Vx, Vy (Set Vx = Vx - Vy, set VF = NOT borrow)
@@ -382,12 +424,14 @@ setRegisterSub model registerX registerY =
         carryValue =
             if registerXValue > registerYValue then
                 1
+
             else
                 0
 
         newRegisterValue =
             if registerXValue - registerYValue < 0 then
                 registerXValue - registerYValue + 256
+
             else
                 registerXValue - registerYValue
 
@@ -397,7 +441,7 @@ setRegisterSub model registerX registerY =
                 |> Registers.setDataRegister registerX newRegisterValue
                 |> Registers.setDataRegister 15 carryValue
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy6 - SHR Vx (Set Vx = Vx SHR 1)
@@ -415,10 +459,10 @@ setRegisterShiftRight model registerX =
         newRegisters =
             model
                 |> Model.getRegisters
-                |> Registers.setDataRegister 15 (registerXValue % 2)
+                |> Registers.setDataRegister 15 (modBy 2 registerXValue)
                 |> Registers.setDataRegister registerX (registerXValue // 2)
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xy7 - SUBN Vx, Vy (Set Vx = Vy - Vx, set VF = NOT borrow)
@@ -439,12 +483,14 @@ setRegisterSubFlipped model registerX registerY =
         carryValue =
             if registerYValue > registerXValue then
                 1
+
             else
                 0
 
         newRegisterValue =
             if registerYValue - registerXValue < 0 then
                 registerYValue - registerXValue + 256
+
             else
                 registerYValue - registerXValue
 
@@ -454,7 +500,7 @@ setRegisterSubFlipped model registerX registerY =
                 |> Registers.setDataRegister registerX newRegisterValue
                 |> Registers.setDataRegister 15 carryValue
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 8xyE - SHL Vx (Set Vx = Vx SHL 1)
@@ -473,7 +519,7 @@ setRegisterShiftLeft model registerX =
             Bitwise.shiftRightBy 7 registerXValue
 
         newRegisterValue =
-            (registerXValue * 2) % 256
+            modBy 256 (registerXValue * 2)
 
         newRegisters =
             model
@@ -481,7 +527,7 @@ setRegisterShiftLeft model registerX =
                 |> Registers.setDataRegister 15 carryValue
                 |> Registers.setDataRegister registerX newRegisterValue
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| 9xy0 - SNE Vx, Vy (Skip next instruction if Vx != Vy)
@@ -502,10 +548,11 @@ skipNextIfRegistersNotEqual model registerX registerY =
         newRegisters =
             if registerXValue /= registerYValue then
                 model |> Model.getRegisters |> Registers.incrementProgramCounter
+
             else
                 model |> Model.getRegisters
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| Annn - LD I, addr (Set I = nnn)
@@ -519,7 +566,7 @@ setAddressRegisterToConstant model location =
         newRegisters =
             model |> Model.getRegisters |> Registers.setAddressRegister location
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| Bnnn - JP V0, addr (Jump to location nnn + V0)
@@ -539,7 +586,7 @@ jumpRelative model location =
                 |> Model.getRegisters
                 |> Registers.setProgramCounter newProgramCounter
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| Cxkk - RND Vx, byte (Set Vx = random byte AND kk)
@@ -562,11 +609,11 @@ setRegisterRandom model registerX value =
                     registerX
                     (Bitwise.and random value)
     in
-        ( model
-            |> Model.setRegisters newRegisters
-            |> Model.setRandomSeed newSeed
-        , Cmd.none
-        )
+    ( model
+        |> Model.setRegisters newRegisters
+        |> Model.setRandomSeed newSeed
+    , Cmd.none
+    )
 
 
 {-| Dxyn - DRW Vx, Vy, nibble (Display n-byte sprite)
@@ -585,7 +632,7 @@ setRegisterRandom model registerX value =
 displaySprite : Model -> Int -> Int -> Value4Bit -> ( Model, Cmd Msg )
 displaySprite model registerX registerY n =
     let
-        ( displayWidth, displayHeight ) =
+        display =
             ( 64, 32 )
 
         addressRegister =
@@ -601,37 +648,15 @@ displaySprite model registerX registerY n =
                             (model |> Model.getMemory)
                     )
 
-        calculatePosition registers register idx max =
-            ((registers |> Registers.getDataRegister register) + idx) % max
-
-        setBitForRowColumn : Int -> Int -> Bool -> Model -> Model
-        setBitForRowColumn row column bit model =
-            setBit
-                (calculatePosition
-                    (model |> Model.getRegisters)
-                    registerX
-                    column
-                    displayWidth
-                )
-                (calculatePosition
-                    (model |> Model.getRegisters)
-                    registerY
-                    row
-                    displayHeight
-                )
-                bit
-                model
-
-        setBitsForRow row bits model =
-            indexedFoldl
-                (setBitForRowColumn row)
-                model
-                bits
-
         newModel =
-            indexedFoldl
+            List.indexedFoldl
                 (\row sprite accModel ->
-                    setBitsForRow row (hexToBitPattern sprite) accModel
+                    setBitsForRow
+                        display
+                        ( registerX, registerY )
+                        row
+                        (hexToBitPattern sprite)
+                        accModel
                 )
                 (model
                     |> Model.setRegisters
@@ -639,9 +664,39 @@ displaySprite model registerX registerY n =
                 )
                 sprites
     in
-        ( newModel
-        , newModel |> Model.getDisplay |> Display.drawDisplay
+    ( newModel, Cmd.none )
+
+
+setBitsForRow : ( Int, Int ) -> ( Int, Int ) -> Int -> List Bool -> Model -> Model
+setBitsForRow display registers row bits model =
+    List.indexedFoldl
+        (setBitForRowColumn display registers row)
+        model
+        bits
+
+
+setBitForRowColumn : ( Int, Int ) -> ( Int, Int ) -> Int -> Int -> Bool -> Model -> Model
+setBitForRowColumn ( displayWidth, displayHeight ) ( registerX, registerY ) row column bit model =
+    setBit
+        (calculatePosition
+            (model |> Model.getRegisters)
+            registerX
+            column
+            displayWidth
         )
+        (calculatePosition
+            (model |> Model.getRegisters)
+            registerY
+            row
+            displayHeight
+        )
+        bit
+        model
+
+
+calculatePosition : Registers -> Int -> Int -> Int -> Int
+calculatePosition registers register idx max =
+    modBy max ((registers |> Registers.getDataRegister register) + idx)
 
 
 setBit : Int -> Int -> Bool -> Model -> Model
@@ -659,18 +714,21 @@ setBit x y newBitValue model =
         newCarry =
             if carry == 0 && oldBitValue == True && newBitValue == True then
                 1
+
             else
                 carry
 
         newX =
             if x > displayWidth - 1 then
                 x - displayWidth
+
             else
                 x
 
         newY =
             if y > displayHeight - 1 then
                 y - displayHeight
+
             else
                 y
 
@@ -688,9 +746,9 @@ setBit x y newBitValue model =
                     , value = xor oldBitValue newBitValue
                     }
     in
-        model
-            |> Model.setRegisters newRegisters
-            |> Model.setDisplay newDisplay
+    model
+        |> Model.setRegisters newRegisters
+        |> Model.setDisplay newDisplay
 
 
 {-| Converts a string to its bit pattern as a list of bools
@@ -709,15 +767,15 @@ hexToBitPattern number =
             "00000000"
 
         binaryString =
-            paddingByte ++ (ParseInt.toRadixUnsafe radix number)
+            paddingByte ++ ParseInt.toRadixUnsafe radix number
 
         trimmedString =
             binaryString |> String.dropLeft (String.length binaryString - 8)
     in
-        trimmedString
-            |> String.toList
-            |> List.map (ParseInt.intFromChar radix)
-            |> List.map (Result.toMaybe >> Maybe.withDefault 0 >> (\x -> x > 0))
+    trimmedString
+        |> String.toList
+        |> List.map (ParseInt.intFromChar radix)
+        |> List.map (Result.toMaybe >> Maybe.withDefault 0 >> (\x -> x > 0))
 
 
 {-| Ex9E - SKP Vx (Skip next instruction if key code of value Vx is pressed)
@@ -738,10 +796,11 @@ skipNextIfKeyPressed model registerX =
         newRegisters =
             if List.member registerXValue keysPressed then
                 model |> Model.getRegisters |> Registers.incrementProgramCounter
+
             else
                 model |> Model.getRegisters
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| ExA1 - SKNP Vx (Skip next instruction if key code of value Vx isn't pressed)
@@ -762,10 +821,11 @@ skipNextIfKeyNotPressed model registerX =
         newRegisters =
             if not <| List.member registerXValue keysPressed then
                 model |> Model.getRegisters |> Registers.incrementProgramCounter
+
             else
                 model |> Model.getRegisters
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| Fx07 - LD Vx, DT (Set Vx = delay timer value)
@@ -784,7 +844,7 @@ setRegisterToDelayTimer model registerX =
                 |> Model.getRegisters
                 |> Registers.setDataRegister registerX delayTimer
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| Fx0A - LD Vx, K (Wait for a key press)
@@ -803,9 +863,9 @@ waitForKeyPress model registerX =
                 |> Model.getFlags
                 |> Flags.setWaitingForInputRegister (Just registerX)
     in
-        model
-            |> Model.setFlags newFlags
-            |> noCmd
+    model
+        |> Model.setFlags newFlags
+        |> noCmd
 
 
 {-| Fx15 - LD DT, Vx (Set delay timer = Vx)
@@ -827,9 +887,9 @@ setDelayTimerToRegisterValue model registerX =
                 )
                 (model |> Model.getTimers)
     in
-        ( model |> Model.setTimers newTimers |> Model.setRegisters newRegisters
-        , cmd
-        )
+    ( model |> Model.setTimers newTimers |> Model.setRegisters newRegisters
+    , cmd
+    )
 
 
 {-| Fx18 - LD ST, Vx (Set sound timer = Vx)
@@ -846,9 +906,9 @@ setSoundTimerToRegisterValue model registerX =
         cmd =
             Timers.playSound newSoundTimer
     in
-        ( model
-        , cmd
-        )
+    ( model
+    , cmd
+    )
 
 
 {-| Fx1E - ADD I, Vx (Set I = I + Vx)
@@ -876,7 +936,7 @@ addToAddressRegister model registerX =
                 |> Model.getRegisters
                 |> Registers.setAddressRegister newAddressRegister
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| Fx29 - LD F, Vx (Set I = location of sprite for digit Vx)
@@ -899,7 +959,7 @@ setAddressRegisterToSpriteLocation model registerX =
                 |> Model.getRegisters
                 |> Registers.setAddressRegister (registerXValue * 5)
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )
 
 
 {-| Fx33 - LD B, Vx (Store BCD representation of Vx)
@@ -928,12 +988,12 @@ storeBcdOfRegister model registerX =
                     (registerXValue // 100)
                 |> Memory.setCell
                     (addressRegister + 1)
-                    ((registerXValue % 100) // 10)
+                    (modBy 100 registerXValue // 10)
                 |> Memory.setCell
                     (addressRegister + 2)
-                    (registerXValue % 10)
+                    (modBy 10 registerXValue)
     in
-        ( model |> Model.setMemory newMemory, Cmd.none )
+    ( model |> Model.setMemory newMemory, Cmd.none )
 
 
 {-| Fx55 - LD [I], Vx (Store registers V0 through Vx in memory)
@@ -963,7 +1023,7 @@ storeRegistersAtAddressRegister model registerX =
                 (model |> Model.getMemory)
                 (List.range 0 registerX)
     in
-        ( model |> Model.setMemory newMemory, Cmd.none )
+    ( model |> Model.setMemory newMemory, Cmd.none )
 
 
 {-| Fx65 - LD Vx, [I] (Read registers V0 through Vx from memory)
@@ -993,4 +1053,4 @@ readRegistersFromAddressRegister model registerX =
                 (model |> Model.getRegisters)
                 (List.range 0 registerX)
     in
-        ( model |> Model.setRegisters newRegisters, Cmd.none )
+    ( model |> Model.setRegisters newRegisters, Cmd.none )

@@ -1,76 +1,62 @@
-port module Update exposing (update)
+module Update exposing (update)
 
 import Array exposing (Array)
-import FetchDecodeExecuteLoop
 import Dict
 import Display
+import FetchDecodeExecuteLoop
 import Flags exposing (Flags)
-import List.Extra exposing (find, indexedFoldl)
-import Keyboard exposing (KeyCode)
+import Http
+import KeyCode exposing (KeyCode)
 import Keypad
+import List.Extra as List
 import Memory
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Registers exposing (Registers)
+import Request
 import Timers
 import Types exposing (Value8Bit)
 import Utils exposing (noCmd)
 
 
-addKeyCode : KeyCode -> Model -> ( Model, Cmd Msg )
-addKeyCode keyCode model =
-    case model |> Model.getSelectedGame of
-        Just game ->
+addKeyCode : Maybe KeyCode -> Model -> ( Model, Cmd Msg )
+addKeyCode maybeKeyCode model =
+    case maybeKeyCode of
+        Just keyCode ->
             let
                 newKeypad =
                     model
                         |> Model.getKeypad
-                        |> Keypad.addKeyPress
-                            keyCode
-                            game.controls
+                        |> Keypad.addKeyPress keyCode
             in
-                model
-                    |> Model.setKeypad newKeypad
-                    |> checkIfWaitingForKeyPress keyCode
+            model
+                |> Model.setKeypad newKeypad
+                |> checkIfWaitingForKeyPress keyCode
+
+        _ ->
+            ( model, Cmd.none )
+
+
+removeKeyCode : Maybe KeyCode -> Model -> ( Model, Cmd Msg )
+removeKeyCode maybeKeyCode model =
+    case maybeKeyCode of
+        Just keyCode ->
+            let
+                newKeypad =
+                    model
+                        |> Model.getKeypad
+                        |> Keypad.removeKeyPress keyCode
+            in
+            model |> Model.setKeypad newKeypad |> noCmd
 
         Nothing ->
-            model
-                |> noCmd
-
-
-removeKeyCode : KeyCode -> Model -> ( Model, Cmd Msg )
-removeKeyCode keyCode model =
-    model
-        |> Model.getSelectedGame
-        |> Maybe.map
-            (\game ->
-                let
-                    newKeypad =
-                        model
-                            |> Model.getKeypad
-                            |> Keypad.removeKeyPress
-                                keyCode
-                                game.controls
-                in
-                    model
-                        |> Model.setKeypad newKeypad
-            )
-        |> Maybe.withDefault model
-        |> noCmd
+            ( model, Cmd.none )
 
 
 checkIfWaitingForKeyPress : KeyCode -> Model -> ( Model, Cmd Msg )
 checkIfWaitingForKeyPress keyCode model =
-    case
-        ( model
-            |> Model.getFlags
-            |> Flags.getWaitingForInputRegister
-        , model
-            |> Model.getSelectedGame
-            |> Maybe.andThen (.controls >> Dict.get keyCode)
-        )
-    of
-        ( Just registerX, Just chip8KeyCode ) ->
+    case model |> Model.getFlags |> Flags.getWaitingForInputRegister of
+        Just registerX ->
             let
                 newFlags =
                     model
@@ -80,12 +66,12 @@ checkIfWaitingForKeyPress keyCode model =
                 newRegisters =
                     model
                         |> Model.getRegisters
-                        |> Registers.setDataRegister registerX chip8KeyCode
+                        |> Registers.setDataRegister registerX (KeyCode.nibbleValue keyCode)
             in
-                model
-                    |> Model.setFlags newFlags
-                    |> Model.setRegisters newRegisters
-                    |> noCmd
+            model
+                |> Model.setFlags newFlags
+                |> Model.setRegisters newRegisters
+                |> noCmd
 
         _ ->
             model
@@ -100,11 +86,11 @@ delayTick model =
                 (model |> Model.getRegisters)
                 (model |> Model.getTimers)
     in
-        ( model
-            |> Model.setRegisters newRegisters
-            |> Model.setTimers newTimers
-        , cmd
-        )
+    ( model
+        |> Model.setRegisters newRegisters
+        |> Model.setTimers newTimers
+    , cmd
+    )
 
 
 clockTick : Model -> ( Model, Cmd Msg )
@@ -122,25 +108,28 @@ clockTick model =
         speed =
             2
     in
-        if running == True && waitingForInput == False then
-            model |> FetchDecodeExecuteLoop.tick speed
-        else
-            ( model, Cmd.none )
+    if running == True && waitingForInput == False then
+        model |> FetchDecodeExecuteLoop.tick speed
+
+    else
+        ( model, Cmd.none )
 
 
 selectGame : String -> Model -> ( Model, Cmd Msg )
 selectGame gameName model =
     let
         selectedGame =
-            find (.name >> (==) gameName) model.games
+            List.find (.name >> (==) gameName) model.games
     in
-        ( Model.initModel
-            |> Model.setSelectedGame selectedGame
-        , loadGame gameName
-        )
+    ( Model.initModel
+        |> Model.setSelectedGame selectedGame
+    , loadGame gameName
+    )
 
 
-port loadGame : String -> Cmd msg
+loadGame : String -> Cmd Msg
+loadGame gameName =
+    Request.fetchRom gameName LoadedGame
 
 
 reloadGame : Model -> ( Model, Cmd Msg )
@@ -154,68 +143,69 @@ reloadGame model =
                 ( newModel, cmd ) =
                     selectGame game.name freshModel
             in
-                ( newModel
-                , Cmd.batch
-                    [ freshModel |> Model.getDisplay |> Display.drawDisplay
-                    , cmd
-                    ]
-                )
+            ( newModel, cmd )
 
         Nothing ->
             model |> noCmd
 
 
-readProgram : Array Value8Bit -> Model -> ( Model, Cmd Msg )
-readProgram programBytes model =
-    let
-        programStart =
-            512
+readProgram : Result Http.Error (Array Value8Bit) -> Model -> ( Model, Cmd Msg )
+readProgram programBytesResult model =
+    case programBytesResult of
+        Err error ->
+            -- TODO: Report error
+            ( model, Cmd.none )
 
-        newMemory =
-            indexedFoldl
-                (\idx val acc -> Memory.setCell (programStart + idx) val acc)
-                (model |> Model.getMemory)
-                (programBytes |> Array.toList)
+        Ok programBytes ->
+            let
+                programStart =
+                    512
 
-        newRegisters =
+                newMemory =
+                    List.indexedFoldl
+                        (\idx -> Memory.setCell (programStart + idx))
+                        (model |> Model.getMemory)
+                        (programBytes |> Array.toList)
+
+                newRegisters =
+                    model
+                        |> Model.getRegisters
+                        |> Registers.setAddressRegister 0
+                        |> Registers.setProgramCounter programStart
+
+                newFlags =
+                    model |> Model.getFlags |> Flags.setRunning True
+            in
             model
-                |> Model.getRegisters
-                |> Registers.setAddressRegister 0
-                |> Registers.setProgramCounter programStart
-
-        newFlags =
-            model |> Model.getFlags |> Flags.setRunning True
-    in
-        model
-            |> Model.setMemory newMemory
-            |> Model.setRegisters newRegisters
-            |> Model.setFlags newFlags
-            |> noCmd
+                |> Model.setMemory newMemory
+                |> Model.setRegisters newRegisters
+                |> Model.setFlags newFlags
+                |> noCmd
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        KeyDown keyCode ->
-            addKeyCode keyCode model
+        KeyDown maybeKeyCode ->
+            model |> addKeyCode maybeKeyCode
 
-        KeyUp keyCode ->
-            removeKeyCode keyCode model
+        KeyUp maybeKeyCode ->
+            model |> removeKeyCode maybeKeyCode
 
         KeyPress keyCode ->
             model |> noCmd
 
         DelayTick ->
-            delayTick model
+            model |> delayTick
 
         ClockTick _ ->
-            clockTick model
+            model |> clockTick
 
         SelectGame gameName ->
-            selectGame gameName model
+            model |> selectGame gameName
 
         ReloadGame ->
-            reloadGame model
+            model |> reloadGame
 
-        LoadedGame gameBytes ->
-            readProgram gameBytes model
+        LoadedGame gameBytesResult ->
+            model |> readProgram gameBytesResult

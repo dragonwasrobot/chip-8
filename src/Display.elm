@@ -1,11 +1,4 @@
-port module Display
-    exposing
-        ( Display
-        , initDisplay
-        , drawDisplay
-        , getCell
-        , setCell
-        )
+module Display exposing (Cell, Display, getCell, init, setCell)
 
 import Array exposing (Array)
 
@@ -20,23 +13,15 @@ type alias Display =
     Array (Array Bool)
 
 
-initDisplay : Display
-initDisplay =
+init : Display
+init =
     let
         ( width, height ) =
             ( 64, 32 )
     in
-        Array.initialize
-            width
-            (\_ -> Array.initialize height (\_ -> False))
-
-
-drawDisplay : Display -> Cmd msg
-drawDisplay =
-    drawCells
-
-
-port drawCells : Array (Array Bool) -> Cmd msg
+    Array.initialize
+        width
+        (\_ -> Array.initialize height (\_ -> False))
 
 
 type alias Cell =
@@ -55,10 +40,10 @@ getCell display column row =
                 |> Maybe.andThen (Array.get row)
                 |> Maybe.withDefault False
     in
-        { column = column
-        , row = row
-        , value = value
-        }
+    { column = column
+    , row = row
+    , value = value
+    }
 
 
 setCell : Cell -> Display -> Display
@@ -68,6 +53,6 @@ setCell cell display =
             display
                 |> Array.get cell.column
                 |> Maybe.map (Array.set cell.row cell.value)
-                |> Maybe.withDefault (Array.empty)
+                |> Maybe.withDefault Array.empty
     in
-        Array.set cell.column updatedColumn display
+    Array.set cell.column updatedColumn display

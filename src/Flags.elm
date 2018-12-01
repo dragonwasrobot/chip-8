@@ -1,13 +1,12 @@
-module Flags
-    exposing
-        ( Flags
-        , initFlags
-        , isWaitingForInput
-        , getWaitingForInputRegister
-        , setWaitingForInputRegister
-        , isRunning
-        , setRunning
-        )
+module Flags exposing
+    ( Flags
+    , getWaitingForInputRegister
+    , init
+    , isRunning
+    , isWaitingForInput
+    , setRunning
+    , setWaitingForInputRegister
+    )
 
 import Types exposing (Value8Bit)
 
@@ -24,8 +23,8 @@ type alias Flags =
     }
 
 
-initFlags : Flags
-initFlags =
+init : Flags
+init =
     { waitingForInputRegister = Nothing
     , running = False
     }

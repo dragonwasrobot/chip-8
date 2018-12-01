@@ -1,23 +1,22 @@
-module Registers
-    exposing
-        ( Registers
-        , initRegisters
-        , getAddressRegister
-        , setAddressRegister
-        , getDataRegister
-        , setDataRegister
-        , getDelayTimer
-        , setDelayTimer
-        , getSoundTimer
-        , setSoundTimer
-        , getProgramCounter
-        , setProgramCounter
-        , decrementProgramCounter
-        , incrementProgramCounter
-        , getStackPointer
-        , incrementStackPointer
-        , decrementStackPointer
-        )
+module Registers exposing
+    ( Registers
+    , decrementProgramCounter
+    , decrementStackPointer
+    , getAddressRegister
+    , getDataRegister
+    , getDelayTimer
+    , getProgramCounter
+    , getSoundTimer
+    , getStackPointer
+    , incrementProgramCounter
+    , incrementStackPointer
+    , init
+    , setAddressRegister
+    , setDataRegister
+    , setDelayTimer
+    , setProgramCounter
+    , setSoundTimer
+    )
 
 {-| Registers
 
@@ -38,7 +37,7 @@ The program counter (PC, 16-bit) and stack pointer (SP, 8-bit).
 -}
 
 import Array exposing (Array)
-import Types exposing (Value8Bit, Value16Bit)
+import Types exposing (Value16Bit, Value8Bit)
 
 
 type alias DataRegisters =
@@ -51,7 +50,7 @@ initDataRegisters =
         registerCount =
             16
     in
-        Array.initialize registerCount (\_ -> 0)
+    Array.initialize registerCount (\_ -> 0)
 
 
 type alias Registers =
@@ -64,8 +63,8 @@ type alias Registers =
     }
 
 
-initRegisters : Registers
-initRegisters =
+init : Registers
+init =
     { dataRegisters = initDataRegisters
     , addressRegister = 0
     , delayTimer = 0
@@ -78,7 +77,8 @@ initRegisters =
 getDataRegister : Int -> Registers -> Value16Bit
 getDataRegister index registers =
     if index > 15 then
-        Debug.crash ("Data register index out of bounds: " ++ toString index)
+        Debug.todo ("Data register index out of bounds: " ++ String.fromInt index)
+
     else
         registers.dataRegisters |> Array.get index |> Maybe.withDefault 0
 
@@ -89,10 +89,11 @@ setDataRegister index value registers =
         updatedDataRegisters =
             registers.dataRegisters |> Array.set index value
     in
-        if index > 15 then
-            Debug.crash "Register index out of bounds"
-        else
-            { registers | dataRegisters = updatedDataRegisters }
+    if index > 15 then
+        Debug.todo "Register index out of bounds"
+
+    else
+        { registers | dataRegisters = updatedDataRegisters }
 
 
 getAddressRegister : Registers -> Value16Bit

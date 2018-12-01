@@ -1,11 +1,10 @@
-module Keypad
-    exposing
-        ( Keypad
-        , initKeypad
-        , addKeyPress
-        , removeKeyPress
-        , getKeysPressed
-        )
+module Keypad exposing
+    ( Keypad
+    , addKeyPress
+    , getKeysPressed
+    , init
+    , removeKeyPress
+    )
 
 {-| Keypad
 
@@ -26,19 +25,16 @@ We create a specific mapping per game, since the 16-key keypad is unusual.
 
 -}
 
-import Games exposing (KeyMapping)
 import Dict exposing (Dict)
-import Flags exposing (Flags)
-import Registers exposing (Registers)
-import Keyboard exposing (KeyCode)
+import KeyCode exposing (KeyCode)
 
 
 type alias Keypad =
-    Dict KeyCode Bool
+    Dict Int Bool
 
 
-initKeypad : Keypad
-initKeypad =
+init : Keypad
+init =
     List.range 0 16
         |> List.foldl (\idx -> Dict.insert idx False) Dict.empty
 
@@ -47,29 +43,19 @@ initKeypad =
 {- Keyboard events -}
 
 
-addKeyPress : KeyCode -> KeyMapping -> Keypad -> Keypad
-addKeyPress keyCode keyMapping keysPressed =
-    case Dict.get keyCode keyMapping of
-        Just chip8KeyCode ->
-            keysPressed
-                |> Dict.insert chip8KeyCode True
-
-        Nothing ->
-            keysPressed
+addKeyPress : KeyCode -> Keypad -> Keypad
+addKeyPress keyCode keysPressed =
+    keysPressed
+        |> Dict.insert (KeyCode.nibbleValue keyCode) True
 
 
-removeKeyPress : KeyCode -> KeyMapping -> Keypad -> Keypad
-removeKeyPress keyCode keyMapping keysPressed =
-    case Dict.get keyCode keyMapping of
-        Just chip8KeyCode ->
-            keysPressed
-                |> Dict.insert chip8KeyCode False
-
-        Nothing ->
-            keysPressed
+removeKeyPress : KeyCode -> Keypad -> Keypad
+removeKeyPress keyCode keysPressed =
+    keysPressed
+        |> Dict.insert (KeyCode.nibbleValue keyCode) False
 
 
-getKeysPressed : Keypad -> List KeyCode
+getKeysPressed : Keypad -> List Int
 getKeysPressed keyPad =
     keyPad
         |> Dict.toList

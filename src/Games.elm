@@ -1,4 +1,4 @@
-module Games exposing (KeyMapping, Game, initGames)
+module Games exposing (Game, init)
 
 {-| Games
 
@@ -8,13 +8,7 @@ emulator.
 -}
 
 import Dict exposing (Dict)
-import Keyboard exposing (KeyCode)
-
-
-{-| Mapping from standard keyboard codes to CHIP-8 keypad codes
--}
-type alias KeyMapping =
-    Dict KeyCode Int
+import KeyCode exposing (KeyCode(..), KeyMapping)
 
 
 type alias Game =
@@ -47,126 +41,126 @@ blinky : Game
 blinky =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 37 7
-                |> Dict.insert 38 3
-                |> Dict.insert 39 8
-                |> Dict.insert 40 6
+            [ ( "ArrowLeft", KeyCode 7 )
+            , ( "ArrowRight", KeyCode 8 )
+            , ( "ArrowUp", KeyCode 3 )
+            , ( "ArrowDown", KeyCode 6 )
+            ]
     in
-        { name = "BLINKY"
-        , controls = controls
-        }
+    { name = "BLINKY"
+    , controls = controls
+    }
 
 
 brix : Game
 brix =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 37 4
-                |> Dict.insert 39 6
+            [ ( "ArrowLeft", KeyCode 4 )
+            , ( "ArrowRight", KeyCode 6 )
+            ]
     in
-        { name = "BRIX"
-        , controls = controls
-        }
+    { name = "BRIX"
+    , controls = controls
+    }
 
 
 connect4 : Game
 connect4 =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 37 4
-                |> Dict.insert 32 5
-                |> Dict.insert 39 6
+            [ ( "ArrowLeft", KeyCode 4 )
+            , ( "ArrowRight", KeyCode 6 )
+            , ( " ", KeyCode 5 )
+            ]
     in
-        { name = "CONNECT4"
-        , controls = controls
-        }
+    { name = "CONNECT4"
+    , controls = controls
+    }
 
 
 hidden : Game
 hidden =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 37 4
-                |> Dict.insert 32 5
-                |> Dict.insert 39 6
-                |> Dict.insert 40 8
-                |> Dict.insert 38 2
+            [ ( "ArrowLeft", KeyCode 4 )
+            , ( "ArrowRight", KeyCode 6 )
+            , ( " ", KeyCode 5 )
+            , ( "ArrowUp", KeyCode 2 )
+            , ( "ArrowDown", KeyCode 8 )
+            ]
     in
-        { name = "HIDDEN"
-        , controls = controls
-        }
+    { name = "HIDDEN"
+    , controls = controls
+    }
 
 
 invaders : Game
 invaders =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 37 4
-                |> Dict.insert 32 5
-                |> Dict.insert 39 6
+            [ ( "ArrowLeft", KeyCode 4 )
+            , ( " ", KeyCode 5 )
+            , ( "ArrowRight", KeyCode 6 )
+            ]
     in
-        { name = "INVADERS"
-        , controls = controls
-        }
+    { name = "INVADERS"
+    , controls = controls
+    }
 
 
 pong : Game
 pong =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 87 1
-                |> Dict.insert 83 4
-                |> Dict.insert 73 12
-                |> Dict.insert 75 13
+            [ ( "w", KeyCode 1 )
+            , ( "s", KeyCode 4 )
+            , ( "i", KeyCode 12 )
+            , ( "k", KeyCode 13 )
+            ]
     in
-        { name = "PONG"
-        , controls = controls
-        }
+    { name = "PONG"
+    , controls = controls
+    }
 
 
 tetris : Game
 tetris =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 37 5
-                |> Dict.insert 39 6
-                |> Dict.insert 32 4
-                |> Dict.insert 40 7
+            [ ( "ArrowLeft", KeyCode 5 )
+            , ( "ArrowRight", KeyCode 6 )
+            , ( " ", KeyCode 4 )
+            , ( "ArrowDown", KeyCode 7 )
+            ]
     in
-        { name = "TETRIS"
-        , controls = controls
-        }
+    { name = "TETRIS"
+    , controls = controls
+    }
 
 
 tictac : Game
 tictac =
     let
         controls =
-            Dict.empty
-                |> Dict.insert 53 1
-                |> Dict.insert 54 2
-                |> Dict.insert 55 3
-                |> Dict.insert 82 4
-                |> Dict.insert 84 5
-                |> Dict.insert 89 6
-                |> Dict.insert 70 7
-                |> Dict.insert 71 8
-                |> Dict.insert 72 9
+            [ ( "5", KeyCode 1 )
+            , ( "6", KeyCode 2 )
+            , ( "7", KeyCode 3 )
+            , ( "r", KeyCode 4 )
+            , ( "t", KeyCode 5 )
+            , ( "y", KeyCode 6 )
+            , ( "f", KeyCode 7 )
+            , ( "g", KeyCode 8 )
+            , ( "h", KeyCode 9 )
+            ]
     in
-        { name = "TICTAC"
-        , controls = controls
-        }
+    { name = "TICTAC"
+    , controls = controls
+    }
 
 
-initGames : List Game
-initGames =
+init : List Game
+init =
     [ blinky
     , brix
     , connect4

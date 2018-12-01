@@ -1,4 +1,4 @@
-module Stack exposing (Stack, initStack, put, pop)
+module Stack exposing (Stack, init, pop, put)
 
 {-| Stack
 
@@ -9,26 +9,27 @@ allows for up to 16 levels of nested subroutines.
 -}
 
 import Array exposing (Array)
-import Types exposing (Value8Bit, Value16Bit)
+import Types exposing (Value16Bit, Value8Bit)
 
 
 type alias Stack =
     Array Value16Bit
 
 
-initStack : Stack
-initStack =
+init : Stack
+init =
     let
         stackSize =
             16
     in
-        Array.initialize stackSize (\_ -> 0)
+    Array.initialize stackSize (\_ -> 0)
 
 
 pop : Value8Bit -> Stack -> Value16Bit
 pop stackPointer stack =
     if stackPointer > 15 then
-        Debug.crash "Stack pointer out of bounds"
+        Debug.todo "Stack pointer out of bounds"
+
     else
         stack |> Array.get stackPointer |> Maybe.withDefault 0
 
@@ -36,6 +37,7 @@ pop stackPointer stack =
 put : Value8Bit -> Value16Bit -> Stack -> Stack
 put stackPointer value stack =
     if stackPointer > 15 then
-        Debug.crash "Stack pointer out of bounds"
+        Debug.todo "Stack pointer out of bounds"
+
     else
         stack |> Array.set stackPointer value

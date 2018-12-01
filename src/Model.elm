@@ -1,27 +1,26 @@
-module Model
-    exposing
-        ( Model
-        , initModel
-        , getMemory
-        , setMemory
-        , getStack
-        , setStack
-        , getRegisters
-        , setRegisters
-        , getFlags
-        , setFlags
-        , getDisplay
-        , setDisplay
-        , getTimers
-        , setTimers
-        , getKeypad
-        , setKeypad
-        , getGames
-        , getSelectedGame
-        , setSelectedGame
-        , getRandomSeed
-        , setRandomSeed
-        )
+module Model exposing
+    ( Model
+    , getDisplay
+    , getFlags
+    , getGames
+    , getKeypad
+    , getMemory
+    , getRandomSeed
+    , getRegisters
+    , getSelectedGame
+    , getStack
+    , getTimers
+    , initModel
+    , setDisplay
+    , setFlags
+    , setKeypad
+    , setMemory
+    , setRandomSeed
+    , setRegisters
+    , setSelectedGame
+    , setStack
+    , setTimers
+    )
 
 {-| Model
 
@@ -29,15 +28,15 @@ Contains the state of the CHIP-8 emulator.
 
 -}
 
-import Display exposing (Display, initDisplay)
-import Games exposing (Game, initGames)
-import Flags exposing (Flags, initFlags)
-import Keypad exposing (Keypad, initKeypad)
-import Memory exposing (Memory, initMemory)
-import Random exposing (Seed, initialSeed)
-import Registers exposing (Registers, initRegisters)
-import Stack exposing (Stack, initStack)
-import Timers exposing (Timers, initTimers)
+import Display exposing (Display)
+import Flags exposing (Flags)
+import Games exposing (Game)
+import Keypad exposing (Keypad)
+import Memory exposing (Memory)
+import Random exposing (Seed)
+import Registers exposing (Registers)
+import Stack exposing (Stack)
+import Timers exposing (Timers)
 
 
 type alias Model =
@@ -56,16 +55,16 @@ type alias Model =
 
 initModel : Model
 initModel =
-    { memory = initMemory
-    , stack = initStack
-    , registers = initRegisters
-    , flags = initFlags
-    , display = initDisplay
-    , timers = initTimers
-    , keypad = initKeypad
-    , games = initGames
+    { memory = Memory.init
+    , stack = Stack.init
+    , registers = Registers.init
+    , flags = Flags.init
+    , display = Display.init
+    , timers = Timers.init
+    , keypad = Keypad.init
+    , games = Games.init
     , selectedGame = Nothing
-    , randomSeed = initialSeed 49317
+    , randomSeed = Random.initialSeed 49317
     }
 
 
