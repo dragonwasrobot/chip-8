@@ -9,7 +9,7 @@ import FetchDecodeExecuteLoop
 import Flags exposing (Flags)
 import KeyCode exposing (KeyCode)
 import Keypad
-import List.Extra exposing (find, indexedFoldl)
+import List.Extra as List
 import Memory
 import Model exposing (Model)
 import Msg exposing (Msg(..))
@@ -19,60 +19,44 @@ import Types exposing (Value8Bit)
 import Utils exposing (noCmd)
 
 
-addKeyCode : KeyCode -> Model -> ( Model, Cmd Msg )
-addKeyCode keyCode model =
-    case model |> Model.getSelectedGame of
-        Just game ->
+addKeyCode : Maybe KeyCode -> Model -> ( Model, Cmd Msg )
+addKeyCode maybeKeyCode model =
+    case maybeKeyCode of
+        Just keyCode ->
             let
                 newKeypad =
                     model
                         |> Model.getKeypad
-                        |> Keypad.addKeyPress
-                            keyCode
-                            game.controls
+                        |> Keypad.addKeyPress keyCode
             in
             model
                 |> Model.setKeypad newKeypad
                 |> checkIfWaitingForKeyPress keyCode
 
+        _ ->
+            ( model, Cmd.none )
+
+
+removeKeyCode : Maybe KeyCode -> Model -> ( Model, Cmd Msg )
+removeKeyCode maybeKeyCode model =
+    case maybeKeyCode of
+        Just keyCode ->
+            let
+                newKeypad =
+                    model
+                        |> Model.getKeypad
+                        |> Keypad.removeKeyPress keyCode
+            in
+            model |> Model.setKeypad newKeypad |> noCmd
+
         Nothing ->
-            model
-                |> noCmd
-
-
-removeKeyCode : KeyCode -> Model -> ( Model, Cmd Msg )
-removeKeyCode keyCode model =
-    model
-        |> Model.getSelectedGame
-        |> Maybe.map
-            (\game ->
-                let
-                    newKeypad =
-                        model
-                            |> Model.getKeypad
-                            |> Keypad.removeKeyPress
-                                keyCode
-                                game.controls
-                in
-                model
-                    |> Model.setKeypad newKeypad
-            )
-        |> Maybe.withDefault model
-        |> noCmd
+            ( model, Cmd.none )
 
 
 checkIfWaitingForKeyPress : KeyCode -> Model -> ( Model, Cmd Msg )
 checkIfWaitingForKeyPress keyCode model =
-    case
-        ( model
-            |> Model.getFlags
-            |> Flags.getWaitingForInputRegister
-        , model
-            |> Model.getSelectedGame
-            |> Maybe.andThen (.controls >> Dict.get (KeyCode.intValue keyCode))
-        )
-    of
-        ( Just registerX, Just chip8KeyCode ) ->
+    case model |> Model.getFlags |> Flags.getWaitingForInputRegister of
+        Just registerX ->
             let
                 newFlags =
                     model
@@ -82,7 +66,7 @@ checkIfWaitingForKeyPress keyCode model =
                 newRegisters =
                     model
                         |> Model.getRegisters
-                        |> Registers.setDataRegister registerX chip8KeyCode
+                        |> Registers.setDataRegister registerX (KeyCode.nibbleValue keyCode)
             in
             model
                 |> Model.setFlags newFlags
@@ -135,7 +119,7 @@ selectGame : String -> Model -> ( Model, Cmd Msg )
 selectGame gameName model =
     let
         selectedGame =
-            find (.name >> (==) gameName) model.games
+            List.find (.name >> (==) gameName) model.games
     in
     ( Model.initModel
         |> Model.setSelectedGame selectedGame
@@ -175,7 +159,7 @@ readProgram programBytes model =
             512
 
         newMemory =
-            indexedFoldl
+            List.indexedFoldl
                 (\idx -> Memory.setCell (programStart + idx))
                 (model |> Model.getMemory)
                 (programBytes |> Array.toList)
@@ -199,26 +183,26 @@ readProgram programBytes model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        KeyDown keyCode ->
-            addKeyCode (Debug.log "keyDown" keyCode) model
+        KeyDown maybeKeyCode ->
+            model |> addKeyCode maybeKeyCode
 
-        KeyUp keyCode ->
-            removeKeyCode (Debug.log "keyUp" keyCode) model
+        KeyUp maybeKeyCode ->
+            model |> removeKeyCode maybeKeyCode
 
         KeyPress keyCode ->
             model |> noCmd
 
         DelayTick ->
-            delayTick model
+            model |> delayTick
 
         ClockTick _ ->
-            clockTick model
+            model |> clockTick
 
         SelectGame gameName ->
-            selectGame gameName model
+            model |> selectGame gameName
 
         ReloadGame ->
-            reloadGame model
+            model |> reloadGame
 
         LoadedGame gameBytes ->
-            readProgram gameBytes model
+            model |> readProgram gameBytes

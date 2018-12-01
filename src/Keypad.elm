@@ -26,14 +26,7 @@ We create a specific mapping per game, since the 16-key keypad is unusual.
 -}
 
 import Dict exposing (Dict)
-import Flags exposing (Flags)
-import Games exposing (KeyMapping)
 import KeyCode exposing (KeyCode)
-import Registers exposing (Registers)
-
-
-
--- import Keyboard exposing (KeyCode)
 
 
 type alias Keypad =
@@ -50,26 +43,16 @@ initKeypad =
 {- Keyboard events -}
 
 
-addKeyPress : KeyCode -> KeyMapping -> Keypad -> Keypad
-addKeyPress keyCode keyMapping keysPressed =
-    case Dict.get (KeyCode.intValue keyCode) keyMapping of
-        Just chip8KeyCode ->
-            keysPressed
-                |> Dict.insert chip8KeyCode True
-
-        Nothing ->
-            keysPressed
+addKeyPress : KeyCode -> Keypad -> Keypad
+addKeyPress keyCode keysPressed =
+    keysPressed
+        |> Dict.insert (KeyCode.nibbleValue keyCode) True
 
 
-removeKeyPress : KeyCode -> KeyMapping -> Keypad -> Keypad
-removeKeyPress keyCode keyMapping keysPressed =
-    case Dict.get (KeyCode.intValue keyCode) keyMapping of
-        Just chip8KeyCode ->
-            keysPressed
-                |> Dict.insert chip8KeyCode False
-
-        Nothing ->
-            keysPressed
+removeKeyPress : KeyCode -> Keypad -> Keypad
+removeKeyPress keyCode keysPressed =
+    keysPressed
+        |> Dict.insert (KeyCode.nibbleValue keyCode) False
 
 
 getKeysPressed : Keypad -> List Int

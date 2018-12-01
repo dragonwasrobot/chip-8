@@ -6,9 +6,9 @@ import Time exposing (Posix)
 
 
 type Msg
-    = KeyUp KeyCode
-    | KeyDown KeyCode
-    | KeyPress KeyCode
+    = KeyUp (Maybe KeyCode)
+    | KeyDown (Maybe KeyCode)
+    | KeyPress (Maybe KeyCode)
     | DelayTick
     | ClockTick Posix
     | SelectGame String

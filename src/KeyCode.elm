@@ -1,78 +1,32 @@
-module KeyCode exposing (KeyCode(..), decoder, intValue)
+module KeyCode exposing (KeyCode(..), KeyMapping, decoder, nibbleValue)
 
 import Json.Decode as Decode exposing (Decoder)
+import List.Extra as List
+import Types exposing (Value4Bit)
+
+
+{-| Mapping from standard keyboard codes to CHIP-8 keypad codes
+-}
+type alias KeyMapping =
+    List ( String, KeyCode )
 
 
 type KeyCode
-    = KeyCode Int
+    = KeyCode Value4Bit
 
 
-intValue : KeyCode -> Int
-intValue (KeyCode keyCode) =
+nibbleValue : KeyCode -> Value4Bit
+nibbleValue (KeyCode keyCode) =
     keyCode
 
 
-decoder : Decoder KeyCode
-decoder =
-    Decode.map toKeyCode (Decode.field "key" Decode.string)
+decoder : KeyMapping -> Decoder (Maybe KeyCode)
+decoder keyMapping =
+    Decode.map (toKeyCode keyMapping) (Decode.field "key" Decode.string)
 
 
-toKeyCode : String -> KeyCode
-toKeyCode key =
-    case Debug.log "Key" key of
-        " " ->
-            KeyCode 32
-
-        "ArrowLeft" ->
-            KeyCode 37
-
-        "ArrowUp" ->
-            KeyCode 38
-
-        "ArrowRight" ->
-            KeyCode 39
-
-        "ArrowDown" ->
-            KeyCode 40
-
-        "5" ->
-            KeyCode 53
-
-        "6" ->
-            KeyCode 54
-
-        "7" ->
-            KeyCode 55
-
-        "F" ->
-            KeyCode 70
-
-        "G" ->
-            KeyCode 71
-
-        "H" ->
-            KeyCode 72
-
-        "I" ->
-            KeyCode 73
-
-        "K" ->
-            KeyCode 75
-
-        "R" ->
-            KeyCode 82
-
-        "S" ->
-            KeyCode 83
-
-        "T" ->
-            KeyCode 84
-
-        "W" ->
-            KeyCode 87
-
-        "Y" ->
-            KeyCode 89
-
-        someKey ->
-            KeyCode 0
+toKeyCode : KeyMapping -> String -> Maybe KeyCode
+toKeyCode controls candidate =
+    controls
+        |> List.find (\( str, keyCode ) -> str == candidate)
+        |> Maybe.map Tuple.second

@@ -70,18 +70,13 @@ viewKeyMapping model =
         keyMapping =
             case model.selectedGame of
                 Just game ->
-                    Dict.toList game.controls
+                    game.controls
 
                 Nothing ->
                     []
 
-        toListItems ( keyCode, keyPadValue ) acc =
-            case Dict.get keyCode keyMap of
-                Just keyName ->
-                    li [] [ text keyName ] :: acc
-
-                Nothing ->
-                    acc
+        toListItems ( keyStr, keyPadValue ) acc =
+            li [] [ keyStr |> prettyPrintKey |> text ] :: acc
     in
     div [ id "key-mapping-container" ]
         [ h3 [] [ text "Controls" ]
@@ -90,24 +85,23 @@ viewKeyMapping model =
         ]
 
 
-keyMap : Dict KeyCode String
-keyMap =
-    Dict.empty
-        |> Dict.insert 32 "Space"
-        |> Dict.insert 37 "Left arrow"
-        |> Dict.insert 38 "Up arrow"
-        |> Dict.insert 39 "Right arrow"
-        |> Dict.insert 40 "Down arrow"
-        |> Dict.insert 53 "5"
-        |> Dict.insert 54 "6"
-        |> Dict.insert 55 "7"
-        |> Dict.insert 70 "F"
-        |> Dict.insert 71 "G"
-        |> Dict.insert 72 "H"
-        |> Dict.insert 73 "I"
-        |> Dict.insert 75 "K"
-        |> Dict.insert 82 "R"
-        |> Dict.insert 83 "S"
-        |> Dict.insert 84 "T"
-        |> Dict.insert 87 "W"
-        |> Dict.insert 89 "Y"
+prettyPrintKey : String -> String
+prettyPrintKey keyStr =
+    case keyStr of
+        " " ->
+            "Space"
+
+        "ArrowLeft" ->
+            "Left arrow"
+
+        "ArrowUp" ->
+            "Up arrow"
+
+        "ArrowRight" ->
+            "Right arrow"
+
+        "ArrowDown" ->
+            "Down arrow"
+
+        alphaNumeric ->
+            String.toUpper alphaNumeric
