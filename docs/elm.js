@@ -9322,7 +9322,7 @@ var author$project$Request$fetchRom = F2(
 		return elm$http$Http$get(
 			{
 				expect: A2(elm$http$Http$expectBytesResponse, toMsg, author$project$Request$decodeBytesResponse),
-				url: '/roms/' + romName
+				url: '/chip-8/roms/' + romName
 			});
 	});
 var author$project$Update$loadGame = function (gameName) {

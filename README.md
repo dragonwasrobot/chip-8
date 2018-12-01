@@ -19,6 +19,8 @@ https://github.com/asdf-vm/asdf, to handle version management of compilers.
 
 With Elm installed, perform the following steps:
 
-- Run the command `elm-make src/Main.elm --output elm.js` to compile the source
-- Run the command `python -m SimpleHTTPServer` to start a server that can serve
-  both the index.html file and the CHIP-8 roms stored in `/roms`
+- Run the command `elm-make src/Main.elm --output docs/elm.js` to compile the
+  source,
+- Run the command `python -m SimpleHTTPServer` in the folder `docs` to start a
+  server that can serve both the `docs/index.html` file and the CHIP-8 roms
+  stored in `docs/roms`.
