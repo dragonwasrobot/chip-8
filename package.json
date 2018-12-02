@@ -1,0 +1,13 @@
+{
+    "name": "chip-8",
+    "version": "1.0.0",
+    "description": "A CHIP-8 Emulator written in Elm",
+    "dependencies": {
+        "elm-test": "= 0.19.0-rev3",
+        "elm-verify-examples": "= 3.0.1"
+    },
+    "scripts": {
+        "test": "./node_modules/elm-test/bin/elm-test",
+        "doc-tests": "./node_modules/elm-verify-examples/bin/cli.js"
+    }
+}
