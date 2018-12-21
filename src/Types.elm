@@ -1,4 +1,4 @@
-module Types exposing (Value4Bit, Value8Bit, Value12Bit, Value16Bit)
+module Types exposing (Error, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
 
 -- Common types used in the CHIP-8 project.
 
@@ -17,3 +17,7 @@ type alias Value12Bit =
 
 type alias Value16Bit =
     Int
+
+
+type alias Error =
+    String

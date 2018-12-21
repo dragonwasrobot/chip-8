@@ -15,7 +15,7 @@ import Memory exposing (Memory)
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Registers exposing (Registers)
-import Types exposing (Value12Bit, Value16Bit, Value4Bit, Value8Bit)
+import Types exposing (Error, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
 import Utils exposing (noCmd)
 
 
@@ -36,17 +36,17 @@ import Utils exposing (noCmd)
     --> 8
 
 -}
-getNibble : Int -> Value16Bit -> Value4Bit
+getNibble : Int -> Value16Bit -> Result Error Value4Bit
 getNibble n opcode =
     if List.member n [ 0, 1, 2, 3 ] then
         opcode
             |> Bitwise.shiftLeftBy (4 * n)
             |> modBy 0xFFFF
             |> Bitwise.shiftRightBy 12
+            |> Ok
 
     else
-        Debug.todo <|
-            ("expected 'n' to be in [0,1,2,3] was '" ++ String.fromInt n ++ "'")
+        Err <| "expected 'n' to be in [0,1,2,3] was '" ++ String.fromInt n ++ "'"
 
 
 {-| Gets the trailing byte from a 16-bit opcode
@@ -67,10 +67,14 @@ fetchOpcode : Memory -> Value16Bit -> Value16Bit
 fetchOpcode memory programCounter =
     let
         firstByte =
-            memory |> Memory.getCell programCounter
+            memory
+                |> Memory.getCell programCounter
+                |> Result.withDefault 0
 
         secondByte =
-            memory |> Memory.getCell (programCounter + 1)
+            memory
+                |> Memory.getCell (programCounter + 1)
+                |> Result.withDefault 0
     in
     Bitwise.or (Bitwise.shiftLeftBy 8 firstByte) secondByte
 
@@ -100,257 +104,256 @@ toHex int =
     int |> Hex.toString |> String.toUpper
 
 
-handle0 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle0 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle0 model opcode =
     case getByte opcode of
         0xE0 ->
-            Instructions.clearDisplay model
+            Ok <| Instructions.clearDisplay model
 
         0xEE ->
-            Instructions.returnFromSubroutine model
+            Ok <| Instructions.returnFromSubroutine model
 
         _ ->
-            Debug.todo <| "Unknown opcode: " ++ toHex opcode
+            Err <| "Unknown opcode: " ++ toHex opcode
 
 
-handle1 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle1 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle1 model opcode =
-    opcode |> dropFirstNibble |> Instructions.jumpAbsolute model
+    opcode |> dropFirstNibble |> Instructions.jumpAbsolute model |> Ok
 
 
-handle2 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle2 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle2 model opcode =
-    opcode |> dropFirstNibble |> Instructions.callSubroutine model
+    opcode |> dropFirstNibble |> Instructions.callSubroutine model |> Ok
 
 
-handle3 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle3 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle3 model opcode =
     let
         register =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         value =
             opcode |> getByte
     in
-    Instructions.skipNextIfEqualConstant model register value
+    Ok <| Instructions.skipNextIfEqualConstant model register value
 
 
-handle4 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle4 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle4 model opcode =
     let
         register =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         value =
             opcode |> getByte
     in
-    Instructions.skipNextIfNotEqualConstant model register value
+    Ok <| Instructions.skipNextIfNotEqualConstant model register value
 
 
-handle5 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle5 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle5 model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         registerY =
-            opcode |> getNibble 2
+            opcode |> getNibble 2 |> Result.withDefault 0
     in
-    if (opcode |> getNibble 3) /= 0 then
-        Debug.todo <| "Unknown opcode: " ++ toHex opcode
+    if (opcode |> getNibble 3 |> Result.withDefault -1) /= 0 then
+        Err <| "Unknown opcode: " ++ toHex opcode
 
     else
-        Instructions.skipNextIfRegistersEqual model registerX registerY
+        Ok <| Instructions.skipNextIfRegistersEqual model registerX registerY
 
 
-handle6 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle6 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle6 model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         value =
             opcode |> getByte
     in
-    Instructions.setRegisterToConstant model registerX value
+    Ok <| Instructions.setRegisterToConstant model registerX value
 
 
-handle7 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle7 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle7 model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         value =
             opcode |> getByte
     in
-    Instructions.addToRegister model registerX value
+    Ok <| Instructions.addToRegister model registerX value
 
 
-handle8 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle8 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle8 model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         registerY =
-            opcode |> getNibble 2
+            opcode |> getNibble 2 |> Result.withDefault 0
 
         nibble =
-            opcode |> getNibble 3
+            opcode |> getNibble 3 |> Result.withDefault 0
     in
     case nibble of
         0x00 ->
-            Instructions.setRegisterToRegister model registerX registerY
+            Ok <| Instructions.setRegisterToRegister model registerX registerY
 
         0x01 ->
-            Instructions.setRegisterOr model registerX registerY
+            Ok <| Instructions.setRegisterOr model registerX registerY
 
         0x02 ->
-            Instructions.setRegisterAnd model registerX registerY
+            Ok <| Instructions.setRegisterAnd model registerX registerY
 
         0x03 ->
-            Instructions.setRegisterXor model registerX registerY
+            Ok <| Instructions.setRegisterXor model registerX registerY
 
         0x04 ->
-            Instructions.setRegisterAdd model registerX registerY
+            Ok <| Instructions.setRegisterAdd model registerX registerY
 
         0x05 ->
-            Instructions.setRegisterSub model registerX registerY
+            Ok <| Instructions.setRegisterSub model registerX registerY
 
         0x06 ->
-            Instructions.setRegisterShiftRight model registerX
+            Ok <| Instructions.setRegisterShiftRight model registerX
 
         0x07 ->
-            Instructions.setRegisterSubFlipped model registerX registerY
+            Ok <| Instructions.setRegisterSubFlipped model registerX registerY
 
         0x0E ->
-            Instructions.setRegisterShiftLeft model registerX
+            Ok <| Instructions.setRegisterShiftLeft model registerX
 
         other ->
-            Debug.todo <| "Unknown opcode: " ++ toHex opcode
+            Err <| "Unknown opcode: " ++ toHex opcode
 
 
-handle9 : Model -> Value16Bit -> ( Model, Cmd Msg )
+handle9 : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handle9 model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         registerY =
-            opcode |> getNibble 2
+            opcode |> getNibble 2 |> Result.withDefault 0
 
         nibble =
-            opcode |> getNibble 3
+            opcode |> getNibble 3 |> Result.withDefault 0
     in
     if nibble /= 0 then
-        Debug.todo <| "Unknown opcode: " ++ toHex opcode
+        Err <| "Unknown opcode: " ++ toHex opcode
 
     else
-        Instructions.skipNextIfRegistersNotEqual model registerX registerY
+        Ok <| Instructions.skipNextIfRegistersNotEqual model registerX registerY
 
-
-handleA : Model -> Value16Bit -> ( Model, Cmd Msg )
+handleA : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handleA model opcode =
-    Instructions.setAddressRegisterToConstant model (opcode |> dropFirstNibble)
+    Ok <| Instructions.setAddressRegisterToConstant model (opcode |> dropFirstNibble)
 
 
-handleB : Model -> Value16Bit -> ( Model, Cmd Msg )
+handleB : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handleB model opcode =
-    Instructions.jumpRelative model (opcode |> dropFirstNibble)
+    Ok <| Instructions.jumpRelative model (opcode |> dropFirstNibble)
 
 
-handleC : Model -> Value16Bit -> ( Model, Cmd Msg )
+handleC : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handleC model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         value =
             opcode |> getByte
     in
-    Instructions.setRegisterRandom model registerX value
+    Ok <| Instructions.setRegisterRandom model registerX value
 
 
-handleD : Model -> Value16Bit -> ( Model, Cmd Msg )
+handleD : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handleD model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         registerY =
-            opcode |> getNibble 2
+            opcode |> getNibble 2 |> Result.withDefault 0
 
         n =
-            opcode |> getNibble 3
+            opcode |> getNibble 3 |> Result.withDefault 0
     in
-    Instructions.displaySprite model registerX registerY n
+    Ok <| Instructions.displaySprite model registerX registerY n
 
 
-handleE : Model -> Value16Bit -> ( Model, Cmd Msg )
+handleE : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handleE model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         byte =
             opcode |> getByte
     in
     case byte of
         0x9E ->
-            Instructions.skipNextIfKeyPressed model registerX
+            Ok <| Instructions.skipNextIfKeyPressed model registerX
 
         0xA1 ->
-            Instructions.skipNextIfKeyNotPressed model registerX
+            Ok <| Instructions.skipNextIfKeyNotPressed model registerX
 
         other ->
-            Debug.todo <| "Unknown opcode: " ++ toHex opcode
+            Err <| "Unknown opcode: " ++ toHex opcode
 
 
-handleF : Model -> Value16Bit -> ( Model, Cmd Msg )
+handleF : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 handleF model opcode =
     let
         registerX =
-            opcode |> getNibble 1
+            opcode |> getNibble 1 |> Result.withDefault 0
 
         byte =
             opcode |> getByte
     in
     case byte of
         0x07 ->
-            Instructions.setRegisterToDelayTimer model registerX
+            Ok <| Instructions.setRegisterToDelayTimer model registerX
 
         0x0A ->
-            Instructions.waitForKeyPress model registerX
+            Ok <| Instructions.waitForKeyPress model registerX
 
         0x15 ->
-            Instructions.setDelayTimerToRegisterValue model registerX
+            Ok <| Instructions.setDelayTimerToRegisterValue model registerX
 
         0x18 ->
-            Instructions.setSoundTimerToRegisterValue model registerX
+            Ok <| Instructions.setSoundTimerToRegisterValue model registerX
 
         0x1E ->
-            Instructions.addToAddressRegister model registerX
+            Ok <| Instructions.addToAddressRegister model registerX
 
         0x29 ->
-            Instructions.setAddressRegisterToSpriteLocation model registerX
+            Ok <| Instructions.setAddressRegisterToSpriteLocation model registerX
 
         0x33 ->
-            Instructions.storeBcdOfRegister model registerX
+            Ok <| Instructions.storeBcdOfRegister model registerX
 
         0x55 ->
-            Instructions.storeRegistersAtAddressRegister model registerX
+            Ok <| Instructions.storeRegistersAtAddressRegister model registerX
 
         0x65 ->
-            Instructions.readRegistersFromAddressRegister model registerX
+            Ok <| Instructions.readRegistersFromAddressRegister model registerX
 
         other ->
-            Debug.todo <| "Unknown opcode: " ++ toHex opcode
+            Err <| "Unknown opcode: " ++ toHex opcode
 
 
-executeOpcode : Model -> Value16Bit -> ( Model, Cmd Msg )
+executeOpcode : Model -> Value16Bit -> Result Error ( Model, Cmd Msg )
 executeOpcode model opcode =
-    case opcode |> getNibble 0 of
+    case opcode |> getNibble 0 |> Result.withDefault 0 of
         0x00 ->
             handle0 model opcode
 
@@ -400,7 +403,7 @@ executeOpcode model opcode =
             handleF model opcode
 
         other ->
-            Debug.todo <| "Unknown opcode: " ++ toHex opcode
+            Err <| "Unknown opcode: " ++ toHex opcode
 
 
 performCycle : Flags -> Model -> ( Model, Cmd Msg )
@@ -419,8 +422,14 @@ performCycle flags model =
             opcode =
                 programCounter |> fetchOpcode memory
 
-            ( resultModel, cmd ) =
-                executeOpcode model opcode
+            ( resultModel, resultCmd ) =
+                case executeOpcode model opcode of
+                    Ok result ->
+                        result
+
+                    Err error ->
+                        -- TODO: Handle error
+                        ( model, Cmd.none )
 
             newRegisters =
                 resultModel
@@ -430,7 +439,7 @@ performCycle flags model =
             newModel =
                 resultModel |> Model.setRegisters newRegisters
         in
-        ( newModel, cmd )
+        ( newModel, resultCmd )
 
 
 {-| Perform a clock tick

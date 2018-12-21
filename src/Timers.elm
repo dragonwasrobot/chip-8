@@ -18,8 +18,9 @@ port module Timers exposing
 -}
 
 import Msg exposing (Msg(..))
+import Process
 import Registers exposing (Registers)
-import Utils exposing (setTimeout)
+import Task
 
 
 type alias Delay =
@@ -110,6 +111,12 @@ tick registers timers =
         ( ( registers, setDelay (setRunning False delay) timers )
         , Cmd.none
         )
+
+
+setTimeout : Float -> msg -> Cmd msg
+setTimeout time msg =
+    Process.sleep time
+        |> Task.perform (\_ -> msg)
 
 
 {-| Start playing the sound

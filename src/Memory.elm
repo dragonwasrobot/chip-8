@@ -12,19 +12,21 @@ bytes (0x200) are reserved for the CHIP-8 interpreter:
 -}
 
 import Array exposing (Array)
-import Types exposing (Value16Bit, Value8Bit)
+import Types exposing (Error, Value16Bit, Value8Bit)
 
 
 type alias Memory =
     Array Value8Bit
 
 
+memorySize : Int
+memorySize =
+    4096
+
+
 init : Memory
 init =
     let
-        memorySize =
-            4096
-
         emptyMemory =
             Array.initialize memorySize (\_ -> 0)
     in
@@ -32,25 +34,27 @@ init =
         |> addSpritesToMemory
 
 
-getCell : Int -> Memory -> Value8Bit
+getCell : Int -> Memory -> Result Error Value8Bit
 getCell index memory =
-    if index > 4095 then
-        Debug.todo "Memory index out of bounds"
+    if index >= memorySize then
+        Err "Memory index out of bounds"
 
     else
         memory
             |> Array.get index
             |> Maybe.withDefault 0
+            |> Ok
 
 
-setCell : Int -> Value8Bit -> Memory -> Memory
+setCell : Int -> Value8Bit -> Memory -> Result Error Memory
 setCell index value memory =
-    if index > 4095 then
-        Debug.todo "Memory index out of bounds"
+    if index >= memorySize then
+        Err "Memory index out of bounds"
 
     else
         memory
             |> Array.set index value
+            |> Ok
 
 
 {-| Sprites
@@ -161,7 +165,9 @@ addSpritesToMemory memory =
             Array.fromList hardcodedSprites
 
         rangeToUpdate =
-            List.range 0 <| Array.length sprites
+            sprites
+                |> Array.length
+                |> List.range 0
     in
     List.foldl
         (copySpriteCell sprites)
@@ -171,9 +177,8 @@ addSpritesToMemory memory =
 
 copySpriteCell : Array Value8Bit -> Int -> Memory -> Memory
 copySpriteCell sprites idx memory =
-    case Array.get idx sprites of
-        Just spriteValue ->
-            setCell idx spriteValue memory
-
-        Nothing ->
-            memory
+    sprites
+        |> Array.get idx
+        |> Maybe.andThen
+            (\spriteValue -> memory |> setCell idx spriteValue |> Result.toMaybe)
+        |> Maybe.withDefault memory

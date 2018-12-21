@@ -37,20 +37,21 @@ The program counter (PC, 16-bit) and stack pointer (SP, 8-bit).
 -}
 
 import Array exposing (Array)
-import Types exposing (Value16Bit, Value8Bit)
+import Types exposing (Error, Value16Bit, Value8Bit)
 
 
 type alias DataRegisters =
     Array Value16Bit
 
 
+dataRegisterCount : Int
+dataRegisterCount =
+    16
+
+
 initDataRegisters : DataRegisters
 initDataRegisters =
-    let
-        registerCount =
-            16
-    in
-    Array.initialize registerCount (\_ -> 0)
+    Array.initialize dataRegisterCount (\_ -> 0)
 
 
 type alias Registers =
@@ -74,26 +75,26 @@ init =
     }
 
 
-getDataRegister : Int -> Registers -> Value16Bit
+getDataRegister : Int -> Registers -> Result Error Value16Bit
 getDataRegister index registers =
-    if index > 15 then
-        Debug.todo ("Data register index out of bounds: " ++ String.fromInt index)
+    if index >= dataRegisterCount then
+        Err <| "Data register index out of bounds: " ++ String.fromInt index
 
     else
-        registers.dataRegisters |> Array.get index |> Maybe.withDefault 0
+        Ok <| (registers.dataRegisters |> Array.get index |> Maybe.withDefault 0)
 
 
-setDataRegister : Int -> Value16Bit -> Registers -> Registers
+setDataRegister : Int -> Value16Bit -> Registers -> Result Error Registers
 setDataRegister index value registers =
     let
         updatedDataRegisters =
             registers.dataRegisters |> Array.set index value
     in
-    if index > 15 then
-        Debug.todo "Register index out of bounds"
+    if index > dataRegisterCount then
+        Err "Register index out of bounds"
 
     else
-        { registers | dataRegisters = updatedDataRegisters }
+        Ok { registers | dataRegisters = updatedDataRegisters }
 
 
 getAddressRegister : Registers -> Value16Bit

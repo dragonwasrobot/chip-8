@@ -10,7 +10,7 @@ import Types exposing (Value8Bit)
 fetchRom : String -> (Result Http.Error (Array Value8Bit) -> msg) -> Cmd msg
 fetchRom romName toMsg =
     Http.get
-        { url = "/chip-8/roms/" ++ romName
+        { url = "/roms/" ++ romName
         , expect = Http.expectBytesResponse toMsg decodeBytesResponse
         }
 

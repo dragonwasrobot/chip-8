@@ -1,4 +1,4 @@
-port module Subscriptions exposing (subscriptions)
+module Subscriptions exposing (subscriptions)
 
 import Array exposing (Array)
 import Browser.Events as Events

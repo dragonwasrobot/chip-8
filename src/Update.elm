@@ -63,10 +63,13 @@ checkIfWaitingForKeyPress keyCode model =
                         |> Model.getFlags
                         |> Flags.setWaitingForInputRegister Nothing
 
+                registers =
+                    model |> Model.getRegisters
+
                 newRegisters =
-                    model
-                        |> Model.getRegisters
+                    registers
                         |> Registers.setDataRegister registerX (KeyCode.nibbleValue keyCode)
+                        |> Result.withDefault registers
             in
             model
                 |> Model.setFlags newFlags
@@ -153,7 +156,6 @@ readProgram : Result Http.Error (Array Value8Bit) -> Model -> ( Model, Cmd Msg )
 readProgram programBytesResult model =
     case programBytesResult of
         Err error ->
-            -- TODO: Report error
             ( model, Cmd.none )
 
         Ok programBytes ->
@@ -161,11 +163,18 @@ readProgram programBytesResult model =
                 programStart =
                     512
 
+                memory =
+                    model |> Model.getMemory
+
                 newMemory =
-                    List.indexedFoldl
-                        (\idx -> Memory.setCell (programStart + idx))
-                        (model |> Model.getMemory)
-                        (programBytes |> Array.toList)
+                    (programBytes |> Array.toList)
+                        |> List.indexedFoldl
+                            (\idx value accMemory ->
+                                accMemory
+                                    |> Memory.setCell (programStart + idx) value
+                                    |> Result.withDefault accMemory
+                            )
+                            memory
 
                 newRegisters =
                     model
@@ -174,7 +183,9 @@ readProgram programBytesResult model =
                         |> Registers.setProgramCounter programStart
 
                 newFlags =
-                    model |> Model.getFlags |> Flags.setRunning True
+                    model
+                        |> Model.getFlags
+                        |> Flags.setRunning True
             in
             model
                 |> Model.setMemory newMemory

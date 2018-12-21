@@ -130,7 +130,7 @@ viewGameSelector model =
         [ Attr.id "games-container" ]
         [ select
             [ Attr.id "game-selector"
-            , Attr.class "btn is-warning"
+            , Attr.class "nes-select is-warning"
             , Attr.style "margin-right" "0.5em"
             , Attr.style "height" "3em"
             , onChange SelectGame
@@ -138,7 +138,7 @@ viewGameSelector model =
             gameOptions
         , button
             [ Attr.id "game-reload"
-            , Attr.class "btn is-warning"
+            , Attr.class "nes-btn is-warning"
             , Attr.style "margin-left" "0.5em"
             , Events.onClick ReloadGame
             ]
