@@ -9693,6 +9693,7 @@ var author$project$Msg$SelectGame = function (a) {
 	return {$: 5, a: a};
 };
 var elm$html$Html$button = _VirtualDom_node('button');
+var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$option = _VirtualDom_node('option');
 var elm$html$Html$section = _VirtualDom_node('section');
 var elm$html$Html$select = _VirtualDom_node('select');
@@ -9761,16 +9762,25 @@ var author$project$Main$viewGameSelector = function (model) {
 	var gameSelector = _List_fromArray(
 		[
 			A2(
-			elm$html$Html$select,
+			elm$html$Html$div,
 			_List_fromArray(
 				[
-					elm$html$Html$Attributes$id('game-selector'),
-					elm$html$Html$Attributes$class('nes-select is-warning'),
-					A2(elm$html$Html$Attributes$style, 'margin-right', '0.5em'),
-					A2(elm$html$Html$Attributes$style, 'height', '3em'),
-					author$project$Main$onChange(author$project$Msg$SelectGame)
+					elm$html$Html$Attributes$class('nes-select'),
+					A2(elm$html$Html$Attributes$style, 'width', '15%'),
+					A2(elm$html$Html$Attributes$style, 'left', '42.5%'),
+					A2(elm$html$Html$Attributes$style, 'margin-bottom', '1em')
 				]),
-			gameOptions)
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$select,
+					_List_fromArray(
+						[
+							elm$html$Html$Attributes$id('game-selector'),
+							author$project$Main$onChange(author$project$Msg$SelectGame)
+						]),
+					gameOptions)
+				]))
 		]);
 	return A2(
 		elm$html$Html$section,
@@ -9805,7 +9815,6 @@ var author$project$Main$prettyPrintKey = function (keyStr) {
 			return elm$core$String$toUpper(alphaNumeric);
 	}
 };
-var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$h3 = _VirtualDom_node('h3');
 var elm$html$Html$li = _VirtualDom_node('li');
 var elm$html$Html$ul = _VirtualDom_node('ul');

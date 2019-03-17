@@ -458,14 +458,18 @@ viewGameSelector model =
 
         gameSelector : List (Html Msg)
         gameSelector =
-            [ select
-                [ Attr.id "game-selector"
-                , Attr.class "nes-select is-warning"
-                , Attr.style "margin-right" "0.5em"
-                , Attr.style "height" "3em"
-                , onChange SelectGame
+            [ div
+                [ Attr.class "nes-select"
+                , Attr.style "width" "15%"
+                , Attr.style "left" "42.5%"
+                , Attr.style "margin-bottom" "1em"
                 ]
-                gameOptions
+                [ select
+                    [ Attr.id "game-selector"
+                    , onChange SelectGame
+                    ]
+                    gameOptions
+                ]
             ]
 
         reloadButton : List (Html Msg)
