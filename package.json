@@ -3,11 +3,13 @@
     "version": "1.0.0",
     "description": "A CHIP-8 Emulator written in Elm",
     "dependencies": {
+        "elm-format": "^0.8.1",
         "elm-test": "= 0.19.0-rev6",
         "elm-verify-examples": "= 3.1.0"
     },
     "scripts": {
-        "test": "./node_modules/elm-test/bin/elm-test",
-        "doc-tests": "./node_modules/elm-verify-examples/bin/cli.js"
+        "format": "./node_modules/.bin/elm-format --validate src",
+        "test": "./node_modules/.bin/elm-test",
+        "doc-tests": "./node_modules/.bin/elm-verify-examples"
     }
 }
