@@ -6,9 +6,11 @@ import Bytes.Decode as Decode exposing (Decoder, Step(..))
 import Http exposing (Metadata, Response(..))
 import Types exposing (Value8Bit)
 
+
 romsUrlPrefix : String
 romsUrlPrefix =
-    "/chip-8/roms/"
+    "/roms/"
+
 
 fetchRom : String -> (Result Http.Error (Array Value8Bit) -> msg) -> Cmd msg
 fetchRom romName toMsg =

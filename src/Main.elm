@@ -3,8 +3,8 @@ module Main exposing (main)
 import Array exposing (Array)
 import Browser
 import Browser.Events as BrowserEvents
-import Canvas exposing (Commands)
-import CanvasColor as Color
+import Canvas exposing (Renderable)
+import Color
 import Dict exposing (Dict)
 import Display exposing (Cell, Display)
 import FetchDecodeExecuteLoop
@@ -402,46 +402,43 @@ backgroundColor =
 
 viewCanvas : Model -> Html Msg
 viewCanvas model =
-    Canvas.element
-        width
-        height
-        []
-        (Canvas.empty
-            |> Canvas.clearRect 0 0 width height
-            |> renderDisplay model.virtualMachine.display
-        )
+    Canvas.toHtml ( width, height ) [] <|
+        renderDisplay model.virtualMachine.display <|
+            [ Canvas.shapes
+                [ Canvas.fill Color.white ]
+                [ Canvas.rect ( 0, 0 ) width height ]
+            ]
 
 
-renderDisplay : Display -> Commands -> Commands
-renderDisplay displayCells commands =
+renderDisplay : Display -> List Renderable -> List Renderable
+renderDisplay displayCells renderables =
     displayCells
         |> Array.toList
-        |> List.indexedFoldl renderCellRow commands
+        |> List.indexedFoldl renderCellRow renderables
 
 
-renderCellRow : Int -> Array Bool -> Commands -> Commands
-renderCellRow rowIdx rowCells commands =
+renderCellRow : Int -> Array Bool -> List Renderable -> List Renderable
+renderCellRow rowIdx rowCells renderables =
     rowCells
         |> Array.toList
-        |> List.indexedFoldl (renderCell rowIdx) commands
+        |> List.indexedFoldl (renderCell rowIdx) renderables
 
 
-renderCell : Int -> Int -> Bool -> Commands -> Commands
-renderCell rowIdx columnIdx cellValue commands =
+renderCell : Int -> Int -> Bool -> List Renderable -> List Renderable
+renderCell rowIdx columnIdx cellValue renderables =
     let
         color =
             if cellValue == True then
-                Color.rgba cellColor.red cellColor.green cellColor.blue 1
+                Color.rgb255 cellColor.red cellColor.green cellColor.blue
 
             else
-                Color.rgba backgroundColor.red backgroundColor.green backgroundColor.blue 1
+                Color.rgb255 backgroundColor.red backgroundColor.green backgroundColor.blue
 
         ( x, y ) =
             ( toFloat rowIdx * cellSize, toFloat columnIdx * cellSize )
     in
-    commands
-        |> Canvas.fillStyle color
-        |> Canvas.fillRect x y cellSize cellSize
+    renderables
+        ++ [ Canvas.shapes [ Canvas.fill color ] [ Canvas.rect ( x, y ) cellSize cellSize ] ]
 
 
 viewGameSelector : Model -> Html Msg
