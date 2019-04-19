@@ -12,7 +12,6 @@ romsUrlPrefix =
     "/roms/"
 
 
-
 fetchRom : String -> (Result Http.Error (Array Value8Bit) -> msg) -> Cmd msg
 fetchRom romName toMsg =
     Http.get
