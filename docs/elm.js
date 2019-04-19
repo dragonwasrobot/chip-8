@@ -8714,6 +8714,7 @@ var author$project$Request$decodeBytesResponse = function (response) {
 			}
 	}
 };
+var author$project$Request$romsUrlPrefix = '/chip-8/roms/';
 var elm$core$Dict$getMin = function (dict) {
 	getMin:
 	while (true) {
@@ -9290,7 +9291,7 @@ var author$project$Request$fetchRom = F2(
 		return elm$http$Http$get(
 			{
 				bA: A2(elm$http$Http$expectBytesResponse, toMsg, author$project$Request$decodeBytesResponse),
-				b4: '/chip-8/roms/' + romName
+				b4: _Utils_ap(author$project$Request$romsUrlPrefix, romName)
 			});
 	});
 var author$project$Main$loadGame = function (gameName) {
