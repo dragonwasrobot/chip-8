@@ -7,7 +7,7 @@ node_js: '10.13.0'
 
 install:
   - npm install
-  - elm make src/Main.elm --output docs/elm.js --optimize
+  - ./build.sh
 
 script:
   - npm run doc-tests
