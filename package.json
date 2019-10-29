@@ -5,7 +5,7 @@
     "dependencies": {
         "elm-format": "^0.8.2",
         "elm-test": "^0.19.1",
-        "elm-verify-examples": "= 4.0.2"
+        "elm-verify-examples": "= 5.0.0"
     },
     "scripts": {
         "format": "./node_modules/.bin/elm-format --validate src",
