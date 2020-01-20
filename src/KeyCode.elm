@@ -28,5 +28,5 @@ decoder keyMapping =
 toKeyCode : KeyMapping -> String -> Maybe KeyCode
 toKeyCode controls candidate =
     controls
-        |> List.find (\( str, keyCode ) -> str == candidate)
+        |> List.find (\( str, _ ) -> str == candidate)
         |> Maybe.map Tuple.second

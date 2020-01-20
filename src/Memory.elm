@@ -12,7 +12,7 @@ bytes (0x200) are reserved for the CHIP-8 interpreter:
 -}
 
 import Array exposing (Array)
-import Types exposing (Error, Value16Bit, Value8Bit)
+import Types exposing (Error, Value8Bit)
 
 
 type alias Memory =

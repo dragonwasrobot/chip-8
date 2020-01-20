@@ -3,9 +3,10 @@
     "version": "1.0.0",
     "description": "A CHIP-8 Emulator written in Elm",
     "dependencies": {
-        "elm-format": "^0.8.2",
-        "elm-test": "^0.19.1",
-        "elm-verify-examples": "= 4.0.2"
+        "elm-analyse": "^0.16.5",
+        "elm-format": "=0.8.2",
+        "elm-test": "=0.19.1",
+        "elm-verify-examples": "=5.0.0"
     },
     "scripts": {
         "format": "./node_modules/.bin/elm-format --validate src",

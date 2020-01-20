@@ -13,7 +13,7 @@ import Hex
 import Instructions
 import Memory exposing (Memory)
 import Msg exposing (Msg(..))
-import Registers exposing (Registers)
+import Registers
 import Types exposing (Error, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
 import VirtualMachine exposing (VirtualMachine)
 
@@ -230,7 +230,7 @@ handle8 virtualMachine opcode =
         0x0E ->
             Ok <| Instructions.setRegisterShiftLeft virtualMachine registerX
 
-        other ->
+        _ ->
             Err <| "Unknown opcode: " ++ toHex opcode
 
 
@@ -306,7 +306,7 @@ handleE virtualMachine opcode =
         0xA1 ->
             Ok <| Instructions.skipNextIfKeyNotPressed virtualMachine registerX
 
-        other ->
+        _ ->
             Err <| "Unknown opcode: " ++ toHex opcode
 
 
@@ -347,7 +347,7 @@ handleF virtualMachine opcode =
         0x65 ->
             Ok <| Instructions.readRegistersFromAddressRegister virtualMachine registerX
 
-        other ->
+        _ ->
             Err <| "Unknown opcode: " ++ toHex opcode
 
 
@@ -402,7 +402,7 @@ executeOpcode virtualMachine opcode =
         0x0F ->
             handleF virtualMachine opcode
 
-        other ->
+        _ ->
             Err <| "Unknown opcode: " ++ toHex opcode
 
 
@@ -427,8 +427,8 @@ performCycle flags virtualMachine =
                     Ok result ->
                         result
 
-                    Err error ->
-                        -- TODO: Handle error
+                    Err _ ->
+                        -- We ignore any errors
                         ( virtualMachine, Cmd.none )
 
             newRegisters =
@@ -456,9 +456,6 @@ tick instructions virtualMachine =
                     let
                         flags =
                             accVirtualMachine |> VirtualMachine.getFlags
-
-                        running =
-                            flags |> Flags.isRunning
                     in
                     let
                         ( updatedVirtualMachine, cmd ) =

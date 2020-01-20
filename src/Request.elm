@@ -3,13 +3,14 @@ module Request exposing (fetchRom)
 import Array exposing (Array)
 import Bytes exposing (Bytes)
 import Bytes.Decode as Decode exposing (Decoder, Step(..))
-import Http exposing (Metadata, Response(..))
+import Http exposing (Response(..))
 import Types exposing (Value8Bit)
 
 
 romsUrlPrefix : String
 romsUrlPrefix =
-    "/chip-8/roms/"
+    -- Use /roms/ for dev, /chip-8/roms for prod
+    "/roms/"
 
 
 fetchRom : String -> (Result Http.Error (Array Value8Bit) -> msg) -> Cmd msg
@@ -32,10 +33,10 @@ decodeBytesResponse response =
         Http.NetworkError_ ->
             Err Http.NetworkError
 
-        Http.BadStatus_ metadata body ->
+        Http.BadStatus_ metadata _ ->
             Err (Http.BadStatus metadata.statusCode)
 
-        Http.GoodStatus_ metadata bytes ->
+        Http.GoodStatus_ _ bytes ->
             case Decode.decode (romDecoder (Bytes.width bytes)) bytes of
                 Just rom ->
                     Ok rom

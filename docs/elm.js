@@ -80,6 +80,271 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
 
 
 
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	/**_UNUSED/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = $elm$core$Set$toList(x);
+		y = $elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**/
+	if (x.$ < 0)
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**_UNUSED/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**_UNUSED/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? $elm$core$Basics$LT : n ? $elm$core$Basics$GT : $elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0 = 0;
+var _Utils_Tuple0_UNUSED = { $: '#0' };
+
+function _Utils_Tuple2(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2_UNUSED(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3_UNUSED(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr(c) { return c; }
+function _Utils_chr_UNUSED(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
+var _List_Nil = { $: 0 };
+var _List_Nil_UNUSED = { $: '[]' };
+
+function _List_Cons(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons_UNUSED(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === $elm$core$Basics$EQ ? 0 : ord === $elm$core$Basics$LT ? -1 : 1;
+	}));
+});
+
+
+
 var _JsArray_empty = [];
 
 function _JsArray_singleton(value)
@@ -326,21 +591,21 @@ function _Debug_toAnsiString(ansi, value)
 		{
 			return _Debug_ctorColor(ansi, 'Set')
 				+ _Debug_fadeColor(ansi, '.fromList') + ' '
-				+ _Debug_toAnsiString(ansi, elm$core$Set$toList(value));
+				+ _Debug_toAnsiString(ansi, $elm$core$Set$toList(value));
 		}
 
 		if (tag === 'RBNode_elm_builtin' || tag === 'RBEmpty_elm_builtin')
 		{
 			return _Debug_ctorColor(ansi, 'Dict')
 				+ _Debug_fadeColor(ansi, '.fromList') + ' '
-				+ _Debug_toAnsiString(ansi, elm$core$Dict$toList(value));
+				+ _Debug_toAnsiString(ansi, $elm$core$Dict$toList(value));
 		}
 
 		if (tag === 'Array_elm_builtin')
 		{
 			return _Debug_ctorColor(ansi, 'Array')
 				+ _Debug_fadeColor(ansi, '.fromList') + ' '
-				+ _Debug_toAnsiString(ansi, elm$core$Array$toList(value));
+				+ _Debug_toAnsiString(ansi, $elm$core$Array$toList(value));
 		}
 
 		if (tag === '::' || tag === '[]')
@@ -519,277 +784,12 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.aG.S === region.aR.S)
+	if (region.ay.N === region.aJ.N)
 	{
-		return 'on line ' + region.aG.S;
+		return 'on line ' + region.ay.N;
 	}
-	return 'on lines ' + region.aG.S + ' through ' + region.aR.S;
+	return 'on lines ' + region.ay.N + ' through ' + region.aJ.N;
 }
-
-
-
-// EQUALITY
-
-function _Utils_eq(x, y)
-{
-	for (
-		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
-		isEqual && (pair = stack.pop());
-		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
-		)
-	{}
-
-	return isEqual;
-}
-
-function _Utils_eqHelp(x, y, depth, stack)
-{
-	if (depth > 100)
-	{
-		stack.push(_Utils_Tuple2(x,y));
-		return true;
-	}
-
-	if (x === y)
-	{
-		return true;
-	}
-
-	if (typeof x !== 'object' || x === null || y === null)
-	{
-		typeof x === 'function' && _Debug_crash(5);
-		return false;
-	}
-
-	/**_UNUSED/
-	if (x.$ === 'Set_elm_builtin')
-	{
-		x = elm$core$Set$toList(x);
-		y = elm$core$Set$toList(y);
-	}
-	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	/**/
-	if (x.$ < 0)
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	for (var key in x)
-	{
-		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-var _Utils_equal = F2(_Utils_eq);
-var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
-
-
-
-// COMPARISONS
-
-// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
-// the particular integer values assigned to LT, EQ, and GT.
-
-function _Utils_cmp(x, y, ord)
-{
-	if (typeof x !== 'object')
-	{
-		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
-	}
-
-	/**_UNUSED/
-	if (x instanceof String)
-	{
-		var a = x.valueOf();
-		var b = y.valueOf();
-		return a === b ? 0 : a < b ? -1 : 1;
-	}
-	//*/
-
-	/**/
-	if (typeof x.$ === 'undefined')
-	//*/
-	/**_UNUSED/
-	if (x.$[0] === '#')
-	//*/
-	{
-		return (ord = _Utils_cmp(x.a, y.a))
-			? ord
-			: (ord = _Utils_cmp(x.b, y.b))
-				? ord
-				: _Utils_cmp(x.c, y.c);
-	}
-
-	// traverse conses until end of a list or a mismatch
-	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
-	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
-}
-
-var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
-var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
-var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
-var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
-
-var _Utils_compare = F2(function(x, y)
-{
-	var n = _Utils_cmp(x, y);
-	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
-});
-
-
-// COMMON VALUES
-
-var _Utils_Tuple0 = 0;
-var _Utils_Tuple0_UNUSED = { $: '#0' };
-
-function _Utils_Tuple2(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2_UNUSED(a, b) { return { $: '#2', a: a, b: b }; }
-
-function _Utils_Tuple3(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3_UNUSED(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
-
-function _Utils_chr(c) { return c; }
-function _Utils_chr_UNUSED(c) { return new String(c); }
-
-
-// RECORDS
-
-function _Utils_update(oldRecord, updatedFields)
-{
-	var newRecord = {};
-
-	for (var key in oldRecord)
-	{
-		newRecord[key] = oldRecord[key];
-	}
-
-	for (var key in updatedFields)
-	{
-		newRecord[key] = updatedFields[key];
-	}
-
-	return newRecord;
-}
-
-
-// APPEND
-
-var _Utils_append = F2(_Utils_ap);
-
-function _Utils_ap(xs, ys)
-{
-	// append Strings
-	if (typeof xs === 'string')
-	{
-		return xs + ys;
-	}
-
-	// append Lists
-	if (!xs.b)
-	{
-		return ys;
-	}
-	var root = _List_Cons(xs.a, ys);
-	xs = xs.b
-	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		curr = curr.b = _List_Cons(xs.a, ys);
-	}
-	return root;
-}
-
-
-
-var _List_Nil = { $: 0 };
-var _List_Nil_UNUSED = { $: '[]' };
-
-function _List_Cons(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons_UNUSED(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
-	}));
-});
 
 
 
@@ -853,90 +853,6 @@ var _Basics_xor = F2(function(a, b) { return a !== b; });
 
 
 
-var _Bitwise_and = F2(function(a, b)
-{
-	return a & b;
-});
-
-var _Bitwise_or = F2(function(a, b)
-{
-	return a | b;
-});
-
-var _Bitwise_xor = F2(function(a, b)
-{
-	return a ^ b;
-});
-
-function _Bitwise_complement(a)
-{
-	return ~a;
-};
-
-var _Bitwise_shiftLeftBy = F2(function(offset, a)
-{
-	return a << offset;
-});
-
-var _Bitwise_shiftRightBy = F2(function(offset, a)
-{
-	return a >> offset;
-});
-
-var _Bitwise_shiftRightZfBy = F2(function(offset, a)
-{
-	return a >>> offset;
-});
-
-
-
-function _Char_toCode(char)
-{
-	var code = char.charCodeAt(0);
-	if (0xD800 <= code && code <= 0xDBFF)
-	{
-		return (code - 0xD800) * 0x400 + char.charCodeAt(1) - 0xDC00 + 0x10000
-	}
-	return code;
-}
-
-function _Char_fromCode(code)
-{
-	return _Utils_chr(
-		(code < 0 || 0x10FFFF < code)
-			? '\uFFFD'
-			:
-		(code <= 0xFFFF)
-			? String.fromCharCode(code)
-			:
-		(code -= 0x10000,
-			String.fromCharCode(Math.floor(code / 0x400) + 0xD800, code % 0x400 + 0xDC00)
-		)
-	);
-}
-
-function _Char_toUpper(char)
-{
-	return _Utils_chr(char.toUpperCase());
-}
-
-function _Char_toLower(char)
-{
-	return _Utils_chr(char.toLowerCase());
-}
-
-function _Char_toLocaleUpper(char)
-{
-	return _Utils_chr(char.toLocaleUpperCase());
-}
-
-function _Char_toLocaleLower(char)
-{
-	return _Utils_chr(char.toLocaleLowerCase());
-}
-
-
-
 var _String_cons = F2(function(chr, str)
 {
 	return chr + str;
@@ -946,12 +862,12 @@ function _String_uncons(string)
 {
 	var word = string.charCodeAt(0);
 	return word
-		? elm$core$Maybe$Just(
+		? $elm$core$Maybe$Just(
 			0xD800 <= word && word <= 0xDBFF
 				? _Utils_Tuple2(_Utils_chr(string[0] + string[1]), string.slice(2))
 				: _Utils_Tuple2(_Utils_chr(string[0]), string.slice(1))
 		)
-		: elm$core$Maybe$Nothing;
+		: $elm$core$Maybe$Nothing;
 }
 
 var _String_append = F2(function(a, b)
@@ -1216,14 +1132,14 @@ function _String_toInt(str)
 		var code = str.charCodeAt(i);
 		if (code < 0x30 || 0x39 < code)
 		{
-			return elm$core$Maybe$Nothing;
+			return $elm$core$Maybe$Nothing;
 		}
 		total = 10 * total + code - 0x30;
 	}
 
 	return i == start
-		? elm$core$Maybe$Nothing
-		: elm$core$Maybe$Just(code0 == 0x2D ? -total : total);
+		? $elm$core$Maybe$Nothing
+		: $elm$core$Maybe$Just(code0 == 0x2D ? -total : total);
 }
 
 
@@ -1234,11 +1150,11 @@ function _String_toFloat(s)
 	// check if it is a hex, octal, or binary number
 	if (s.length === 0 || /[\sxbo]/.test(s))
 	{
-		return elm$core$Maybe$Nothing;
+		return $elm$core$Maybe$Nothing;
 	}
 	var n = +s;
 	// faster isNaN check
-	return n === n ? elm$core$Maybe$Just(n) : elm$core$Maybe$Nothing;
+	return n === n ? $elm$core$Maybe$Just(n) : $elm$core$Maybe$Nothing;
 }
 
 function _String_fromList(chars)
@@ -1249,10 +1165,57 @@ function _String_fromList(chars)
 
 
 
+function _Char_toCode(char)
+{
+	var code = char.charCodeAt(0);
+	if (0xD800 <= code && code <= 0xDBFF)
+	{
+		return (code - 0xD800) * 0x400 + char.charCodeAt(1) - 0xDC00 + 0x10000
+	}
+	return code;
+}
+
+function _Char_fromCode(code)
+{
+	return _Utils_chr(
+		(code < 0 || 0x10FFFF < code)
+			? '\uFFFD'
+			:
+		(code <= 0xFFFF)
+			? String.fromCharCode(code)
+			:
+		(code -= 0x10000,
+			String.fromCharCode(Math.floor(code / 0x400) + 0xD800, code % 0x400 + 0xDC00)
+		)
+	);
+}
+
+function _Char_toUpper(char)
+{
+	return _Utils_chr(char.toUpperCase());
+}
+
+function _Char_toLower(char)
+{
+	return _Utils_chr(char.toLowerCase());
+}
+
+function _Char_toLocaleUpper(char)
+{
+	return _Utils_chr(char.toLocaleUpperCase());
+}
+
+function _Char_toLocaleLower(char)
+{
+	return _Utils_chr(char.toLocaleLowerCase());
+}
+
+
+
 /**_UNUSED/
 function _Json_errorToString(error)
 {
-	return elm$json$Json$Decode$errorToString(error);
+	return $elm$json$Json$Decode$errorToString(error);
 }
 //*/
 
@@ -1285,34 +1248,34 @@ var _Json_decodeInt = _Json_decodePrim(function(value) {
 		? _Json_expecting('an INT', value)
 		:
 	(-2147483647 < value && value < 2147483647 && (value | 0) === value)
-		? elm$core$Result$Ok(value)
+		? $elm$core$Result$Ok(value)
 		:
 	(isFinite(value) && !(value % 1))
-		? elm$core$Result$Ok(value)
+		? $elm$core$Result$Ok(value)
 		: _Json_expecting('an INT', value);
 });
 
 var _Json_decodeBool = _Json_decodePrim(function(value) {
 	return (typeof value === 'boolean')
-		? elm$core$Result$Ok(value)
+		? $elm$core$Result$Ok(value)
 		: _Json_expecting('a BOOL', value);
 });
 
 var _Json_decodeFloat = _Json_decodePrim(function(value) {
 	return (typeof value === 'number')
-		? elm$core$Result$Ok(value)
+		? $elm$core$Result$Ok(value)
 		: _Json_expecting('a FLOAT', value);
 });
 
 var _Json_decodeValue = _Json_decodePrim(function(value) {
-	return elm$core$Result$Ok(_Json_wrap(value));
+	return $elm$core$Result$Ok(_Json_wrap(value));
 });
 
 var _Json_decodeString = _Json_decodePrim(function(value) {
 	return (typeof value === 'string')
-		? elm$core$Result$Ok(value)
+		? $elm$core$Result$Ok(value)
 		: (value instanceof String)
-			? elm$core$Result$Ok(value + '')
+			? $elm$core$Result$Ok(value + '')
 			: _Json_expecting('a STRING', value);
 });
 
@@ -1428,7 +1391,7 @@ var _Json_runOnString = F2(function(decoder, string)
 	}
 	catch (e)
 	{
-		return elm$core$Result$Err(A2(elm$json$Json$Decode$Failure, 'This is not valid JSON! ' + e.message, _Json_wrap(string)));
+		return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, 'This is not valid JSON! ' + e.message, _Json_wrap(string)));
 	}
 });
 
@@ -1446,7 +1409,7 @@ function _Json_runHelp(decoder, value)
 
 		case 5:
 			return (value === null)
-				? elm$core$Result$Ok(decoder.c)
+				? $elm$core$Result$Ok(decoder.c)
 				: _Json_expecting('null', value);
 
 		case 3:
@@ -1470,7 +1433,7 @@ function _Json_runHelp(decoder, value)
 				return _Json_expecting('an OBJECT with a field named `' + field + '`', value);
 			}
 			var result = _Json_runHelp(decoder.b, value[field]);
-			return (elm$core$Result$isOk(result)) ? result : elm$core$Result$Err(A2(elm$json$Json$Decode$Field, field, result.a));
+			return ($elm$core$Result$isOk(result)) ? result : $elm$core$Result$Err(A2($elm$json$Json$Decode$Field, field, result.a));
 
 		case 7:
 			var index = decoder.e;
@@ -1483,7 +1446,7 @@ function _Json_runHelp(decoder, value)
 				return _Json_expecting('a LONGER array. Need index ' + index + ' but only see ' + value.length + ' entries', value);
 			}
 			var result = _Json_runHelp(decoder.b, value[index]);
-			return (elm$core$Result$isOk(result)) ? result : elm$core$Result$Err(A2(elm$json$Json$Decode$Index, index, result.a));
+			return ($elm$core$Result$isOk(result)) ? result : $elm$core$Result$Err(A2($elm$json$Json$Decode$Index, index, result.a));
 
 		case 8:
 			if (typeof value !== 'object' || value === null || _Json_isArray(value))
@@ -1498,14 +1461,14 @@ function _Json_runHelp(decoder, value)
 				if (value.hasOwnProperty(key))
 				{
 					var result = _Json_runHelp(decoder.b, value[key]);
-					if (!elm$core$Result$isOk(result))
+					if (!$elm$core$Result$isOk(result))
 					{
-						return elm$core$Result$Err(A2(elm$json$Json$Decode$Field, key, result.a));
+						return $elm$core$Result$Err(A2($elm$json$Json$Decode$Field, key, result.a));
 					}
 					keyValuePairs = _List_Cons(_Utils_Tuple2(key, result.a), keyValuePairs);
 				}
 			}
-			return elm$core$Result$Ok(elm$core$List$reverse(keyValuePairs));
+			return $elm$core$Result$Ok($elm$core$List$reverse(keyValuePairs));
 
 		case 9:
 			var answer = decoder.f;
@@ -1513,17 +1476,17 @@ function _Json_runHelp(decoder, value)
 			for (var i = 0; i < decoders.length; i++)
 			{
 				var result = _Json_runHelp(decoders[i], value);
-				if (!elm$core$Result$isOk(result))
+				if (!$elm$core$Result$isOk(result))
 				{
 					return result;
 				}
 				answer = answer(result.a);
 			}
-			return elm$core$Result$Ok(answer);
+			return $elm$core$Result$Ok(answer);
 
 		case 10:
 			var result = _Json_runHelp(decoder.b, value);
-			return (!elm$core$Result$isOk(result))
+			return (!$elm$core$Result$isOk(result))
 				? result
 				: _Json_runHelp(decoder.h(result.a), value);
 
@@ -1532,19 +1495,19 @@ function _Json_runHelp(decoder, value)
 			for (var temp = decoder.g; temp.b; temp = temp.b) // WHILE_CONS
 			{
 				var result = _Json_runHelp(temp.a, value);
-				if (elm$core$Result$isOk(result))
+				if ($elm$core$Result$isOk(result))
 				{
 					return result;
 				}
 				errors = _List_Cons(result.a, errors);
 			}
-			return elm$core$Result$Err(elm$json$Json$Decode$OneOf(elm$core$List$reverse(errors)));
+			return $elm$core$Result$Err($elm$json$Json$Decode$OneOf($elm$core$List$reverse(errors)));
 
 		case 1:
-			return elm$core$Result$Err(A2(elm$json$Json$Decode$Failure, decoder.a, _Json_wrap(value)));
+			return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, decoder.a, _Json_wrap(value)));
 
 		case 0:
-			return elm$core$Result$Ok(decoder.a);
+			return $elm$core$Result$Ok(decoder.a);
 	}
 }
 
@@ -1555,13 +1518,13 @@ function _Json_runArrayDecoder(decoder, value, toElmValue)
 	for (var i = 0; i < len; i++)
 	{
 		var result = _Json_runHelp(decoder, value[i]);
-		if (!elm$core$Result$isOk(result))
+		if (!$elm$core$Result$isOk(result))
 		{
-			return elm$core$Result$Err(A2(elm$json$Json$Decode$Index, i, result.a));
+			return $elm$core$Result$Err(A2($elm$json$Json$Decode$Index, i, result.a));
 		}
 		array[i] = result.a;
 	}
-	return elm$core$Result$Ok(toElmValue(array));
+	return $elm$core$Result$Ok(toElmValue(array));
 }
 
 function _Json_isArray(value)
@@ -1571,12 +1534,12 @@ function _Json_isArray(value)
 
 function _Json_toElmArray(array)
 {
-	return A2(elm$core$Array$initialize, array.length, function(i) { return array[i]; });
+	return A2($elm$core$Array$initialize, array.length, function(i) { return array[i]; });
 }
 
 function _Json_expecting(type, value)
 {
-	return elm$core$Result$Err(A2(elm$json$Json$Decode$Failure, 'Expecting ' + type, _Json_wrap(value)));
+	return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, 'Expecting ' + type, _Json_wrap(value)));
 }
 
 
@@ -1894,9 +1857,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bH,
-		impl.b3,
-		impl.b$,
+		impl.bE,
+		impl.b2,
+		impl.bZ,
 		function() { return function() {} }
 	);
 });
@@ -1909,7 +1872,7 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 function _Platform_initialize(flagDecoder, args, init, update, subscriptions, stepperBuilder)
 {
 	var result = A2(_Json_run, flagDecoder, _Json_wrap(args ? args['flags'] : undefined));
-	elm$core$Result$isOk(result) || _Debug_crash(2 /**_UNUSED/, _Json_errorToString(result.a) /**/);
+	$elm$core$Result$isOk(result) || _Debug_crash(2 /**_UNUSED/, _Json_errorToString(result.a) /**/);
 	var managers = {};
 	result = init(result.a);
 	var model = result.a;
@@ -2287,7 +2250,7 @@ function _Platform_setupIncomingPort(name, sendToApp)
 	{
 		var result = A2(_Json_run, converter, _Json_wrap(incomingValue));
 
-		elm$core$Result$isOk(result) || _Debug_crash(4, name, result.a);
+		$elm$core$Result$isOk(result) || _Debug_crash(4, name, result.a);
 
 		var value = result.a;
 		for (var temp = subs; temp.b; temp = temp.b) // WHILE_CONS
@@ -2347,52 +2310,6 @@ function _Platform_mergeExportsDebug(moduleName, obj, exports)
 				: _Platform_mergeExportsDebug(moduleName + '.' + name, obj[name], exports[name])
 			: (obj[name] = exports[name]);
 	}
-}
-
-
-
-function _Time_now(millisToPosix)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(millisToPosix(Date.now())));
-	});
-}
-
-var _Time_setInterval = F2(function(interval, task)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
-		return function() { clearInterval(id); };
-	});
-});
-
-function _Time_here()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(
-			A2(elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
-		));
-	});
-}
-
-
-function _Time_getZoneName()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		try
-		{
-			var name = elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
-		}
-		catch (e)
-		{
-			var name = elm$time$Time$Offset(new Date().getTimezoneOffset());
-		}
-		callback(_Scheduler_succeed(name));
-	});
 }
 
 
@@ -2711,7 +2628,7 @@ var _VirtualDom_mapAttribute = F2(function(func, attr)
 
 function _VirtualDom_mapHandler(func, handler)
 {
-	var tag = elm$virtual_dom$VirtualDom$toHandlerInt(handler);
+	var tag = $elm$virtual_dom$VirtualDom$toHandlerInt(handler);
 
 	// 0 = Normal
 	// 1 = MayStopPropagation
@@ -2722,13 +2639,13 @@ function _VirtualDom_mapHandler(func, handler)
 		$: handler.$,
 		a:
 			!tag
-				? A2(elm$json$Json$Decode$map, func, handler.a)
+				? A2($elm$json$Json$Decode$map, func, handler.a)
 				:
-			A3(elm$json$Json$Decode$map2,
+			A3($elm$json$Json$Decode$map2,
 				tag < 3
 					? _VirtualDom_mapEventTuple
 					: _VirtualDom_mapEventRecord,
-				elm$json$Json$Decode$succeed(func),
+				$elm$json$Json$Decode$succeed(func),
 				handler.a
 			)
 	};
@@ -2742,9 +2659,9 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		x: func(record.x),
-		aH: record.aH,
-		aD: record.aD
+		t: func(record.t),
+		az: record.az,
+		av: record.av
 	}
 });
 
@@ -2966,7 +2883,7 @@ function _VirtualDom_applyEvents(domNode, eventNode, events)
 		oldCallback = _VirtualDom_makeCallback(eventNode, newHandler);
 		domNode.addEventListener(key, oldCallback,
 			_VirtualDom_passiveSupported
-			&& { passive: elm$virtual_dom$VirtualDom$toHandlerInt(newHandler) < 2 }
+			&& { passive: $elm$virtual_dom$VirtualDom$toHandlerInt(newHandler) < 2 }
 		);
 		allCallbacks[key] = oldCallback;
 	}
@@ -2999,12 +2916,12 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		var handler = callback.q;
 		var result = _Json_runHelp(handler.a, event);
 
-		if (!elm$core$Result$isOk(result))
+		if (!$elm$core$Result$isOk(result))
 		{
 			return;
 		}
 
-		var tag = elm$virtual_dom$VirtualDom$toHandlerInt(handler);
+		var tag = $elm$virtual_dom$VirtualDom$toHandlerInt(handler);
 
 		// 0 = Normal
 		// 1 = MayStopPropagation
@@ -3012,11 +2929,11 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.x;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.aH;
+		var message = !tag ? value : tag < 3 ? value.a : value.t;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.az;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.aD) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.av) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3966,11 +3883,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bH,
-		impl.b3,
-		impl.b$,
+		impl.bE,
+		impl.b2,
+		impl.bZ,
 		function(sendToApp, initialModel) {
-			var view = impl.b5;
+			var view = impl.b4;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -4002,12 +3919,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bH,
-		impl.b3,
-		impl.b$,
+		impl.bE,
+		impl.b2,
+		impl.bZ,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.W && impl.W(sendToApp)
-			var view = impl.b5;
+			var divertHrefToApp = impl.ax && impl.ax(sendToApp)
+			var view = impl.b4;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -4015,12 +3932,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bs);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bp);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.b2) && (_VirtualDom_doc.title = title = doc.b2);
+				(title !== doc.b1) && (_VirtualDom_doc.title = title = doc.b1);
 			});
 		}
 	);
@@ -4076,12 +3993,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.bR;
-	var onUrlRequest = impl.bS;
+	var onUrlChange = impl.bP;
+	var onUrlRequest = impl.bQ;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		W: function(sendToApp)
+		ax: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4094,37 +4011,37 @@ function _Browser_application(impl)
 					event.preventDefault();
 					var href = domNode.href;
 					var curr = _Browser_getUrl();
-					var next = elm$url$Url$fromString(href).a;
+					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.a8 === next.a8
-							&& curr.aW === next.aW
-							&& curr.a5.a === next.a5.a
+							&& curr.a1 === next.a1
+							&& curr.aP === next.aP
+							&& curr.a_.a === next.a_.a
 						)
-							? elm$browser$Browser$Internal(next)
-							: elm$browser$Browser$External(href)
+							? $elm$browser$Browser$Internal(next)
+							: $elm$browser$Browser$External(href)
 					));
 				}
 			});
 		},
-		bH: function(flags)
+		bE: function(flags)
 		{
-			return A3(impl.bH, flags, _Browser_getUrl(), key);
+			return A3(impl.bE, flags, _Browser_getUrl(), key);
 		},
-		b5: impl.b5,
-		b3: impl.b3,
-		b$: impl.b$
+		b4: impl.b4,
+		b2: impl.b2,
+		bZ: impl.bZ
 	});
 }
 
 function _Browser_getUrl()
 {
-	return elm$url$Url$fromString(_VirtualDom_doc.location.href).a || _Debug_crash(1);
+	return $elm$url$Url$fromString(_VirtualDom_doc.location.href).a || _Debug_crash(1);
 }
 
 var _Browser_go = F2(function(key, n)
 {
-	return A2(elm$core$Task$perform, elm$core$Basics$never, _Scheduler_binding(function() {
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function() {
 		n && history.go(n);
 		key();
 	}));
@@ -4132,7 +4049,7 @@ var _Browser_go = F2(function(key, n)
 
 var _Browser_pushUrl = F2(function(key, url)
 {
-	return A2(elm$core$Task$perform, elm$core$Basics$never, _Scheduler_binding(function() {
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function() {
 		history.pushState({}, '', url);
 		key();
 	}));
@@ -4140,7 +4057,7 @@ var _Browser_pushUrl = F2(function(key, url)
 
 var _Browser_replaceUrl = F2(function(key, url)
 {
-	return A2(elm$core$Task$perform, elm$core$Basics$never, _Scheduler_binding(function() {
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function() {
 		history.replaceState({}, '', url);
 		key();
 	}));
@@ -4168,7 +4085,7 @@ var _Browser_on = F3(function(node, eventName, sendToSelf)
 var _Browser_decodeEvent = F2(function(decoder, event)
 {
 	var result = _Json_runHelp(decoder, event);
-	return elm$core$Result$isOk(result) ? elm$core$Maybe$Just(result.a) : elm$core$Maybe$Nothing;
+	return $elm$core$Result$isOk(result) ? $elm$core$Maybe$Just(result.a) : $elm$core$Maybe$Nothing;
 });
 
 
@@ -4179,17 +4096,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { bF: 'hidden', bu: 'visibilitychange' }
+		? { bC: 'hidden', br: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { bF: 'mozHidden', bu: 'mozvisibilitychange' }
+		? { bC: 'mozHidden', br: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { bF: 'msHidden', bu: 'msvisibilitychange' }
+		? { bC: 'msHidden', br: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { bF: 'webkitHidden', bu: 'webkitvisibilitychange' }
-		: { bF: 'hidden', bu: 'visibilitychange' };
+		? { bC: 'webkitHidden', br: 'webkitvisibilitychange' }
+		: { bC: 'hidden', br: 'visibilitychange' };
 }
 
 
@@ -4233,7 +4150,7 @@ function _Browser_withNode(id, doStuff)
 			var node = document.getElementById(id);
 			callback(node
 				? _Scheduler_succeed(doStuff(node))
-				: _Scheduler_fail(elm$browser$Browser$Dom$NotFound(id))
+				: _Scheduler_fail($elm$browser$Browser$Dom$NotFound(id))
 			);
 		});
 	});
@@ -4270,12 +4187,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		bh: _Browser_getScene(),
-		bn: {
-			av: _Browser_window.pageXOffset,
-			aw: _Browser_window.pageYOffset,
-			N: _Browser_doc.documentElement.clientWidth,
-			G: _Browser_doc.documentElement.clientHeight
+		ba: _Browser_getScene(),
+		bj: {
+			an: _Browser_window.pageXOffset,
+			ao: _Browser_window.pageYOffset,
+			I: _Browser_doc.documentElement.clientWidth,
+			B: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4285,8 +4202,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		N: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		G: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		I: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		B: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4309,15 +4226,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			bh: {
-				N: node.scrollWidth,
-				G: node.scrollHeight
+			ba: {
+				I: node.scrollWidth,
+				B: node.scrollHeight
 			},
-			bn: {
-				av: node.scrollLeft,
-				aw: node.scrollTop,
-				N: node.clientWidth,
-				G: node.clientHeight
+			bj: {
+				an: node.scrollLeft,
+				ao: node.scrollTop,
+				I: node.clientWidth,
+				B: node.clientHeight
 			}
 		};
 	});
@@ -4347,18 +4264,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			bh: _Browser_getScene(),
-			bn: {
-				av: x,
-				aw: y,
-				N: _Browser_doc.documentElement.clientWidth,
-				G: _Browser_doc.documentElement.clientHeight
+			ba: _Browser_getScene(),
+			bj: {
+				an: x,
+				ao: y,
+				I: _Browser_doc.documentElement.clientWidth,
+				B: _Browser_doc.documentElement.clientHeight
 			},
-			by: {
-				av: x + rect.left,
-				aw: y + rect.top,
-				N: rect.width,
-				G: rect.height
+			bv: {
+				an: x + rect.left,
+				ao: y + rect.top,
+				I: rect.width,
+				B: rect.height
 			}
 		};
 	});
@@ -4371,7 +4288,7 @@ function _Browser_getElement(id)
 
 function _Browser_reload(skipCache)
 {
-	return A2(elm$core$Task$perform, elm$core$Basics$never, _Scheduler_binding(function(callback)
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function(callback)
 	{
 		_VirtualDom_doc.location.reload(skipCache);
 	}));
@@ -4379,7 +4296,7 @@ function _Browser_reload(skipCache)
 
 function _Browser_load(url)
 {
-	return A2(elm$core$Task$perform, elm$core$Basics$never, _Scheduler_binding(function(callback)
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function(callback)
 	{
 		try
 		{
@@ -4392,6 +4309,89 @@ function _Browser_load(url)
 			_VirtualDom_doc.location.reload(false);
 		}
 	}));
+}
+
+
+
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+
+
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
 }
 
 
@@ -4415,8 +4415,8 @@ var _Bytes_getHostEndianness = F2(function(le, be)
 
 function _Bytes_encode(encoder)
 {
-	var mutableBytes = new DataView(new ArrayBuffer(elm$bytes$Bytes$Encode$getWidth(encoder)));
-	elm$bytes$Bytes$Encode$write(encoder)(mutableBytes)(0);
+	var mutableBytes = new DataView(new ArrayBuffer($elm$bytes$Bytes$Encode$getWidth(encoder)));
+	$elm$bytes$Bytes$Encode$write(encoder)(mutableBytes)(0);
 	return mutableBytes;
 }
 
@@ -4517,9 +4517,9 @@ var _Bytes_write_string = F3(function(mb, offset, string)
 var _Bytes_decode = F2(function(decoder, bytes)
 {
 	try {
-		return elm$core$Maybe$Just(A2(decoder, bytes, 0).b);
+		return $elm$core$Maybe$Just(A2(decoder, bytes, 0).b);
 	} catch(e) {
-		return elm$core$Maybe$Nothing;
+		return $elm$core$Maybe$Nothing;
 	}
 });
 
@@ -4534,7 +4534,7 @@ var _Bytes_read_f64 = F3(function(isLE, bytes, offset) { return _Utils_Tuple2(of
 
 var _Bytes_read_bytes = F3(function(len, bytes, offset)
 {
-	return _Utils_Tuple2(offset + len, new DataView(bytes.buffer, offset, len));
+	return _Utils_Tuple2(offset + len, new DataView(bytes.buffer, bytes.byteOffset + offset, len));
 });
 
 var _Bytes_read_string = F3(function(len, bytes, offset)
@@ -4581,25 +4581,25 @@ var _Http_toTask = F3(function(router, toTask, request)
 	return _Scheduler_binding(function(callback)
 	{
 		function done(response) {
-			callback(toTask(request.bA.a(response)));
+			callback(toTask(request.bx.a(response)));
 		}
 
 		var xhr = new XMLHttpRequest();
-		xhr.addEventListener('error', function() { done(elm$http$Http$NetworkError_); });
-		xhr.addEventListener('timeout', function() { done(elm$http$Http$Timeout_); });
-		xhr.addEventListener('load', function() { done(_Http_toResponse(request.bA.b, xhr)); });
-		elm$core$Maybe$isJust(request.r) && _Http_track(router, xhr, request.r.a);
+		xhr.addEventListener('error', function() { done($elm$http$Http$NetworkError_); });
+		xhr.addEventListener('timeout', function() { done($elm$http$Http$Timeout_); });
+		xhr.addEventListener('load', function() { done(_Http_toResponse(request.bx.b, xhr)); });
+		$elm$core$Maybe$isJust(request.bi) && _Http_track(router, xhr, request.bi.a);
 
 		try {
-			xhr.open(request.n, request.b4, true);
+			xhr.open(request.bF, request.b3, true);
 		} catch (e) {
-			return done(elm$http$Http$BadUrl_(request.b4));
+			return done($elm$http$Http$BadUrl_(request.b3));
 		}
 
 		_Http_configureRequest(xhr, request);
 
-		request.bs.a && xhr.setRequestHeader('Content-Type', request.bs.a);
-		xhr.send(request.bs.b);
+		request.bp.a && xhr.setRequestHeader('Content-Type', request.bp.a);
+		xhr.send(request.bp.b);
 
 		return function() { xhr.c = true; xhr.abort(); };
 	});
@@ -4610,13 +4610,13 @@ var _Http_toTask = F3(function(router, toTask, request)
 
 function _Http_configureRequest(xhr, request)
 {
-	for (var headers = request.i; headers.b; headers = headers.b) // WHILE_CONS
+	for (var headers = request.aO; headers.b; headers = headers.b) // WHILE_CONS
 	{
 		xhr.setRequestHeader(headers.a.a, headers.a.b);
 	}
-	xhr.timeout = request.q.a || 0;
-	xhr.responseType = request.bA.d;
-	xhr.withCredentials = request.E;
+	xhr.timeout = request.b0.a || 0;
+	xhr.responseType = request.bx.d;
+	xhr.withCredentials = request.bm;
 }
 
 
@@ -4625,7 +4625,7 @@ function _Http_configureRequest(xhr, request)
 function _Http_toResponse(toBody, xhr)
 {
 	return A2(
-		200 <= xhr.status && xhr.status < 300 ? elm$http$Http$GoodStatus_ : elm$http$Http$BadStatus_,
+		200 <= xhr.status && xhr.status < 300 ? $elm$http$Http$GoodStatus_ : $elm$http$Http$BadStatus_,
 		_Http_toMetadata(xhr),
 		toBody(xhr.response)
 	);
@@ -4637,10 +4637,10 @@ function _Http_toResponse(toBody, xhr)
 function _Http_toMetadata(xhr)
 {
 	return {
-		b4: xhr.responseURL,
-		bZ: xhr.status,
-		b_: xhr.statusText,
-		i: _Http_parseHeaders(xhr.getAllResponseHeaders())
+		b3: xhr.responseURL,
+		bX: xhr.status,
+		bY: xhr.statusText,
+		aO: _Http_parseHeaders(xhr.getAllResponseHeaders())
 	};
 }
 
@@ -4651,10 +4651,10 @@ function _Http_parseHeaders(rawHeaders)
 {
 	if (!rawHeaders)
 	{
-		return elm$core$Dict$empty;
+		return $elm$core$Dict$empty;
 	}
 
-	var headers = elm$core$Dict$empty;
+	var headers = $elm$core$Dict$empty;
 	var headerPairs = rawHeaders.split('\r\n');
 	for (var i = headerPairs.length; i--; )
 	{
@@ -4665,8 +4665,8 @@ function _Http_parseHeaders(rawHeaders)
 			var key = headerPair.substring(0, index);
 			var value = headerPair.substring(index + 2);
 
-			headers = A3(elm$core$Dict$update, key, function(oldValue) {
-				return elm$core$Maybe$Just(elm$core$Maybe$isJust(oldValue)
+			headers = A3($elm$core$Dict$update, key, function(oldValue) {
+				return $elm$core$Maybe$Just($elm$core$Maybe$isJust(oldValue)
 					? value + ', ' + oldValue.a
 					: value
 				);
@@ -4734,51 +4734,23 @@ function _Http_track(router, xhr, tracker)
 
 	xhr.upload.addEventListener('progress', function(event) {
 		if (xhr.c) { return; }
-		_Scheduler_rawSpawn(A2(elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, elm$http$Http$Sending({
-			bY: event.loaded,
-			aF: event.total
+		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Sending({
+			bW: event.loaded,
+			bb: event.total
 		}))));
 	});
 	xhr.addEventListener('progress', function(event) {
 		if (xhr.c) { return; }
-		_Scheduler_rawSpawn(A2(elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, elm$http$Http$Receiving({
-			bV: event.loaded,
-			aF: event.lengthComputable ? elm$core$Maybe$Just(event.total) : elm$core$Maybe$Nothing
+		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Receiving({
+			bT: event.loaded,
+			bb: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
 		}))));
 	});
-}var author$project$KeyCode$KeyCode = elm$core$Basics$identity;
-var elm$core$Basics$identity = function (x) {
-	return x;
-};
-var elm$core$Basics$EQ = 1;
-var elm$core$Basics$LT = 0;
-var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
-var elm$core$Array$foldr = F3(
-	function (func, baseCase, _n0) {
-		var tree = _n0.c;
-		var tail = _n0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (!node.$) {
-					var subTree = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
-				}
-			});
-		return A3(
-			elm$core$Elm$JsArray$foldr,
-			helper,
-			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
-			tree);
-	});
-var elm$core$List$cons = _List_cons;
-var elm$core$Array$toList = function (array) {
-	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
-};
-var elm$core$Basics$GT = 2;
-var elm$core$Dict$foldr = F3(
+}var $elm$core$Basics$EQ = 1;
+var $elm$core$Basics$GT = 2;
+var $elm$core$Basics$LT = 0;
+var $elm$core$List$cons = _List_cons;
+var $elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
 		while (true) {
@@ -4794,7 +4766,7 @@ var elm$core$Dict$foldr = F3(
 					func,
 					key,
 					value,
-					A3(elm$core$Dict$foldr, func, acc, right)),
+					A3($elm$core$Dict$foldr, func, acc, right)),
 					$temp$t = left;
 				func = $temp$func;
 				acc = $temp$acc;
@@ -4803,141 +4775,108 @@ var elm$core$Dict$foldr = F3(
 			}
 		}
 	});
-var elm$core$Dict$toList = function (dict) {
+var $elm$core$Dict$toList = function (dict) {
 	return A3(
-		elm$core$Dict$foldr,
+		$elm$core$Dict$foldr,
 		F3(
 			function (key, value, list) {
 				return A2(
-					elm$core$List$cons,
+					$elm$core$List$cons,
 					_Utils_Tuple2(key, value),
 					list);
 			}),
 		_List_Nil,
 		dict);
 };
-var elm$core$Dict$keys = function (dict) {
+var $elm$core$Dict$keys = function (dict) {
 	return A3(
-		elm$core$Dict$foldr,
+		$elm$core$Dict$foldr,
 		F3(
 			function (key, value, keyList) {
-				return A2(elm$core$List$cons, key, keyList);
+				return A2($elm$core$List$cons, key, keyList);
 			}),
 		_List_Nil,
 		dict);
 };
-var elm$core$Set$toList = function (_n0) {
-	var dict = _n0;
-	return elm$core$Dict$keys(dict);
+var $elm$core$Set$toList = function (_v0) {
+	var dict = _v0;
+	return $elm$core$Dict$keys(dict);
 };
-var author$project$Games$blinky = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('ArrowLeft', 7),
-			_Utils_Tuple2('ArrowRight', 8),
-			_Utils_Tuple2('ArrowUp', 3),
-			_Utils_Tuple2('ArrowDown', 6)
-		]);
-	return {t: controls, v: 'BLINKY'};
-}();
-var author$project$Games$brix = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('ArrowLeft', 4),
-			_Utils_Tuple2('ArrowRight', 6)
-		]);
-	return {t: controls, v: 'BRIX'};
-}();
-var author$project$Games$connect4 = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('ArrowLeft', 4),
-			_Utils_Tuple2('ArrowRight', 6),
-			_Utils_Tuple2(' ', 5)
-		]);
-	return {t: controls, v: 'CONNECT4'};
-}();
-var author$project$Games$hidden = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('ArrowLeft', 4),
-			_Utils_Tuple2('ArrowRight', 6),
-			_Utils_Tuple2(' ', 5),
-			_Utils_Tuple2('ArrowUp', 2),
-			_Utils_Tuple2('ArrowDown', 8)
-		]);
-	return {t: controls, v: 'HIDDEN'};
-}();
-var author$project$Games$invaders = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('ArrowLeft', 4),
-			_Utils_Tuple2(' ', 5),
-			_Utils_Tuple2('ArrowRight', 6)
-		]);
-	return {t: controls, v: 'INVADERS'};
-}();
-var author$project$Games$pong = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('w', 1),
-			_Utils_Tuple2('s', 4),
-			_Utils_Tuple2('i', 12),
-			_Utils_Tuple2('k', 13)
-		]);
-	return {t: controls, v: 'PONG'};
-}();
-var author$project$Games$tetris = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('ArrowLeft', 5),
-			_Utils_Tuple2('ArrowRight', 6),
-			_Utils_Tuple2(' ', 4),
-			_Utils_Tuple2('ArrowDown', 7)
-		]);
-	return {t: controls, v: 'TETRIS'};
-}();
-var author$project$Games$tictac = function () {
-	var controls = _List_fromArray(
-		[
-			_Utils_Tuple2('5', 1),
-			_Utils_Tuple2('6', 2),
-			_Utils_Tuple2('7', 3),
-			_Utils_Tuple2('r', 4),
-			_Utils_Tuple2('t', 5),
-			_Utils_Tuple2('y', 6),
-			_Utils_Tuple2('f', 7),
-			_Utils_Tuple2('g', 8),
-			_Utils_Tuple2('h', 9)
-		]);
-	return {t: controls, v: 'TICTAC'};
-}();
-var author$project$Games$init = _List_fromArray(
-	[author$project$Games$blinky, author$project$Games$brix, author$project$Games$connect4, author$project$Games$hidden, author$project$Games$invaders, author$project$Games$pong, author$project$Games$tetris, author$project$Games$tictac]);
-var elm$core$Array$branchFactor = 32;
-var elm$core$Array$Array_elm_builtin = F4(
-	function (a, b, c, d) {
-		return {$: 0, a: a, b: b, c: c, d: d};
+var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var $elm$core$Array$foldr = F3(
+	function (func, baseCase, _v0) {
+		var tree = _v0.c;
+		var tail = _v0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (!node.$) {
+					var subTree = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			$elm$core$Elm$JsArray$foldr,
+			helper,
+			A3($elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
 	});
-var elm$core$Basics$ceiling = _Basics_ceiling;
-var elm$core$Basics$fdiv = _Basics_fdiv;
-var elm$core$Basics$logBase = F2(
-	function (base, number) {
-		return _Basics_log(number) / _Basics_log(base);
-	});
-var elm$core$Basics$toFloat = _Basics_toFloat;
-var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
-	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
-var elm$core$Elm$JsArray$empty = _JsArray_empty;
-var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
-var elm$core$Array$Leaf = function (a) {
+var $elm$core$Array$toList = function (array) {
+	return A3($elm$core$Array$foldr, $elm$core$List$cons, _List_Nil, array);
+};
+var $elm$core$Result$Err = function (a) {
 	return {$: 1, a: a};
 };
-var elm$core$Array$SubTree = function (a) {
+var $elm$json$Json$Decode$Failure = F2(
+	function (a, b) {
+		return {$: 3, a: a, b: b};
+	});
+var $elm$json$Json$Decode$Field = F2(
+	function (a, b) {
+		return {$: 0, a: a, b: b};
+	});
+var $elm$json$Json$Decode$Index = F2(
+	function (a, b) {
+		return {$: 1, a: a, b: b};
+	});
+var $elm$core$Result$Ok = function (a) {
 	return {$: 0, a: a};
 };
-var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
-var elm$core$List$foldl = F3(
+var $elm$json$Json$Decode$OneOf = function (a) {
+	return {$: 2, a: a};
+};
+var $elm$core$Basics$False = 1;
+var $elm$core$Basics$add = _Basics_add;
+var $elm$core$Maybe$Just = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$core$Maybe$Nothing = {$: 1};
+var $elm$core$String$all = _String_all;
+var $elm$core$Basics$and = _Basics_and;
+var $elm$core$Basics$append = _Utils_append;
+var $elm$json$Json$Encode$encode = _Json_encode;
+var $elm$core$String$fromInt = _String_fromNumber;
+var $elm$core$String$join = F2(
+	function (sep, chunks) {
+		return A2(
+			_String_join,
+			sep,
+			_List_toArray(chunks));
+	});
+var $elm$core$String$split = F2(
+	function (sep, string) {
+		return _List_fromArray(
+			A2(_String_split, sep, string));
+	});
+var $elm$json$Json$Decode$indent = function (str) {
+	return A2(
+		$elm$core$String$join,
+		'\n    ',
+		A2($elm$core$String$split, '\n', str));
+};
+var $elm$core$List$foldl = F3(
 	function (func, acc, list) {
 		foldl:
 		while (true) {
@@ -4956,22 +4895,232 @@ var elm$core$List$foldl = F3(
 			}
 		}
 	});
-var elm$core$List$reverse = function (list) {
-	return A3(elm$core$List$foldl, elm$core$List$cons, _List_Nil, list);
+var $elm$core$List$length = function (xs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, i) {
+				return i + 1;
+			}),
+		0,
+		xs);
 };
-var elm$core$Array$compressNodes = F2(
+var $elm$core$List$map2 = _List_map2;
+var $elm$core$Basics$le = _Utils_le;
+var $elm$core$Basics$sub = _Basics_sub;
+var $elm$core$List$rangeHelp = F3(
+	function (lo, hi, list) {
+		rangeHelp:
+		while (true) {
+			if (_Utils_cmp(lo, hi) < 1) {
+				var $temp$lo = lo,
+					$temp$hi = hi - 1,
+					$temp$list = A2($elm$core$List$cons, hi, list);
+				lo = $temp$lo;
+				hi = $temp$hi;
+				list = $temp$list;
+				continue rangeHelp;
+			} else {
+				return list;
+			}
+		}
+	});
+var $elm$core$List$range = F2(
+	function (lo, hi) {
+		return A3($elm$core$List$rangeHelp, lo, hi, _List_Nil);
+	});
+var $elm$core$List$indexedMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$map2,
+			f,
+			A2(
+				$elm$core$List$range,
+				0,
+				$elm$core$List$length(xs) - 1),
+			xs);
+	});
+var $elm$core$Char$toCode = _Char_toCode;
+var $elm$core$Char$isLower = function (_char) {
+	var code = $elm$core$Char$toCode(_char);
+	return (97 <= code) && (code <= 122);
+};
+var $elm$core$Char$isUpper = function (_char) {
+	var code = $elm$core$Char$toCode(_char);
+	return (code <= 90) && (65 <= code);
+};
+var $elm$core$Basics$or = _Basics_or;
+var $elm$core$Char$isAlpha = function (_char) {
+	return $elm$core$Char$isLower(_char) || $elm$core$Char$isUpper(_char);
+};
+var $elm$core$Char$isDigit = function (_char) {
+	var code = $elm$core$Char$toCode(_char);
+	return (code <= 57) && (48 <= code);
+};
+var $elm$core$Char$isAlphaNum = function (_char) {
+	return $elm$core$Char$isLower(_char) || ($elm$core$Char$isUpper(_char) || $elm$core$Char$isDigit(_char));
+};
+var $elm$core$List$reverse = function (list) {
+	return A3($elm$core$List$foldl, $elm$core$List$cons, _List_Nil, list);
+};
+var $elm$core$String$uncons = _String_uncons;
+var $elm$json$Json$Decode$errorOneOf = F2(
+	function (i, error) {
+		return '\n\n(' + ($elm$core$String$fromInt(i + 1) + (') ' + $elm$json$Json$Decode$indent(
+			$elm$json$Json$Decode$errorToString(error))));
+	});
+var $elm$json$Json$Decode$errorToString = function (error) {
+	return A2($elm$json$Json$Decode$errorToStringHelp, error, _List_Nil);
+};
+var $elm$json$Json$Decode$errorToStringHelp = F2(
+	function (error, context) {
+		errorToStringHelp:
+		while (true) {
+			switch (error.$) {
+				case 0:
+					var f = error.a;
+					var err = error.b;
+					var isSimple = function () {
+						var _v1 = $elm$core$String$uncons(f);
+						if (_v1.$ === 1) {
+							return false;
+						} else {
+							var _v2 = _v1.a;
+							var _char = _v2.a;
+							var rest = _v2.b;
+							return $elm$core$Char$isAlpha(_char) && A2($elm$core$String$all, $elm$core$Char$isAlphaNum, rest);
+						}
+					}();
+					var fieldName = isSimple ? ('.' + f) : ('[\'' + (f + '\']'));
+					var $temp$error = err,
+						$temp$context = A2($elm$core$List$cons, fieldName, context);
+					error = $temp$error;
+					context = $temp$context;
+					continue errorToStringHelp;
+				case 1:
+					var i = error.a;
+					var err = error.b;
+					var indexName = '[' + ($elm$core$String$fromInt(i) + ']');
+					var $temp$error = err,
+						$temp$context = A2($elm$core$List$cons, indexName, context);
+					error = $temp$error;
+					context = $temp$context;
+					continue errorToStringHelp;
+				case 2:
+					var errors = error.a;
+					if (!errors.b) {
+						return 'Ran into a Json.Decode.oneOf with no possibilities' + function () {
+							if (!context.b) {
+								return '!';
+							} else {
+								return ' at json' + A2(
+									$elm$core$String$join,
+									'',
+									$elm$core$List$reverse(context));
+							}
+						}();
+					} else {
+						if (!errors.b.b) {
+							var err = errors.a;
+							var $temp$error = err,
+								$temp$context = context;
+							error = $temp$error;
+							context = $temp$context;
+							continue errorToStringHelp;
+						} else {
+							var starter = function () {
+								if (!context.b) {
+									return 'Json.Decode.oneOf';
+								} else {
+									return 'The Json.Decode.oneOf at json' + A2(
+										$elm$core$String$join,
+										'',
+										$elm$core$List$reverse(context));
+								}
+							}();
+							var introduction = starter + (' failed in the following ' + ($elm$core$String$fromInt(
+								$elm$core$List$length(errors)) + ' ways:'));
+							return A2(
+								$elm$core$String$join,
+								'\n\n',
+								A2(
+									$elm$core$List$cons,
+									introduction,
+									A2($elm$core$List$indexedMap, $elm$json$Json$Decode$errorOneOf, errors)));
+						}
+					}
+				default:
+					var msg = error.a;
+					var json = error.b;
+					var introduction = function () {
+						if (!context.b) {
+							return 'Problem with the given value:\n\n';
+						} else {
+							return 'Problem with the value at json' + (A2(
+								$elm$core$String$join,
+								'',
+								$elm$core$List$reverse(context)) + ':\n\n    ');
+						}
+					}();
+					return introduction + ($elm$json$Json$Decode$indent(
+						A2($elm$json$Json$Encode$encode, 4, json)) + ('\n\n' + msg));
+			}
+		}
+	});
+var $elm$core$Array$branchFactor = 32;
+var $elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 0, a: a, b: b, c: c, d: d};
+	});
+var $elm$core$Elm$JsArray$empty = _JsArray_empty;
+var $elm$core$Basics$ceiling = _Basics_ceiling;
+var $elm$core$Basics$fdiv = _Basics_fdiv;
+var $elm$core$Basics$logBase = F2(
+	function (base, number) {
+		return _Basics_log(number) / _Basics_log(base);
+	});
+var $elm$core$Basics$toFloat = _Basics_toFloat;
+var $elm$core$Array$shiftStep = $elm$core$Basics$ceiling(
+	A2($elm$core$Basics$logBase, 2, $elm$core$Array$branchFactor));
+var $elm$core$Array$empty = A4($elm$core$Array$Array_elm_builtin, 0, $elm$core$Array$shiftStep, $elm$core$Elm$JsArray$empty, $elm$core$Elm$JsArray$empty);
+var $elm$core$Elm$JsArray$initialize = _JsArray_initialize;
+var $elm$core$Array$Leaf = function (a) {
+	return {$: 1, a: a};
+};
+var $elm$core$Basics$apL = F2(
+	function (f, x) {
+		return f(x);
+	});
+var $elm$core$Basics$apR = F2(
+	function (x, f) {
+		return f(x);
+	});
+var $elm$core$Basics$eq = _Utils_equal;
+var $elm$core$Basics$floor = _Basics_floor;
+var $elm$core$Elm$JsArray$length = _JsArray_length;
+var $elm$core$Basics$gt = _Utils_gt;
+var $elm$core$Basics$max = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) > 0) ? x : y;
+	});
+var $elm$core$Basics$mul = _Basics_mul;
+var $elm$core$Array$SubTree = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
+var $elm$core$Array$compressNodes = F2(
 	function (nodes, acc) {
 		compressNodes:
 		while (true) {
-			var _n0 = A2(elm$core$Elm$JsArray$initializeFromList, elm$core$Array$branchFactor, nodes);
-			var node = _n0.a;
-			var remainingNodes = _n0.b;
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, nodes);
+			var node = _v0.a;
+			var remainingNodes = _v0.b;
 			var newAcc = A2(
-				elm$core$List$cons,
-				elm$core$Array$SubTree(node),
+				$elm$core$List$cons,
+				$elm$core$Array$SubTree(node),
 				acc);
 			if (!remainingNodes.b) {
-				return elm$core$List$reverse(newAcc);
+				return $elm$core$List$reverse(newAcc);
 			} else {
 				var $temp$nodes = remainingNodes,
 					$temp$acc = newAcc;
@@ -4981,24 +5130,19 @@ var elm$core$Array$compressNodes = F2(
 			}
 		}
 	});
-var elm$core$Basics$apR = F2(
-	function (x, f) {
-		return f(x);
-	});
-var elm$core$Basics$eq = _Utils_equal;
-var elm$core$Tuple$first = function (_n0) {
-	var x = _n0.a;
+var $elm$core$Tuple$first = function (_v0) {
+	var x = _v0.a;
 	return x;
 };
-var elm$core$Array$treeFromBuilder = F2(
+var $elm$core$Array$treeFromBuilder = F2(
 	function (nodeList, nodeListSize) {
 		treeFromBuilder:
 		while (true) {
-			var newNodeSize = elm$core$Basics$ceiling(nodeListSize / elm$core$Array$branchFactor);
+			var newNodeSize = $elm$core$Basics$ceiling(nodeListSize / $elm$core$Array$branchFactor);
 			if (newNodeSize === 1) {
-				return A2(elm$core$Elm$JsArray$initializeFromList, elm$core$Array$branchFactor, nodeList).a;
+				return A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, nodeList).a;
 			} else {
-				var $temp$nodeList = A2(elm$core$Array$compressNodes, nodeList, _List_Nil),
+				var $temp$nodeList = A2($elm$core$Array$compressNodes, nodeList, _List_Nil),
 					$temp$nodeListSize = newNodeSize;
 				nodeList = $temp$nodeList;
 				nodeListSize = $temp$nodeListSize;
@@ -5006,63 +5150,47 @@ var elm$core$Array$treeFromBuilder = F2(
 			}
 		}
 	});
-var elm$core$Basics$add = _Basics_add;
-var elm$core$Basics$apL = F2(
-	function (f, x) {
-		return f(x);
-	});
-var elm$core$Basics$floor = _Basics_floor;
-var elm$core$Basics$gt = _Utils_gt;
-var elm$core$Basics$max = F2(
-	function (x, y) {
-		return (_Utils_cmp(x, y) > 0) ? x : y;
-	});
-var elm$core$Basics$mul = _Basics_mul;
-var elm$core$Basics$sub = _Basics_sub;
-var elm$core$Elm$JsArray$length = _JsArray_length;
-var elm$core$Array$builderToArray = F2(
+var $elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
 		if (!builder.c) {
 			return A4(
-				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.e),
-				elm$core$Array$shiftStep,
-				elm$core$Elm$JsArray$empty,
+				$elm$core$Array$Array_elm_builtin,
+				$elm$core$Elm$JsArray$length(builder.e),
+				$elm$core$Array$shiftStep,
+				$elm$core$Elm$JsArray$empty,
 				builder.e);
 		} else {
-			var treeLen = builder.c * elm$core$Array$branchFactor;
-			var depth = elm$core$Basics$floor(
-				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.f) : builder.f;
-			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.c);
+			var treeLen = builder.c * $elm$core$Array$branchFactor;
+			var depth = $elm$core$Basics$floor(
+				A2($elm$core$Basics$logBase, $elm$core$Array$branchFactor, treeLen - 1));
+			var correctNodeList = reverseNodeList ? $elm$core$List$reverse(builder.f) : builder.f;
+			var tree = A2($elm$core$Array$treeFromBuilder, correctNodeList, builder.c);
 			return A4(
-				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.e) + treeLen,
-				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
+				$elm$core$Array$Array_elm_builtin,
+				$elm$core$Elm$JsArray$length(builder.e) + treeLen,
+				A2($elm$core$Basics$max, 5, depth * $elm$core$Array$shiftStep),
 				tree,
 				builder.e);
 		}
 	});
-var elm$core$Basics$False = 1;
-var elm$core$Basics$idiv = _Basics_idiv;
-var elm$core$Basics$lt = _Utils_lt;
-var elm$core$Elm$JsArray$initialize = _JsArray_initialize;
-var elm$core$Array$initializeHelp = F5(
+var $elm$core$Basics$idiv = _Basics_idiv;
+var $elm$core$Basics$lt = _Utils_lt;
+var $elm$core$Array$initializeHelp = F5(
 	function (fn, fromIndex, len, nodeList, tail) {
 		initializeHelp:
 		while (true) {
 			if (fromIndex < 0) {
 				return A2(
-					elm$core$Array$builderToArray,
+					$elm$core$Array$builderToArray,
 					false,
-					{f: nodeList, c: (len / elm$core$Array$branchFactor) | 0, e: tail});
+					{f: nodeList, c: (len / $elm$core$Array$branchFactor) | 0, e: tail});
 			} else {
-				var leaf = elm$core$Array$Leaf(
-					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
+				var leaf = $elm$core$Array$Leaf(
+					A3($elm$core$Elm$JsArray$initialize, $elm$core$Array$branchFactor, fromIndex, fn));
 				var $temp$fn = fn,
-					$temp$fromIndex = fromIndex - elm$core$Array$branchFactor,
+					$temp$fromIndex = fromIndex - $elm$core$Array$branchFactor,
 					$temp$len = len,
-					$temp$nodeList = A2(elm$core$List$cons, leaf, nodeList),
+					$temp$nodeList = A2($elm$core$List$cons, leaf, nodeList),
 					$temp$tail = tail;
 				fn = $temp$fn;
 				fromIndex = $temp$fromIndex;
@@ -5073,250 +5201,577 @@ var elm$core$Array$initializeHelp = F5(
 			}
 		}
 	});
-var elm$core$Basics$le = _Utils_le;
-var elm$core$Basics$remainderBy = _Basics_remainderBy;
-var elm$core$Array$initialize = F2(
+var $elm$core$Basics$remainderBy = _Basics_remainderBy;
+var $elm$core$Array$initialize = F2(
 	function (len, fn) {
 		if (len <= 0) {
-			return elm$core$Array$empty;
+			return $elm$core$Array$empty;
 		} else {
-			var tailLen = len % elm$core$Array$branchFactor;
-			var tail = A3(elm$core$Elm$JsArray$initialize, tailLen, len - tailLen, fn);
-			var initialFromIndex = (len - tailLen) - elm$core$Array$branchFactor;
-			return A5(elm$core$Array$initializeHelp, fn, initialFromIndex, len, _List_Nil, tail);
+			var tailLen = len % $elm$core$Array$branchFactor;
+			var tail = A3($elm$core$Elm$JsArray$initialize, tailLen, len - tailLen, fn);
+			var initialFromIndex = (len - tailLen) - $elm$core$Array$branchFactor;
+			return A5($elm$core$Array$initializeHelp, fn, initialFromIndex, len, _List_Nil, tail);
 		}
 	});
-var author$project$Display$init = function () {
-	var _n0 = _Utils_Tuple2(64, 32);
-	var width = _n0.a;
-	var height = _n0.b;
+var $elm$core$Basics$True = 0;
+var $elm$core$Result$isOk = function (result) {
+	if (!result.$) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$json$Json$Decode$map = _Json_map1;
+var $elm$json$Json$Decode$map2 = _Json_map2;
+var $elm$json$Json$Decode$succeed = _Json_succeed;
+var $elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
+	switch (handler.$) {
+		case 0:
+			return 0;
+		case 1:
+			return 1;
+		case 2:
+			return 2;
+		default:
+			return 3;
+	}
+};
+var $elm$browser$Browser$External = function (a) {
+	return {$: 1, a: a};
+};
+var $elm$browser$Browser$Internal = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$core$Basics$identity = function (x) {
+	return x;
+};
+var $elm$browser$Browser$Dom$NotFound = $elm$core$Basics$identity;
+var $elm$url$Url$Http = 0;
+var $elm$url$Url$Https = 1;
+var $elm$url$Url$Url = F6(
+	function (protocol, host, port_, path, query, fragment) {
+		return {aL: fragment, aP: host, aY: path, a_: port_, a1: protocol, a2: query};
+	});
+var $elm$core$String$contains = _String_contains;
+var $elm$core$String$length = _String_length;
+var $elm$core$String$slice = _String_slice;
+var $elm$core$String$dropLeft = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3(
+			$elm$core$String$slice,
+			n,
+			$elm$core$String$length(string),
+			string);
+	});
+var $elm$core$String$indexes = _String_indexes;
+var $elm$core$String$isEmpty = function (string) {
+	return string === '';
+};
+var $elm$core$String$left = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3($elm$core$String$slice, 0, n, string);
+	});
+var $elm$core$String$toInt = _String_toInt;
+var $elm$url$Url$chompBeforePath = F5(
+	function (protocol, path, params, frag, str) {
+		if ($elm$core$String$isEmpty(str) || A2($elm$core$String$contains, '@', str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, ':', str);
+			if (!_v0.b) {
+				return $elm$core$Maybe$Just(
+					A6($elm$url$Url$Url, protocol, str, $elm$core$Maybe$Nothing, path, params, frag));
+			} else {
+				if (!_v0.b.b) {
+					var i = _v0.a;
+					var _v1 = $elm$core$String$toInt(
+						A2($elm$core$String$dropLeft, i + 1, str));
+					if (_v1.$ === 1) {
+						return $elm$core$Maybe$Nothing;
+					} else {
+						var port_ = _v1;
+						return $elm$core$Maybe$Just(
+							A6(
+								$elm$url$Url$Url,
+								protocol,
+								A2($elm$core$String$left, i, str),
+								port_,
+								path,
+								params,
+								frag));
+					}
+				} else {
+					return $elm$core$Maybe$Nothing;
+				}
+			}
+		}
+	});
+var $elm$url$Url$chompBeforeQuery = F4(
+	function (protocol, params, frag, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, '/', str);
+			if (!_v0.b) {
+				return A5($elm$url$Url$chompBeforePath, protocol, '/', params, frag, str);
+			} else {
+				var i = _v0.a;
+				return A5(
+					$elm$url$Url$chompBeforePath,
+					protocol,
+					A2($elm$core$String$dropLeft, i, str),
+					params,
+					frag,
+					A2($elm$core$String$left, i, str));
+			}
+		}
+	});
+var $elm$url$Url$chompBeforeFragment = F3(
+	function (protocol, frag, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, '?', str);
+			if (!_v0.b) {
+				return A4($elm$url$Url$chompBeforeQuery, protocol, $elm$core$Maybe$Nothing, frag, str);
+			} else {
+				var i = _v0.a;
+				return A4(
+					$elm$url$Url$chompBeforeQuery,
+					protocol,
+					$elm$core$Maybe$Just(
+						A2($elm$core$String$dropLeft, i + 1, str)),
+					frag,
+					A2($elm$core$String$left, i, str));
+			}
+		}
+	});
+var $elm$url$Url$chompAfterProtocol = F2(
+	function (protocol, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, '#', str);
+			if (!_v0.b) {
+				return A3($elm$url$Url$chompBeforeFragment, protocol, $elm$core$Maybe$Nothing, str);
+			} else {
+				var i = _v0.a;
+				return A3(
+					$elm$url$Url$chompBeforeFragment,
+					protocol,
+					$elm$core$Maybe$Just(
+						A2($elm$core$String$dropLeft, i + 1, str)),
+					A2($elm$core$String$left, i, str));
+			}
+		}
+	});
+var $elm$core$String$startsWith = _String_startsWith;
+var $elm$url$Url$fromString = function (str) {
+	return A2($elm$core$String$startsWith, 'http://', str) ? A2(
+		$elm$url$Url$chompAfterProtocol,
+		0,
+		A2($elm$core$String$dropLeft, 7, str)) : (A2($elm$core$String$startsWith, 'https://', str) ? A2(
+		$elm$url$Url$chompAfterProtocol,
+		1,
+		A2($elm$core$String$dropLeft, 8, str)) : $elm$core$Maybe$Nothing);
+};
+var $elm$core$Basics$never = function (_v0) {
+	never:
+	while (true) {
+		var nvr = _v0;
+		var $temp$_v0 = nvr;
+		_v0 = $temp$_v0;
+		continue never;
+	}
+};
+var $elm$core$Task$Perform = $elm$core$Basics$identity;
+var $elm$core$Task$succeed = _Scheduler_succeed;
+var $elm$core$Task$init = $elm$core$Task$succeed(0);
+var $elm$core$List$foldrHelper = F4(
+	function (fn, acc, ctr, ls) {
+		if (!ls.b) {
+			return acc;
+		} else {
+			var a = ls.a;
+			var r1 = ls.b;
+			if (!r1.b) {
+				return A2(fn, a, acc);
+			} else {
+				var b = r1.a;
+				var r2 = r1.b;
+				if (!r2.b) {
+					return A2(
+						fn,
+						a,
+						A2(fn, b, acc));
+				} else {
+					var c = r2.a;
+					var r3 = r2.b;
+					if (!r3.b) {
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(fn, c, acc)));
+					} else {
+						var d = r3.a;
+						var r4 = r3.b;
+						var res = (ctr > 500) ? A3(
+							$elm$core$List$foldl,
+							fn,
+							acc,
+							$elm$core$List$reverse(r4)) : A4($elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(
+									fn,
+									c,
+									A2(fn, d, res))));
+					}
+				}
+			}
+		}
+	});
+var $elm$core$List$foldr = F3(
+	function (fn, acc, ls) {
+		return A4($elm$core$List$foldrHelper, fn, acc, 0, ls);
+	});
+var $elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						$elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
+var $elm$core$Task$andThen = _Scheduler_andThen;
+var $elm$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			$elm$core$Task$andThen,
+			function (a) {
+				return $elm$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var $elm$core$Task$map2 = F3(
+	function (func, taskA, taskB) {
+		return A2(
+			$elm$core$Task$andThen,
+			function (a) {
+				return A2(
+					$elm$core$Task$andThen,
+					function (b) {
+						return $elm$core$Task$succeed(
+							A2(func, a, b));
+					},
+					taskB);
+			},
+			taskA);
+	});
+var $elm$core$Task$sequence = function (tasks) {
+	return A3(
+		$elm$core$List$foldr,
+		$elm$core$Task$map2($elm$core$List$cons),
+		$elm$core$Task$succeed(_List_Nil),
+		tasks);
+};
+var $elm$core$Platform$sendToApp = _Platform_sendToApp;
+var $elm$core$Task$spawnCmd = F2(
+	function (router, _v0) {
+		var task = _v0;
+		return _Scheduler_spawn(
+			A2(
+				$elm$core$Task$andThen,
+				$elm$core$Platform$sendToApp(router),
+				task));
+	});
+var $elm$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			$elm$core$Task$map,
+			function (_v0) {
+				return 0;
+			},
+			$elm$core$Task$sequence(
+				A2(
+					$elm$core$List$map,
+					$elm$core$Task$spawnCmd(router),
+					commands)));
+	});
+var $elm$core$Task$onSelfMsg = F3(
+	function (_v0, _v1, _v2) {
+		return $elm$core$Task$succeed(0);
+	});
+var $elm$core$Task$cmdMap = F2(
+	function (tagger, _v0) {
+		var task = _v0;
+		return A2($elm$core$Task$map, tagger, task);
+	});
+_Platform_effectManagers['Task'] = _Platform_createManager($elm$core$Task$init, $elm$core$Task$onEffects, $elm$core$Task$onSelfMsg, $elm$core$Task$cmdMap);
+var $elm$core$Task$command = _Platform_leaf('Task');
+var $elm$core$Task$perform = F2(
+	function (toMessage, task) {
+		return $elm$core$Task$command(
+			A2($elm$core$Task$map, toMessage, task));
+	});
+var $elm$browser$Browser$element = _Browser_element;
+var $author$project$KeyCode$KeyCode = $elm$core$Basics$identity;
+var $author$project$Games$blinky = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('ArrowLeft', 7),
+			_Utils_Tuple2('ArrowRight', 8),
+			_Utils_Tuple2('ArrowUp', 3),
+			_Utils_Tuple2('ArrowDown', 6)
+		]);
+	return {p: controls, r: 'BLINKY'};
+}();
+var $author$project$Games$brix = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('ArrowLeft', 4),
+			_Utils_Tuple2('ArrowRight', 6)
+		]);
+	return {p: controls, r: 'BRIX'};
+}();
+var $author$project$Games$connect4 = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('ArrowLeft', 4),
+			_Utils_Tuple2('ArrowRight', 6),
+			_Utils_Tuple2(' ', 5)
+		]);
+	return {p: controls, r: 'CONNECT4'};
+}();
+var $author$project$Games$hidden = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('ArrowLeft', 4),
+			_Utils_Tuple2('ArrowRight', 6),
+			_Utils_Tuple2(' ', 5),
+			_Utils_Tuple2('ArrowUp', 2),
+			_Utils_Tuple2('ArrowDown', 8)
+		]);
+	return {p: controls, r: 'HIDDEN'};
+}();
+var $author$project$Games$invaders = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('ArrowLeft', 4),
+			_Utils_Tuple2(' ', 5),
+			_Utils_Tuple2('ArrowRight', 6)
+		]);
+	return {p: controls, r: 'INVADERS'};
+}();
+var $author$project$Games$pong = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('w', 1),
+			_Utils_Tuple2('s', 4),
+			_Utils_Tuple2('i', 12),
+			_Utils_Tuple2('k', 13)
+		]);
+	return {p: controls, r: 'PONG'};
+}();
+var $author$project$Games$tetris = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('ArrowLeft', 5),
+			_Utils_Tuple2('ArrowRight', 6),
+			_Utils_Tuple2(' ', 4),
+			_Utils_Tuple2('ArrowDown', 7)
+		]);
+	return {p: controls, r: 'TETRIS'};
+}();
+var $author$project$Games$tictac = function () {
+	var controls = _List_fromArray(
+		[
+			_Utils_Tuple2('5', 1),
+			_Utils_Tuple2('6', 2),
+			_Utils_Tuple2('7', 3),
+			_Utils_Tuple2('r', 4),
+			_Utils_Tuple2('t', 5),
+			_Utils_Tuple2('y', 6),
+			_Utils_Tuple2('f', 7),
+			_Utils_Tuple2('g', 8),
+			_Utils_Tuple2('h', 9)
+		]);
+	return {p: controls, r: 'TICTAC'};
+}();
+var $author$project$Games$init = _List_fromArray(
+	[$author$project$Games$blinky, $author$project$Games$brix, $author$project$Games$connect4, $author$project$Games$hidden, $author$project$Games$invaders, $author$project$Games$pong, $author$project$Games$tetris, $author$project$Games$tictac]);
+var $author$project$Display$init = function () {
+	var _v0 = _Utils_Tuple2(64, 32);
+	var width = _v0.a;
+	var height = _v0.b;
 	return A2(
-		elm$core$Array$initialize,
+		$elm$core$Array$initialize,
 		width,
-		function (_n1) {
+		function (_v1) {
 			return A2(
-				elm$core$Array$initialize,
+				$elm$core$Array$initialize,
 				height,
-				function (_n2) {
+				function (_v2) {
 					return false;
 				});
 		});
 }();
-var elm$core$Maybe$Nothing = {$: 1};
-var author$project$Flags$init = {ap: false, ab: elm$core$Maybe$Nothing};
-var elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
-var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
-var elm$core$Dict$Black = 1;
-var elm$core$Dict$RBNode_elm_builtin = F5(
+var $author$project$Flags$init = {ai: false, W: $elm$core$Maybe$Nothing};
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
+var $elm$core$Dict$Black = 1;
+var $elm$core$Dict$RBNode_elm_builtin = F5(
 	function (a, b, c, d, e) {
 		return {$: -1, a: a, b: b, c: c, d: d, e: e};
 	});
-var elm$core$Basics$compare = _Utils_compare;
-var elm$core$Dict$Red = 0;
-var elm$core$Dict$balance = F5(
+var $elm$core$Dict$Red = 0;
+var $elm$core$Dict$balance = F5(
 	function (color, key, value, left, right) {
 		if ((right.$ === -1) && (!right.a)) {
-			var _n1 = right.a;
+			var _v1 = right.a;
 			var rK = right.b;
 			var rV = right.c;
 			var rLeft = right.d;
 			var rRight = right.e;
 			if ((left.$ === -1) && (!left.a)) {
-				var _n3 = left.a;
+				var _v3 = left.a;
 				var lK = left.b;
 				var lV = left.c;
 				var lLeft = left.d;
 				var lRight = left.e;
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					0,
 					key,
 					value,
-					A5(elm$core$Dict$RBNode_elm_builtin, 1, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rLeft, rRight));
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rLeft, rRight));
 			} else {
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					color,
 					rK,
 					rV,
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, key, value, left, rLeft),
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, key, value, left, rLeft),
 					rRight);
 			}
 		} else {
 			if ((((left.$ === -1) && (!left.a)) && (left.d.$ === -1)) && (!left.d.a)) {
-				var _n5 = left.a;
+				var _v5 = left.a;
 				var lK = left.b;
 				var lV = left.c;
-				var _n6 = left.d;
-				var _n7 = _n6.a;
-				var llK = _n6.b;
-				var llV = _n6.c;
-				var llLeft = _n6.d;
-				var llRight = _n6.e;
+				var _v6 = left.d;
+				var _v7 = _v6.a;
+				var llK = _v6.b;
+				var llV = _v6.c;
+				var llLeft = _v6.d;
+				var llRight = _v6.e;
 				var lRight = left.e;
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					0,
 					lK,
 					lV,
-					A5(elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, 1, key, value, lRight, right));
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, key, value, lRight, right));
 			} else {
-				return A5(elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
+				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
 			}
 		}
 	});
-var elm$core$Dict$insertHelp = F3(
+var $elm$core$Basics$compare = _Utils_compare;
+var $elm$core$Dict$insertHelp = F3(
 	function (key, value, dict) {
 		if (dict.$ === -2) {
-			return A5(elm$core$Dict$RBNode_elm_builtin, 0, key, value, elm$core$Dict$RBEmpty_elm_builtin, elm$core$Dict$RBEmpty_elm_builtin);
+			return A5($elm$core$Dict$RBNode_elm_builtin, 0, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
 		} else {
 			var nColor = dict.a;
 			var nKey = dict.b;
 			var nValue = dict.c;
 			var nLeft = dict.d;
 			var nRight = dict.e;
-			var _n1 = A2(elm$core$Basics$compare, key, nKey);
-			switch (_n1) {
+			var _v1 = A2($elm$core$Basics$compare, key, nKey);
+			switch (_v1) {
 				case 0:
 					return A5(
-						elm$core$Dict$balance,
+						$elm$core$Dict$balance,
 						nColor,
 						nKey,
 						nValue,
-						A3(elm$core$Dict$insertHelp, key, value, nLeft),
+						A3($elm$core$Dict$insertHelp, key, value, nLeft),
 						nRight);
 				case 1:
-					return A5(elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
+					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
 				default:
 					return A5(
-						elm$core$Dict$balance,
+						$elm$core$Dict$balance,
 						nColor,
 						nKey,
 						nValue,
 						nLeft,
-						A3(elm$core$Dict$insertHelp, key, value, nRight));
+						A3($elm$core$Dict$insertHelp, key, value, nRight));
 			}
 		}
 	});
-var elm$core$Dict$insert = F3(
+var $elm$core$Dict$insert = F3(
 	function (key, value, dict) {
-		var _n0 = A3(elm$core$Dict$insertHelp, key, value, dict);
-		if ((_n0.$ === -1) && (!_n0.a)) {
-			var _n1 = _n0.a;
-			var k = _n0.b;
-			var v = _n0.c;
-			var l = _n0.d;
-			var r = _n0.e;
-			return A5(elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
+		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
+		if ((_v0.$ === -1) && (!_v0.a)) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
 		} else {
-			var x = _n0;
+			var x = _v0;
 			return x;
 		}
 	});
-var elm$core$List$rangeHelp = F3(
-	function (lo, hi, list) {
-		rangeHelp:
-		while (true) {
-			if (_Utils_cmp(lo, hi) < 1) {
-				var $temp$lo = lo,
-					$temp$hi = hi - 1,
-					$temp$list = A2(elm$core$List$cons, hi, list);
-				lo = $temp$lo;
-				hi = $temp$hi;
-				list = $temp$list;
-				continue rangeHelp;
-			} else {
-				return list;
-			}
-		}
-	});
-var elm$core$List$range = F2(
-	function (lo, hi) {
-		return A3(elm$core$List$rangeHelp, lo, hi, _List_Nil);
-	});
-var author$project$Keypad$init = A3(
-	elm$core$List$foldl,
+var $author$project$Keypad$init = A3(
+	$elm$core$List$foldl,
 	function (idx) {
-		return A2(elm$core$Dict$insert, idx, false);
+		return A2($elm$core$Dict$insert, idx, false);
 	},
-	elm$core$Dict$empty,
-	A2(elm$core$List$range, 0, 16));
-var author$project$Memory$memorySize = 4096;
-var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var elm$core$Array$bitMask = 4294967295 >>> (32 - elm$core$Array$shiftStep);
-var elm$core$Bitwise$and = _Bitwise_and;
-var elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
-var elm$core$Array$setHelp = F4(
-	function (shift, index, value, tree) {
-		var pos = elm$core$Array$bitMask & (index >>> shift);
-		var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
-		if (!_n0.$) {
-			var subTree = _n0.a;
-			var newSub = A4(elm$core$Array$setHelp, shift - elm$core$Array$shiftStep, index, value, subTree);
-			return A3(
-				elm$core$Elm$JsArray$unsafeSet,
-				pos,
-				elm$core$Array$SubTree(newSub),
-				tree);
+	$elm$core$Dict$empty,
+	A2($elm$core$List$range, 0, 16));
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (!maybeValue.$) {
+			var value = maybeValue.a;
+			return callback(value);
 		} else {
-			var values = _n0.a;
-			var newLeaf = A3(elm$core$Elm$JsArray$unsafeSet, elm$core$Array$bitMask & index, value, values);
-			return A3(
-				elm$core$Elm$JsArray$unsafeSet,
-				pos,
-				elm$core$Array$Leaf(newLeaf),
-				tree);
+			return $elm$core$Maybe$Nothing;
 		}
 	});
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
-};
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Basics$or = _Basics_or;
-var elm$core$Array$set = F3(
-	function (index, value, array) {
-		var len = array.a;
-		var startShift = array.b;
-		var tree = array.c;
-		var tail = array.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? array : ((_Utils_cmp(
-			index,
-			elm$core$Array$tailIndex(len)) > -1) ? A4(
-			elm$core$Array$Array_elm_builtin,
-			len,
-			startShift,
-			tree,
-			A3(elm$core$Elm$JsArray$unsafeSet, elm$core$Array$bitMask & index, value, tail)) : A4(
-			elm$core$Array$Array_elm_builtin,
-			len,
-			startShift,
-			A4(elm$core$Array$setHelp, startShift, index, value, tree),
-			tail));
-	});
-var elm$core$Result$Err = function (a) {
-	return {$: 1, a: a};
-};
-var elm$core$Result$Ok = function (a) {
-	return {$: 0, a: a};
-};
-var author$project$Memory$setCell = F3(
-	function (index, value, memory) {
-		return (_Utils_cmp(index, author$project$Memory$memorySize) > -1) ? elm$core$Result$Err('Memory index out of bounds') : elm$core$Result$Ok(
-			A3(elm$core$Array$set, index, value, memory));
-	});
-var elm$core$Array$getHelp = F3(
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var $elm$core$Array$getHelp = F3(
 	function (shift, index, tree) {
 		getHelp:
 		while (true) {
-			var pos = elm$core$Array$bitMask & (index >>> shift);
-			var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (!_n0.$) {
-				var subTree = _n0.a;
-				var $temp$shift = shift - elm$core$Array$shiftStep,
+			var pos = $elm$core$Array$bitMask & (index >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (!_v0.$) {
+				var subTree = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
 					$temp$index = index,
 					$temp$tree = subTree;
 				shift = $temp$shift;
@@ -5324,36 +5779,85 @@ var elm$core$Array$getHelp = F3(
 				tree = $temp$tree;
 				continue getHelp;
 			} else {
-				var values = _n0.a;
-				return A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, values);
+				var values = _v0.a;
+				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
 			}
 		}
 	});
-var elm$core$Maybe$Just = function (a) {
-	return {$: 0, a: a};
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
 };
-var elm$core$Array$get = F2(
-	function (index, _n0) {
-		var len = _n0.a;
-		var startShift = _n0.b;
-		var tree = _n0.c;
-		var tail = _n0.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? elm$core$Maybe$Nothing : ((_Utils_cmp(
+var $elm$core$Array$get = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
 			index,
-			elm$core$Array$tailIndex(len)) > -1) ? elm$core$Maybe$Just(
-			A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, tail)) : elm$core$Maybe$Just(
-			A3(elm$core$Array$getHelp, startShift, index, tree)));
+			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
+			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
+			A3($elm$core$Array$getHelp, startShift, index, tree)));
 	});
-var elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (!maybeValue.$) {
-			var value = maybeValue.a;
-			return callback(value);
+var $author$project$Memory$memorySize = 4096;
+var $elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
+var $elm$core$Array$setHelp = F4(
+	function (shift, index, value, tree) {
+		var pos = $elm$core$Array$bitMask & (index >>> shift);
+		var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+		if (!_v0.$) {
+			var subTree = _v0.a;
+			var newSub = A4($elm$core$Array$setHelp, shift - $elm$core$Array$shiftStep, index, value, subTree);
+			return A3(
+				$elm$core$Elm$JsArray$unsafeSet,
+				pos,
+				$elm$core$Array$SubTree(newSub),
+				tree);
 		} else {
-			return elm$core$Maybe$Nothing;
+			var values = _v0.a;
+			var newLeaf = A3($elm$core$Elm$JsArray$unsafeSet, $elm$core$Array$bitMask & index, value, values);
+			return A3(
+				$elm$core$Elm$JsArray$unsafeSet,
+				pos,
+				$elm$core$Array$Leaf(newLeaf),
+				tree);
 		}
 	});
-var elm$core$Maybe$withDefault = F2(
+var $elm$core$Array$set = F3(
+	function (index, value, array) {
+		var len = array.a;
+		var startShift = array.b;
+		var tree = array.c;
+		var tail = array.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? array : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? A4(
+			$elm$core$Array$Array_elm_builtin,
+			len,
+			startShift,
+			tree,
+			A3($elm$core$Elm$JsArray$unsafeSet, $elm$core$Array$bitMask & index, value, tail)) : A4(
+			$elm$core$Array$Array_elm_builtin,
+			len,
+			startShift,
+			A4($elm$core$Array$setHelp, startShift, index, value, tree),
+			tail));
+	});
+var $author$project$Memory$setCell = F3(
+	function (index, value, memory) {
+		return (_Utils_cmp(index, $author$project$Memory$memorySize) > -1) ? $elm$core$Result$Err('Memory index out of bounds') : $elm$core$Result$Ok(
+			A3($elm$core$Array$set, index, value, memory));
+	});
+var $elm$core$Result$toMaybe = function (result) {
+	if (!result.$) {
+		var v = result.a;
+		return $elm$core$Maybe$Just(v);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $elm$core$Maybe$withDefault = F2(
 	function (_default, maybe) {
 		if (!maybe.$) {
 			var value = maybe.a;
@@ -5362,29 +5866,55 @@ var elm$core$Maybe$withDefault = F2(
 			return _default;
 		}
 	});
-var elm$core$Result$toMaybe = function (result) {
-	if (!result.$) {
-		var v = result.a;
-		return elm$core$Maybe$Just(v);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Memory$copySpriteCell = F3(
+var $author$project$Memory$copySpriteCell = F3(
 	function (sprites, idx, memory) {
 		return A2(
-			elm$core$Maybe$withDefault,
+			$elm$core$Maybe$withDefault,
 			memory,
 			A2(
-				elm$core$Maybe$andThen,
+				$elm$core$Maybe$andThen,
 				function (spriteValue) {
-					return elm$core$Result$toMaybe(
-						A3(author$project$Memory$setCell, idx, spriteValue, memory));
+					return $elm$core$Result$toMaybe(
+						A3($author$project$Memory$setCell, idx, spriteValue, memory));
 				},
-				A2(elm$core$Array$get, idx, sprites)));
+				A2($elm$core$Array$get, idx, sprites)));
 	});
-var elm$core$Basics$append = _Utils_append;
-var author$project$Memory$hardcodedSprites = function () {
+var $elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
+			var jsArray = _v0.a;
+			var remainingItems = _v0.b;
+			if (_Utils_cmp(
+				$elm$core$Elm$JsArray$length(jsArray),
+				$elm$core$Array$branchFactor) < 0) {
+				return A2(
+					$elm$core$Array$builderToArray,
+					true,
+					{f: nodeList, c: nodeListSize, e: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					$elm$core$List$cons,
+					$elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
+	});
+var $elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return $elm$core$Array$empty;
+	} else {
+		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
+	}
+};
+var $author$project$Memory$hardcodedSprites = function () {
 	var spriteF = _List_fromArray(
 		[240, 128, 240, 128, 128]);
 	var spriteE = _List_fromArray(
@@ -5447,334 +5977,152 @@ var author$project$Memory$hardcodedSprites = function () {
 															spriteD,
 															_Utils_ap(spriteE, spriteF)))))))))))))));
 }();
-var elm$core$Basics$True = 0;
-var elm$core$Array$fromListHelp = F3(
-	function (list, nodeList, nodeListSize) {
-		fromListHelp:
-		while (true) {
-			var _n0 = A2(elm$core$Elm$JsArray$initializeFromList, elm$core$Array$branchFactor, list);
-			var jsArray = _n0.a;
-			var remainingItems = _n0.b;
-			if (_Utils_cmp(
-				elm$core$Elm$JsArray$length(jsArray),
-				elm$core$Array$branchFactor) < 0) {
-				return A2(
-					elm$core$Array$builderToArray,
-					true,
-					{f: nodeList, c: nodeListSize, e: jsArray});
-			} else {
-				var $temp$list = remainingItems,
-					$temp$nodeList = A2(
-					elm$core$List$cons,
-					elm$core$Array$Leaf(jsArray),
-					nodeList),
-					$temp$nodeListSize = nodeListSize + 1;
-				list = $temp$list;
-				nodeList = $temp$nodeList;
-				nodeListSize = $temp$nodeListSize;
-				continue fromListHelp;
-			}
-		}
-	});
-var elm$core$Array$fromList = function (list) {
-	if (!list.b) {
-		return elm$core$Array$empty;
-	} else {
-		return A3(elm$core$Array$fromListHelp, list, _List_Nil, 0);
-	}
-};
-var elm$core$Array$length = function (_n0) {
-	var len = _n0.a;
+var $elm$core$Array$length = function (_v0) {
+	var len = _v0.a;
 	return len;
 };
-var author$project$Memory$addSpritesToMemory = function (memory) {
-	var sprites = elm$core$Array$fromList(author$project$Memory$hardcodedSprites);
+var $author$project$Memory$addSpritesToMemory = function (memory) {
+	var sprites = $elm$core$Array$fromList($author$project$Memory$hardcodedSprites);
 	var rangeToUpdate = A2(
-		elm$core$List$range,
+		$elm$core$List$range,
 		0,
-		elm$core$Array$length(sprites));
+		$elm$core$Array$length(sprites));
 	return A3(
-		elm$core$List$foldl,
-		author$project$Memory$copySpriteCell(sprites),
+		$elm$core$List$foldl,
+		$author$project$Memory$copySpriteCell(sprites),
 		memory,
 		rangeToUpdate);
 };
-var author$project$Memory$init = function () {
+var $author$project$Memory$init = function () {
 	var emptyMemory = A2(
-		elm$core$Array$initialize,
-		author$project$Memory$memorySize,
-		function (_n0) {
+		$elm$core$Array$initialize,
+		$author$project$Memory$memorySize,
+		function (_v0) {
 			return 0;
 		});
-	return author$project$Memory$addSpritesToMemory(emptyMemory);
+	return $author$project$Memory$addSpritesToMemory(emptyMemory);
 }();
-var author$project$Registers$dataRegisterCount = 16;
-var author$project$Registers$initDataRegisters = A2(
-	elm$core$Array$initialize,
-	author$project$Registers$dataRegisterCount,
-	function (_n0) {
+var $author$project$Registers$dataRegisterCount = 16;
+var $author$project$Registers$initDataRegisters = A2(
+	$elm$core$Array$initialize,
+	$author$project$Registers$dataRegisterCount,
+	function (_v0) {
 		return 0;
 	});
-var author$project$Registers$init = {ac: 0, Q: author$project$Registers$initDataRegisters, af: 0, I: 0, ar: 0, X: 0};
-var author$project$Stack$stackSize = 16;
-var author$project$Stack$init = A2(
-	elm$core$Array$initialize,
-	author$project$Stack$stackSize,
-	function (_n0) {
+var $author$project$Registers$init = {X: 0, L: $author$project$Registers$initDataRegisters, Z: 0, D: 0, ak: 0, R: 0};
+var $author$project$Stack$stackSize = 16;
+var $author$project$Stack$init = A2(
+	$elm$core$Array$initialize,
+	$author$project$Stack$stackSize,
+	function (_v0) {
 		return 0;
 	});
-var author$project$Timers$initDelay = {ap: false, at: (1 / 60) * 1000};
-var author$project$Timers$init = {ae: author$project$Timers$initDelay};
-var elm$random$Random$Seed = F2(
+var $author$project$Timers$Timers = $elm$core$Basics$identity;
+var $author$project$Timers$Delay = $elm$core$Basics$identity;
+var $author$project$Timers$initDelay = {ai: false, bh: (1 / 60) * 1000};
+var $author$project$Timers$init = $author$project$Timers$initDelay;
+var $elm$random$Random$Seed = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
 	});
-var elm$random$Random$next = function (_n0) {
-	var state0 = _n0.a;
-	var incr = _n0.b;
-	return A2(elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
+var $elm$random$Random$next = function (_v0) {
+	var state0 = _v0.a;
+	var incr = _v0.b;
+	return A2($elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
 };
-var elm$random$Random$initialSeed = function (x) {
-	var _n0 = elm$random$Random$next(
-		A2(elm$random$Random$Seed, 0, 1013904223));
-	var state1 = _n0.a;
-	var incr = _n0.b;
+var $elm$random$Random$initialSeed = function (x) {
+	var _v0 = $elm$random$Random$next(
+		A2($elm$random$Random$Seed, 0, 1013904223));
+	var state1 = _v0.a;
+	var incr = _v0.b;
 	var state2 = (state1 + x) >>> 0;
-	return elm$random$Random$next(
-		A2(elm$random$Random$Seed, state2, incr));
+	return $elm$random$Random$next(
+		A2($elm$random$Random$Seed, state2, incr));
 };
-var author$project$VirtualMachine$init = {
-	bx: author$project$Display$init,
-	ah: author$project$Flags$init,
-	aj: author$project$Keypad$init,
-	al: author$project$Memory$init,
-	an: elm$random$Random$initialSeed(49317),
-	ao: author$project$Registers$init,
-	as: author$project$Stack$init,
-	au: author$project$Timers$init
+var $author$project$VirtualMachine$init = {
+	bu: $author$project$Display$init,
+	aa: $author$project$Flags$init,
+	ac: $author$project$Keypad$init,
+	ae: $author$project$Memory$init,
+	ag: $elm$random$Random$initialSeed(49317),
+	ah: $author$project$Registers$init,
+	al: $author$project$Stack$init,
+	am: $author$project$Timers$init
 };
-var author$project$Main$initModel = {ay: elm$core$Maybe$Nothing, ai: author$project$Games$init, K: elm$core$Maybe$Nothing, b: author$project$VirtualMachine$init};
-var elm$core$Result$isOk = function (result) {
-	if (!result.$) {
-		return true;
-	} else {
-		return false;
-	}
+var $author$project$Main$initModel = {aq: $elm$core$Maybe$Nothing, ab: $author$project$Games$init, F: $elm$core$Maybe$Nothing, b: $author$project$VirtualMachine$init};
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Main$init = function (_v0) {
+	return _Utils_Tuple2($author$project$Main$initModel, $elm$core$Platform$Cmd$none);
 };
-var elm$json$Json$Decode$Failure = F2(
-	function (a, b) {
-		return {$: 3, a: a, b: b};
-	});
-var elm$json$Json$Decode$Field = F2(
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $author$project$Msg$ClockTick = function (a) {
+	return {$: 4, a: a};
+};
+var $elm$time$Time$Every = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
 	});
-var elm$json$Json$Decode$Index = F2(
-	function (a, b) {
-		return {$: 1, a: a, b: b};
+var $elm$time$Time$State = F2(
+	function (taggers, processes) {
+		return {a0: processes, bg: taggers};
 	});
-var elm$json$Json$Decode$OneOf = function (a) {
-	return {$: 2, a: a};
-};
-var elm$core$Basics$and = _Basics_and;
-var elm$core$Char$toCode = _Char_toCode;
-var elm$core$Char$isLower = function (_char) {
-	var code = elm$core$Char$toCode(_char);
-	return (97 <= code) && (code <= 122);
-};
-var elm$core$Char$isUpper = function (_char) {
-	var code = elm$core$Char$toCode(_char);
-	return (code <= 90) && (65 <= code);
-};
-var elm$core$Char$isAlpha = function (_char) {
-	return elm$core$Char$isLower(_char) || elm$core$Char$isUpper(_char);
-};
-var elm$core$Char$isDigit = function (_char) {
-	var code = elm$core$Char$toCode(_char);
-	return (code <= 57) && (48 <= code);
-};
-var elm$core$Char$isAlphaNum = function (_char) {
-	return elm$core$Char$isLower(_char) || (elm$core$Char$isUpper(_char) || elm$core$Char$isDigit(_char));
-};
-var elm$core$List$length = function (xs) {
-	return A3(
-		elm$core$List$foldl,
-		F2(
-			function (_n0, i) {
-				return i + 1;
-			}),
-		0,
-		xs);
-};
-var elm$core$List$map2 = _List_map2;
-var elm$core$List$indexedMap = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$map2,
-			f,
-			A2(
-				elm$core$List$range,
-				0,
-				elm$core$List$length(xs) - 1),
-			xs);
-	});
-var elm$core$String$all = _String_all;
-var elm$core$String$fromInt = _String_fromNumber;
-var elm$core$String$join = F2(
-	function (sep, chunks) {
-		return A2(
-			_String_join,
-			sep,
-			_List_toArray(chunks));
-	});
-var elm$core$String$uncons = _String_uncons;
-var elm$core$String$split = F2(
-	function (sep, string) {
-		return _List_fromArray(
-			A2(_String_split, sep, string));
-	});
-var elm$json$Json$Decode$indent = function (str) {
-	return A2(
-		elm$core$String$join,
-		'\n    ',
-		A2(elm$core$String$split, '\n', str));
-};
-var elm$json$Json$Encode$encode = _Json_encode;
-var elm$json$Json$Decode$errorOneOf = F2(
-	function (i, error) {
-		return '\n\n(' + (elm$core$String$fromInt(i + 1) + (') ' + elm$json$Json$Decode$indent(
-			elm$json$Json$Decode$errorToString(error))));
-	});
-var elm$json$Json$Decode$errorToString = function (error) {
-	return A2(elm$json$Json$Decode$errorToStringHelp, error, _List_Nil);
-};
-var elm$json$Json$Decode$errorToStringHelp = F2(
-	function (error, context) {
-		errorToStringHelp:
+var $elm$time$Time$init = $elm$core$Task$succeed(
+	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
 		while (true) {
-			switch (error.$) {
-				case 0:
-					var f = error.a;
-					var err = error.b;
-					var isSimple = function () {
-						var _n1 = elm$core$String$uncons(f);
-						if (_n1.$ === 1) {
-							return false;
-						} else {
-							var _n2 = _n1.a;
-							var _char = _n2.a;
-							var rest = _n2.b;
-							return elm$core$Char$isAlpha(_char) && A2(elm$core$String$all, elm$core$Char$isAlphaNum, rest);
-						}
-					}();
-					var fieldName = isSimple ? ('.' + f) : ('[\'' + (f + '\']'));
-					var $temp$error = err,
-						$temp$context = A2(elm$core$List$cons, fieldName, context);
-					error = $temp$error;
-					context = $temp$context;
-					continue errorToStringHelp;
-				case 1:
-					var i = error.a;
-					var err = error.b;
-					var indexName = '[' + (elm$core$String$fromInt(i) + ']');
-					var $temp$error = err,
-						$temp$context = A2(elm$core$List$cons, indexName, context);
-					error = $temp$error;
-					context = $temp$context;
-					continue errorToStringHelp;
-				case 2:
-					var errors = error.a;
-					if (!errors.b) {
-						return 'Ran into a Json.Decode.oneOf with no possibilities' + function () {
-							if (!context.b) {
-								return '!';
-							} else {
-								return ' at json' + A2(
-									elm$core$String$join,
-									'',
-									elm$core$List$reverse(context));
-							}
-						}();
-					} else {
-						if (!errors.b.b) {
-							var err = errors.a;
-							var $temp$error = err,
-								$temp$context = context;
-							error = $temp$error;
-							context = $temp$context;
-							continue errorToStringHelp;
-						} else {
-							var starter = function () {
-								if (!context.b) {
-									return 'Json.Decode.oneOf';
-								} else {
-									return 'The Json.Decode.oneOf at json' + A2(
-										elm$core$String$join,
-										'',
-										elm$core$List$reverse(context));
-								}
-							}();
-							var introduction = starter + (' failed in the following ' + (elm$core$String$fromInt(
-								elm$core$List$length(errors)) + ' ways:'));
-							return A2(
-								elm$core$String$join,
-								'\n\n',
-								A2(
-									elm$core$List$cons,
-									introduction,
-									A2(elm$core$List$indexedMap, elm$json$Json$Decode$errorOneOf, errors)));
-						}
-					}
-				default:
-					var msg = error.a;
-					var json = error.b;
-					var introduction = function () {
-						if (!context.b) {
-							return 'Problem with the given value:\n\n';
-						} else {
-							return 'Problem with the value at json' + (A2(
-								elm$core$String$join,
-								'',
-								elm$core$List$reverse(context)) + ':\n\n    ');
-						}
-					}();
-					return introduction + (elm$json$Json$Decode$indent(
-						A2(elm$json$Json$Encode$encode, 4, json)) + ('\n\n' + msg));
+			if (dict.$ === -2) {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1) {
+					case 0:
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 1:
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
 			}
 		}
 	});
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Main$init = function (_n0) {
-	return _Utils_Tuple2(author$project$Main$initModel, elm$core$Platform$Cmd$none);
-};
-var author$project$Flags$isRunning = function (flags) {
-	return flags.ap;
-};
-var author$project$Flags$isWaitingForInput = function (flags) {
-	var _n0 = flags.ab;
-	if (!_n0.$) {
-		return true;
-	} else {
-		return false;
-	}
-};
-var author$project$Msg$ClockTick = function (a) {
-	return {$: 4, a: a};
-};
-var elm$core$Basics$not = _Basics_not;
-var elm$time$Time$Every = F2(
-	function (a, b) {
-		return {$: 0, a: a, b: b};
+var $elm$time$Time$addMySub = F2(
+	function (_v0, state) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		var _v1 = A2($elm$core$Dict$get, interval, state);
+		if (_v1.$ === 1) {
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				_List_fromArray(
+					[tagger]),
+				state);
+		} else {
+			var taggers = _v1.a;
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				A2($elm$core$List$cons, tagger, taggers),
+				state);
+		}
 	});
-var elm$core$Task$succeed = _Scheduler_succeed;
-var elm$time$Time$State = F2(
-	function (taggers, processes) {
-		return {a7: processes, bm: taggers};
-	});
-var elm$time$Time$init = elm$core$Task$succeed(
-	A2(elm$time$Time$State, elm$core$Dict$empty, elm$core$Dict$empty));
-var elm$core$Dict$foldl = F3(
+var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$core$Dict$foldl = F3(
 	function (func, acc, dict) {
 		foldl:
 		while (true) {
@@ -5790,7 +6138,7 @@ var elm$core$Dict$foldl = F3(
 					func,
 					key,
 					value,
-					A3(elm$core$Dict$foldl, func, acc, left)),
+					A3($elm$core$Dict$foldl, func, acc, left)),
 					$temp$dict = right;
 				func = $temp$func;
 				acc = $temp$acc;
@@ -5799,32 +6147,32 @@ var elm$core$Dict$foldl = F3(
 			}
 		}
 	});
-var elm$core$Dict$merge = F6(
+var $elm$core$Dict$merge = F6(
 	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
 		var stepState = F3(
-			function (rKey, rValue, _n0) {
+			function (rKey, rValue, _v0) {
 				stepState:
 				while (true) {
-					var list = _n0.a;
-					var result = _n0.b;
+					var list = _v0.a;
+					var result = _v0.b;
 					if (!list.b) {
 						return _Utils_Tuple2(
 							list,
 							A3(rightStep, rKey, rValue, result));
 					} else {
-						var _n2 = list.a;
-						var lKey = _n2.a;
-						var lValue = _n2.b;
+						var _v2 = list.a;
+						var lKey = _v2.a;
+						var lValue = _v2.b;
 						var rest = list.b;
 						if (_Utils_cmp(lKey, rKey) < 0) {
 							var $temp$rKey = rKey,
 								$temp$rValue = rValue,
-								$temp$_n0 = _Utils_Tuple2(
+								$temp$_v0 = _Utils_Tuple2(
 								rest,
 								A3(leftStep, lKey, lValue, result));
 							rKey = $temp$rKey;
 							rValue = $temp$rValue;
-							_n0 = $temp$_n0;
+							_v0 = $temp$_v0;
 							continue stepState;
 						} else {
 							if (_Utils_cmp(lKey, rKey) > 0) {
@@ -5840,157 +6188,103 @@ var elm$core$Dict$merge = F6(
 					}
 				}
 			});
-		var _n3 = A3(
-			elm$core$Dict$foldl,
+		var _v3 = A3(
+			$elm$core$Dict$foldl,
 			stepState,
 			_Utils_Tuple2(
-				elm$core$Dict$toList(leftDict),
+				$elm$core$Dict$toList(leftDict),
 				initialResult),
 			rightDict);
-		var leftovers = _n3.a;
-		var intermediateResult = _n3.b;
+		var leftovers = _v3.a;
+		var intermediateResult = _v3.b;
 		return A3(
-			elm$core$List$foldl,
+			$elm$core$List$foldl,
 			F2(
-				function (_n4, result) {
-					var k = _n4.a;
-					var v = _n4.b;
+				function (_v4, result) {
+					var k = _v4.a;
+					var v = _v4.b;
 					return A3(leftStep, k, v, result);
 				}),
 			intermediateResult,
 			leftovers);
 	});
-var elm$core$Process$kill = _Scheduler_kill;
-var elm$core$Task$andThen = _Scheduler_andThen;
-var elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === -2) {
-				return elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _n1 = A2(elm$core$Basics$compare, targetKey, key);
-				switch (_n1) {
-					case 0:
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 1:
-						return elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
-	});
-var elm$time$Time$addMySub = F2(
-	function (_n0, state) {
-		var interval = _n0.a;
-		var tagger = _n0.b;
-		var _n1 = A2(elm$core$Dict$get, interval, state);
-		if (_n1.$ === 1) {
-			return A3(
-				elm$core$Dict$insert,
-				interval,
-				_List_fromArray(
-					[tagger]),
-				state);
-		} else {
-			var taggers = _n1.a;
-			return A3(
-				elm$core$Dict$insert,
-				interval,
-				A2(elm$core$List$cons, tagger, taggers),
-				state);
-		}
-	});
-var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var elm$core$Process$spawn = _Scheduler_spawn;
-var elm$time$Time$Name = function (a) {
+var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var $elm$time$Time$Name = function (a) {
 	return {$: 0, a: a};
 };
-var elm$time$Time$Offset = function (a) {
+var $elm$time$Time$Offset = function (a) {
 	return {$: 1, a: a};
 };
-var elm$time$Time$Zone = F2(
+var $elm$time$Time$Zone = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
 	});
-var elm$time$Time$customZone = elm$time$Time$Zone;
-var elm$time$Time$setInterval = _Time_setInterval;
-var elm$time$Time$spawnHelp = F3(
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$setInterval = _Time_setInterval;
+var $elm$core$Process$spawn = _Scheduler_spawn;
+var $elm$time$Time$spawnHelp = F3(
 	function (router, intervals, processes) {
 		if (!intervals.b) {
-			return elm$core$Task$succeed(processes);
+			return $elm$core$Task$succeed(processes);
 		} else {
 			var interval = intervals.a;
 			var rest = intervals.b;
-			var spawnTimer = elm$core$Process$spawn(
+			var spawnTimer = $elm$core$Process$spawn(
 				A2(
-					elm$time$Time$setInterval,
+					$elm$time$Time$setInterval,
 					interval,
-					A2(elm$core$Platform$sendToSelf, router, interval)));
+					A2($elm$core$Platform$sendToSelf, router, interval)));
 			var spawnRest = function (id) {
 				return A3(
-					elm$time$Time$spawnHelp,
+					$elm$time$Time$spawnHelp,
 					router,
 					rest,
-					A3(elm$core$Dict$insert, interval, id, processes));
+					A3($elm$core$Dict$insert, interval, id, processes));
 			};
-			return A2(elm$core$Task$andThen, spawnRest, spawnTimer);
+			return A2($elm$core$Task$andThen, spawnRest, spawnTimer);
 		}
 	});
-var elm$time$Time$onEffects = F3(
-	function (router, subs, _n0) {
-		var processes = _n0.a7;
+var $elm$time$Time$onEffects = F3(
+	function (router, subs, _v0) {
+		var processes = _v0.a0;
 		var rightStep = F3(
-			function (_n6, id, _n7) {
-				var spawns = _n7.a;
-				var existing = _n7.b;
-				var kills = _n7.c;
+			function (_v6, id, _v7) {
+				var spawns = _v7.a;
+				var existing = _v7.b;
+				var kills = _v7.c;
 				return _Utils_Tuple3(
 					spawns,
 					existing,
 					A2(
-						elm$core$Task$andThen,
-						function (_n5) {
+						$elm$core$Task$andThen,
+						function (_v5) {
 							return kills;
 						},
-						elm$core$Process$kill(id)));
+						$elm$core$Process$kill(id)));
 			});
-		var newTaggers = A3(elm$core$List$foldl, elm$time$Time$addMySub, elm$core$Dict$empty, subs);
+		var newTaggers = A3($elm$core$List$foldl, $elm$time$Time$addMySub, $elm$core$Dict$empty, subs);
 		var leftStep = F3(
-			function (interval, taggers, _n4) {
-				var spawns = _n4.a;
-				var existing = _n4.b;
-				var kills = _n4.c;
+			function (interval, taggers, _v4) {
+				var spawns = _v4.a;
+				var existing = _v4.b;
+				var kills = _v4.c;
 				return _Utils_Tuple3(
-					A2(elm$core$List$cons, interval, spawns),
+					A2($elm$core$List$cons, interval, spawns),
 					existing,
 					kills);
 			});
 		var bothStep = F4(
-			function (interval, taggers, id, _n3) {
-				var spawns = _n3.a;
-				var existing = _n3.b;
-				var kills = _n3.c;
+			function (interval, taggers, id, _v3) {
+				var spawns = _v3.a;
+				var existing = _v3.b;
+				var kills = _v3.c;
 				return _Utils_Tuple3(
 					spawns,
-					A3(elm$core$Dict$insert, interval, id, existing),
+					A3($elm$core$Dict$insert, interval, id, existing),
 					kills);
 			});
-		var _n1 = A6(
-			elm$core$Dict$merge,
+		var _v1 = A6(
+			$elm$core$Dict$merge,
 			leftStep,
 			bothStep,
 			rightStep,
@@ -5998,198 +6292,118 @@ var elm$time$Time$onEffects = F3(
 			processes,
 			_Utils_Tuple3(
 				_List_Nil,
-				elm$core$Dict$empty,
-				elm$core$Task$succeed(0)));
-		var spawnList = _n1.a;
-		var existingDict = _n1.b;
-		var killTask = _n1.c;
+				$elm$core$Dict$empty,
+				$elm$core$Task$succeed(0)));
+		var spawnList = _v1.a;
+		var existingDict = _v1.b;
+		var killTask = _v1.c;
 		return A2(
-			elm$core$Task$andThen,
+			$elm$core$Task$andThen,
 			function (newProcesses) {
-				return elm$core$Task$succeed(
-					A2(elm$time$Time$State, newTaggers, newProcesses));
+				return $elm$core$Task$succeed(
+					A2($elm$time$Time$State, newTaggers, newProcesses));
 			},
 			A2(
-				elm$core$Task$andThen,
-				function (_n2) {
-					return A3(elm$time$Time$spawnHelp, router, spawnList, existingDict);
+				$elm$core$Task$andThen,
+				function (_v2) {
+					return A3($elm$time$Time$spawnHelp, router, spawnList, existingDict);
 				},
 				killTask));
 	});
-var elm$core$List$foldrHelper = F4(
-	function (fn, acc, ctr, ls) {
-		if (!ls.b) {
-			return acc;
-		} else {
-			var a = ls.a;
-			var r1 = ls.b;
-			if (!r1.b) {
-				return A2(fn, a, acc);
-			} else {
-				var b = r1.a;
-				var r2 = r1.b;
-				if (!r2.b) {
-					return A2(
-						fn,
-						a,
-						A2(fn, b, acc));
-				} else {
-					var c = r2.a;
-					var r3 = r2.b;
-					if (!r3.b) {
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(fn, c, acc)));
-					} else {
-						var d = r3.a;
-						var r4 = r3.b;
-						var res = (ctr > 500) ? A3(
-							elm$core$List$foldl,
-							fn,
-							acc,
-							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(
-									fn,
-									c,
-									A2(fn, d, res))));
-					}
-				}
-			}
-		}
-	});
-var elm$core$List$foldr = F3(
-	function (fn, acc, ls) {
-		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
-	});
-var elm$core$List$map = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, acc) {
-					return A2(
-						elm$core$List$cons,
-						f(x),
-						acc);
-				}),
-			_List_Nil,
-			xs);
-	});
-var elm$core$Platform$sendToApp = _Platform_sendToApp;
-var elm$core$Task$map2 = F3(
-	function (func, taskA, taskB) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return A2(
-					elm$core$Task$andThen,
-					function (b) {
-						return elm$core$Task$succeed(
-							A2(func, a, b));
-					},
-					taskB);
-			},
-			taskA);
-	});
-var elm$core$Task$sequence = function (tasks) {
-	return A3(
-		elm$core$List$foldr,
-		elm$core$Task$map2(elm$core$List$cons),
-		elm$core$Task$succeed(_List_Nil),
-		tasks);
-};
-var elm$time$Time$Posix = elm$core$Basics$identity;
-var elm$time$Time$millisToPosix = elm$core$Basics$identity;
-var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
-var elm$time$Time$onSelfMsg = F3(
+var $elm$time$Time$Posix = $elm$core$Basics$identity;
+var $elm$time$Time$millisToPosix = $elm$core$Basics$identity;
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $elm$time$Time$onSelfMsg = F3(
 	function (router, interval, state) {
-		var _n0 = A2(elm$core$Dict$get, interval, state.bm);
-		if (_n0.$ === 1) {
-			return elm$core$Task$succeed(state);
+		var _v0 = A2($elm$core$Dict$get, interval, state.bg);
+		if (_v0.$ === 1) {
+			return $elm$core$Task$succeed(state);
 		} else {
-			var taggers = _n0.a;
+			var taggers = _v0.a;
 			var tellTaggers = function (time) {
-				return elm$core$Task$sequence(
+				return $elm$core$Task$sequence(
 					A2(
-						elm$core$List$map,
+						$elm$core$List$map,
 						function (tagger) {
 							return A2(
-								elm$core$Platform$sendToApp,
+								$elm$core$Platform$sendToApp,
 								router,
 								tagger(time));
 						},
 						taggers));
 			};
 			return A2(
-				elm$core$Task$andThen,
-				function (_n1) {
-					return elm$core$Task$succeed(state);
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$succeed(state);
 				},
-				A2(elm$core$Task$andThen, tellTaggers, elm$time$Time$now));
+				A2($elm$core$Task$andThen, tellTaggers, $elm$time$Time$now));
 		}
 	});
-var elm$core$Basics$composeL = F3(
+var $elm$core$Basics$composeL = F3(
 	function (g, f, x) {
 		return g(
 			f(x));
 	});
-var elm$time$Time$subMap = F2(
-	function (f, _n0) {
-		var interval = _n0.a;
-		var tagger = _n0.b;
+var $elm$time$Time$subMap = F2(
+	function (f, _v0) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
 		return A2(
-			elm$time$Time$Every,
+			$elm$time$Time$Every,
 			interval,
-			A2(elm$core$Basics$composeL, f, tagger));
+			A2($elm$core$Basics$composeL, f, tagger));
 	});
-_Platform_effectManagers['Time'] = _Platform_createManager(elm$time$Time$init, elm$time$Time$onEffects, elm$time$Time$onSelfMsg, 0, elm$time$Time$subMap);
-var elm$time$Time$subscription = _Platform_leaf('Time');
-var elm$time$Time$every = F2(
+_Platform_effectManagers['Time'] = _Platform_createManager($elm$time$Time$init, $elm$time$Time$onEffects, $elm$time$Time$onSelfMsg, 0, $elm$time$Time$subMap);
+var $elm$time$Time$subscription = _Platform_leaf('Time');
+var $elm$time$Time$every = F2(
 	function (interval, tagger) {
-		return elm$time$Time$subscription(
-			A2(elm$time$Time$Every, interval, tagger));
+		return $elm$time$Time$subscription(
+			A2($elm$time$Time$Every, interval, tagger));
 	});
-var author$project$Main$clockSubscriptions = function (flags) {
-	return (author$project$Flags$isWaitingForInput(flags) || (!author$project$Flags$isRunning(flags))) ? _List_Nil : _List_fromArray(
+var $author$project$Flags$isRunning = function (flags) {
+	return flags.ai;
+};
+var $author$project$Flags$isWaitingForInput = function (flags) {
+	var _v0 = flags.W;
+	if (!_v0.$) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$Basics$not = _Basics_not;
+var $author$project$Main$clockSubscriptions = function (flags) {
+	return ($author$project$Flags$isWaitingForInput(flags) || (!$author$project$Flags$isRunning(flags))) ? _List_Nil : _List_fromArray(
 		[
-			A2(elm$time$Time$every, 1000 / 600, author$project$Msg$ClockTick)
+			A2($elm$time$Time$every, 1000 / 600, $author$project$Msg$ClockTick)
 		]);
 };
-var elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (!maybe.$) {
-			var value = maybe.a;
-			return elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
-var elm$core$Tuple$second = function (_n0) {
-	var y = _n0.b;
-	return y;
+var $author$project$VirtualMachine$getFlags = function (virtualMachine) {
+	return virtualMachine.aa;
 };
-var elm_community$list_extra$List$Extra$find = F2(
+var $author$project$Msg$KeyDown = function (a) {
+	return {$: 1, a: a};
+};
+var $author$project$Msg$KeyPress = function (a) {
+	return {$: 2, a: a};
+};
+var $author$project$Msg$KeyUp = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $elm_community$list_extra$List$Extra$find = F2(
 	function (predicate, list) {
 		find:
 		while (true) {
 			if (!list.b) {
-				return elm$core$Maybe$Nothing;
+				return $elm$core$Maybe$Nothing;
 			} else {
 				var first = list.a;
 				var rest = list.b;
 				if (predicate(first)) {
-					return elm$core$Maybe$Just(first);
+					return $elm$core$Maybe$Just(first);
 				} else {
 					var $temp$predicate = predicate,
 						$temp$list = rest;
@@ -6200,282 +6414,86 @@ var elm_community$list_extra$List$Extra$find = F2(
 			}
 		}
 	});
-var author$project$KeyCode$toKeyCode = F2(
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (!maybe.$) {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $author$project$KeyCode$toKeyCode = F2(
 	function (controls, candidate) {
 		return A2(
-			elm$core$Maybe$map,
-			elm$core$Tuple$second,
+			$elm$core$Maybe$map,
+			$elm$core$Tuple$second,
 			A2(
-				elm_community$list_extra$List$Extra$find,
-				function (_n0) {
-					var str = _n0.a;
-					var keyCode = _n0.b;
+				$elm_community$list_extra$List$Extra$find,
+				function (_v0) {
+					var str = _v0.a;
 					return _Utils_eq(str, candidate);
 				},
 				controls));
 	});
-var elm$json$Json$Decode$field = _Json_decodeField;
-var elm$json$Json$Decode$map = _Json_map1;
-var elm$json$Json$Decode$string = _Json_decodeString;
-var author$project$KeyCode$decoder = function (keyMapping) {
+var $author$project$KeyCode$decoder = function (keyMapping) {
 	return A2(
-		elm$json$Json$Decode$map,
-		author$project$KeyCode$toKeyCode(keyMapping),
-		A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+		$elm$json$Json$Decode$map,
+		$author$project$KeyCode$toKeyCode(keyMapping),
+		A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string));
 };
-var author$project$Msg$KeyDown = function (a) {
-	return {$: 1, a: a};
-};
-var author$project$Msg$KeyPress = function (a) {
-	return {$: 2, a: a};
-};
-var author$project$Msg$KeyUp = function (a) {
-	return {$: 0, a: a};
-};
-var elm$browser$Browser$Events$Document = 0;
-var elm$browser$Browser$Events$MySub = F3(
+var $elm$browser$Browser$Events$Document = 0;
+var $elm$browser$Browser$Events$MySub = F3(
 	function (a, b, c) {
 		return {$: 0, a: a, b: b, c: c};
 	});
-var elm$browser$Browser$Events$State = F2(
+var $elm$browser$Browser$Events$State = F2(
 	function (subs, pids) {
-		return {a4: pids, bl: subs};
+		return {aZ: pids, bf: subs};
 	});
-var elm$browser$Browser$Events$init = elm$core$Task$succeed(
-	A2(elm$browser$Browser$Events$State, _List_Nil, elm$core$Dict$empty));
-var elm$browser$Browser$Events$nodeToKey = function (node) {
+var $elm$browser$Browser$Events$init = $elm$core$Task$succeed(
+	A2($elm$browser$Browser$Events$State, _List_Nil, $elm$core$Dict$empty));
+var $elm$browser$Browser$Events$nodeToKey = function (node) {
 	if (!node) {
 		return 'd_';
 	} else {
 		return 'w_';
 	}
 };
-var elm$browser$Browser$Events$addKey = function (sub) {
+var $elm$browser$Browser$Events$addKey = function (sub) {
 	var node = sub.a;
 	var name = sub.b;
 	return _Utils_Tuple2(
 		_Utils_ap(
-			elm$browser$Browser$Events$nodeToKey(node),
+			$elm$browser$Browser$Events$nodeToKey(node),
 			name),
 		sub);
 };
-var elm$browser$Browser$Events$Event = F2(
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $elm$browser$Browser$Events$Event = F2(
 	function (key, event) {
-		return {aS: event, aY: key};
+		return {aK: event, aR: key};
 	});
-var elm$core$Task$map = F2(
-	function (func, taskA) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return elm$core$Task$succeed(
-					func(a));
-			},
-			taskA);
-	});
-var elm$browser$Browser$External = function (a) {
-	return {$: 1, a: a};
-};
-var elm$browser$Browser$Internal = function (a) {
-	return {$: 0, a: a};
-};
-var elm$browser$Browser$Dom$NotFound = elm$core$Basics$identity;
-var elm$core$Basics$never = function (_n0) {
-	never:
-	while (true) {
-		var nvr = _n0;
-		var $temp$_n0 = nvr;
-		_n0 = $temp$_n0;
-		continue never;
-	}
-};
-var elm$core$Task$Perform = elm$core$Basics$identity;
-var elm$core$Task$init = elm$core$Task$succeed(0);
-var elm$core$Task$spawnCmd = F2(
-	function (router, _n0) {
-		var task = _n0;
-		return _Scheduler_spawn(
-			A2(
-				elm$core$Task$andThen,
-				elm$core$Platform$sendToApp(router),
-				task));
-	});
-var elm$core$Task$onEffects = F3(
-	function (router, commands, state) {
-		return A2(
-			elm$core$Task$map,
-			function (_n0) {
-				return 0;
-			},
-			elm$core$Task$sequence(
-				A2(
-					elm$core$List$map,
-					elm$core$Task$spawnCmd(router),
-					commands)));
-	});
-var elm$core$Task$onSelfMsg = F3(
-	function (_n0, _n1, _n2) {
-		return elm$core$Task$succeed(0);
-	});
-var elm$core$Task$cmdMap = F2(
-	function (tagger, _n0) {
-		var task = _n0;
-		return A2(elm$core$Task$map, tagger, task);
-	});
-_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
-var elm$core$Task$command = _Platform_leaf('Task');
-var elm$core$Task$perform = F2(
-	function (toMessage, task) {
-		return elm$core$Task$command(
-			A2(elm$core$Task$map, toMessage, task));
-	});
-var elm$json$Json$Decode$map2 = _Json_map2;
-var elm$json$Json$Decode$succeed = _Json_succeed;
-var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
-	switch (handler.$) {
-		case 0:
-			return 0;
-		case 1:
-			return 1;
-		case 2:
-			return 2;
-		default:
-			return 3;
-	}
-};
-var elm$core$String$length = _String_length;
-var elm$core$String$slice = _String_slice;
-var elm$core$String$dropLeft = F2(
-	function (n, string) {
-		return (n < 1) ? string : A3(
-			elm$core$String$slice,
-			n,
-			elm$core$String$length(string),
-			string);
-	});
-var elm$core$String$startsWith = _String_startsWith;
-var elm$url$Url$Http = 0;
-var elm$url$Url$Https = 1;
-var elm$core$String$indexes = _String_indexes;
-var elm$core$String$isEmpty = function (string) {
-	return string === '';
-};
-var elm$core$String$left = F2(
-	function (n, string) {
-		return (n < 1) ? '' : A3(elm$core$String$slice, 0, n, string);
-	});
-var elm$core$String$contains = _String_contains;
-var elm$core$String$toInt = _String_toInt;
-var elm$url$Url$Url = F6(
-	function (protocol, host, port_, path, query, fragment) {
-		return {aT: fragment, aW: host, a3: path, a5: port_, a8: protocol, a9: query};
-	});
-var elm$url$Url$chompBeforePath = F5(
-	function (protocol, path, params, frag, str) {
-		if (elm$core$String$isEmpty(str) || A2(elm$core$String$contains, '@', str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, ':', str);
-			if (!_n0.b) {
-				return elm$core$Maybe$Just(
-					A6(elm$url$Url$Url, protocol, str, elm$core$Maybe$Nothing, path, params, frag));
-			} else {
-				if (!_n0.b.b) {
-					var i = _n0.a;
-					var _n1 = elm$core$String$toInt(
-						A2(elm$core$String$dropLeft, i + 1, str));
-					if (_n1.$ === 1) {
-						return elm$core$Maybe$Nothing;
-					} else {
-						var port_ = _n1;
-						return elm$core$Maybe$Just(
-							A6(
-								elm$url$Url$Url,
-								protocol,
-								A2(elm$core$String$left, i, str),
-								port_,
-								path,
-								params,
-								frag));
-					}
-				} else {
-					return elm$core$Maybe$Nothing;
-				}
-			}
-		}
-	});
-var elm$url$Url$chompBeforeQuery = F4(
-	function (protocol, params, frag, str) {
-		if (elm$core$String$isEmpty(str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, '/', str);
-			if (!_n0.b) {
-				return A5(elm$url$Url$chompBeforePath, protocol, '/', params, frag, str);
-			} else {
-				var i = _n0.a;
-				return A5(
-					elm$url$Url$chompBeforePath,
-					protocol,
-					A2(elm$core$String$dropLeft, i, str),
-					params,
-					frag,
-					A2(elm$core$String$left, i, str));
-			}
-		}
-	});
-var elm$url$Url$chompBeforeFragment = F3(
-	function (protocol, frag, str) {
-		if (elm$core$String$isEmpty(str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, '?', str);
-			if (!_n0.b) {
-				return A4(elm$url$Url$chompBeforeQuery, protocol, elm$core$Maybe$Nothing, frag, str);
-			} else {
-				var i = _n0.a;
-				return A4(
-					elm$url$Url$chompBeforeQuery,
-					protocol,
-					elm$core$Maybe$Just(
-						A2(elm$core$String$dropLeft, i + 1, str)),
-					frag,
-					A2(elm$core$String$left, i, str));
-			}
-		}
-	});
-var elm$url$Url$chompAfterProtocol = F2(
-	function (protocol, str) {
-		if (elm$core$String$isEmpty(str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, '#', str);
-			if (!_n0.b) {
-				return A3(elm$url$Url$chompBeforeFragment, protocol, elm$core$Maybe$Nothing, str);
-			} else {
-				var i = _n0.a;
-				return A3(
-					elm$url$Url$chompBeforeFragment,
-					protocol,
-					elm$core$Maybe$Just(
-						A2(elm$core$String$dropLeft, i + 1, str)),
-					A2(elm$core$String$left, i, str));
-			}
-		}
-	});
-var elm$url$Url$fromString = function (str) {
-	return A2(elm$core$String$startsWith, 'http://', str) ? A2(
-		elm$url$Url$chompAfterProtocol,
-		0,
-		A2(elm$core$String$dropLeft, 7, str)) : (A2(elm$core$String$startsWith, 'https://', str) ? A2(
-		elm$url$Url$chompAfterProtocol,
-		1,
-		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
-};
-var elm$browser$Browser$Events$spawn = F3(
-	function (router, key, _n0) {
-		var node = _n0.a;
-		var name = _n0.b;
+var $elm$browser$Browser$Events$spawn = F3(
+	function (router, key, _v0) {
+		var node = _v0.a;
+		var name = _v0.b;
 		var actualNode = function () {
 			if (!node) {
 				return _Browser_doc;
@@ -6484,7 +6502,7 @@ var elm$browser$Browser$Events$spawn = F3(
 			}
 		}();
 		return A2(
-			elm$core$Task$map,
+			$elm$core$Task$map,
 			function (value) {
 				return _Utils_Tuple2(key, value);
 			},
@@ -6494,240 +6512,224 @@ var elm$browser$Browser$Events$spawn = F3(
 				name,
 				function (event) {
 					return A2(
-						elm$core$Platform$sendToSelf,
+						$elm$core$Platform$sendToSelf,
 						router,
-						A2(elm$browser$Browser$Events$Event, key, event));
+						A2($elm$browser$Browser$Events$Event, key, event));
 				}));
 	});
-var elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		elm$core$List$foldl,
-		F2(
-			function (_n0, dict) {
-				var key = _n0.a;
-				var value = _n0.b;
-				return A3(elm$core$Dict$insert, key, value, dict);
-			}),
-		elm$core$Dict$empty,
-		assocs);
-};
-var elm$core$Dict$union = F2(
+var $elm$core$Dict$union = F2(
 	function (t1, t2) {
-		return A3(elm$core$Dict$foldl, elm$core$Dict$insert, t2, t1);
+		return A3($elm$core$Dict$foldl, $elm$core$Dict$insert, t2, t1);
 	});
-var elm$browser$Browser$Events$onEffects = F3(
+var $elm$browser$Browser$Events$onEffects = F3(
 	function (router, subs, state) {
 		var stepRight = F3(
-			function (key, sub, _n6) {
-				var deads = _n6.a;
-				var lives = _n6.b;
-				var news = _n6.c;
+			function (key, sub, _v6) {
+				var deads = _v6.a;
+				var lives = _v6.b;
+				var news = _v6.c;
 				return _Utils_Tuple3(
 					deads,
 					lives,
 					A2(
-						elm$core$List$cons,
-						A3(elm$browser$Browser$Events$spawn, router, key, sub),
+						$elm$core$List$cons,
+						A3($elm$browser$Browser$Events$spawn, router, key, sub),
 						news));
 			});
 		var stepLeft = F3(
-			function (_n4, pid, _n5) {
-				var deads = _n5.a;
-				var lives = _n5.b;
-				var news = _n5.c;
+			function (_v4, pid, _v5) {
+				var deads = _v5.a;
+				var lives = _v5.b;
+				var news = _v5.c;
 				return _Utils_Tuple3(
-					A2(elm$core$List$cons, pid, deads),
+					A2($elm$core$List$cons, pid, deads),
 					lives,
 					news);
 			});
 		var stepBoth = F4(
-			function (key, pid, _n2, _n3) {
-				var deads = _n3.a;
-				var lives = _n3.b;
-				var news = _n3.c;
+			function (key, pid, _v2, _v3) {
+				var deads = _v3.a;
+				var lives = _v3.b;
+				var news = _v3.c;
 				return _Utils_Tuple3(
 					deads,
-					A3(elm$core$Dict$insert, key, pid, lives),
+					A3($elm$core$Dict$insert, key, pid, lives),
 					news);
 			});
-		var newSubs = A2(elm$core$List$map, elm$browser$Browser$Events$addKey, subs);
-		var _n0 = A6(
-			elm$core$Dict$merge,
+		var newSubs = A2($elm$core$List$map, $elm$browser$Browser$Events$addKey, subs);
+		var _v0 = A6(
+			$elm$core$Dict$merge,
 			stepLeft,
 			stepBoth,
 			stepRight,
-			state.a4,
-			elm$core$Dict$fromList(newSubs),
-			_Utils_Tuple3(_List_Nil, elm$core$Dict$empty, _List_Nil));
-		var deadPids = _n0.a;
-		var livePids = _n0.b;
-		var makeNewPids = _n0.c;
+			state.aZ,
+			$elm$core$Dict$fromList(newSubs),
+			_Utils_Tuple3(_List_Nil, $elm$core$Dict$empty, _List_Nil));
+		var deadPids = _v0.a;
+		var livePids = _v0.b;
+		var makeNewPids = _v0.c;
 		return A2(
-			elm$core$Task$andThen,
+			$elm$core$Task$andThen,
 			function (pids) {
-				return elm$core$Task$succeed(
+				return $elm$core$Task$succeed(
 					A2(
-						elm$browser$Browser$Events$State,
+						$elm$browser$Browser$Events$State,
 						newSubs,
 						A2(
-							elm$core$Dict$union,
+							$elm$core$Dict$union,
 							livePids,
-							elm$core$Dict$fromList(pids))));
+							$elm$core$Dict$fromList(pids))));
 			},
 			A2(
-				elm$core$Task$andThen,
-				function (_n1) {
-					return elm$core$Task$sequence(makeNewPids);
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$sequence(makeNewPids);
 				},
-				elm$core$Task$sequence(
-					A2(elm$core$List$map, elm$core$Process$kill, deadPids))));
+				$elm$core$Task$sequence(
+					A2($elm$core$List$map, $elm$core$Process$kill, deadPids))));
 	});
-var elm$core$List$maybeCons = F3(
+var $elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
-		var _n0 = f(mx);
-		if (!_n0.$) {
-			var x = _n0.a;
-			return A2(elm$core$List$cons, x, xs);
+		var _v0 = f(mx);
+		if (!_v0.$) {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
 		} else {
 			return xs;
 		}
 	});
-var elm$core$List$filterMap = F2(
+var $elm$core$List$filterMap = F2(
 	function (f, xs) {
 		return A3(
-			elm$core$List$foldr,
-			elm$core$List$maybeCons(f),
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
 			_List_Nil,
 			xs);
 	});
-var elm$browser$Browser$Events$onSelfMsg = F3(
-	function (router, _n0, state) {
-		var key = _n0.aY;
-		var event = _n0.aS;
-		var toMessage = function (_n2) {
-			var subKey = _n2.a;
-			var _n3 = _n2.b;
-			var node = _n3.a;
-			var name = _n3.b;
-			var decoder = _n3.c;
-			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : elm$core$Maybe$Nothing;
+var $elm$browser$Browser$Events$onSelfMsg = F3(
+	function (router, _v0, state) {
+		var key = _v0.aR;
+		var event = _v0.aK;
+		var toMessage = function (_v2) {
+			var subKey = _v2.a;
+			var _v3 = _v2.b;
+			var node = _v3.a;
+			var name = _v3.b;
+			var decoder = _v3.c;
+			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : $elm$core$Maybe$Nothing;
 		};
-		var messages = A2(elm$core$List$filterMap, toMessage, state.bl);
+		var messages = A2($elm$core$List$filterMap, toMessage, state.bf);
 		return A2(
-			elm$core$Task$andThen,
-			function (_n1) {
-				return elm$core$Task$succeed(state);
+			$elm$core$Task$andThen,
+			function (_v1) {
+				return $elm$core$Task$succeed(state);
 			},
-			elm$core$Task$sequence(
+			$elm$core$Task$sequence(
 				A2(
-					elm$core$List$map,
-					elm$core$Platform$sendToApp(router),
+					$elm$core$List$map,
+					$elm$core$Platform$sendToApp(router),
 					messages)));
 	});
-var elm$browser$Browser$Events$subMap = F2(
-	function (func, _n0) {
-		var node = _n0.a;
-		var name = _n0.b;
-		var decoder = _n0.c;
+var $elm$browser$Browser$Events$subMap = F2(
+	function (func, _v0) {
+		var node = _v0.a;
+		var name = _v0.b;
+		var decoder = _v0.c;
 		return A3(
-			elm$browser$Browser$Events$MySub,
+			$elm$browser$Browser$Events$MySub,
 			node,
 			name,
-			A2(elm$json$Json$Decode$map, func, decoder));
+			A2($elm$json$Json$Decode$map, func, decoder));
 	});
-_Platform_effectManagers['Browser.Events'] = _Platform_createManager(elm$browser$Browser$Events$init, elm$browser$Browser$Events$onEffects, elm$browser$Browser$Events$onSelfMsg, 0, elm$browser$Browser$Events$subMap);
-var elm$browser$Browser$Events$subscription = _Platform_leaf('Browser.Events');
-var elm$browser$Browser$Events$on = F3(
+_Platform_effectManagers['Browser.Events'] = _Platform_createManager($elm$browser$Browser$Events$init, $elm$browser$Browser$Events$onEffects, $elm$browser$Browser$Events$onSelfMsg, 0, $elm$browser$Browser$Events$subMap);
+var $elm$browser$Browser$Events$subscription = _Platform_leaf('Browser.Events');
+var $elm$browser$Browser$Events$on = F3(
 	function (node, name, decoder) {
-		return elm$browser$Browser$Events$subscription(
-			A3(elm$browser$Browser$Events$MySub, node, name, decoder));
+		return $elm$browser$Browser$Events$subscription(
+			A3($elm$browser$Browser$Events$MySub, node, name, decoder));
 	});
-var elm$browser$Browser$Events$onKeyDown = A2(elm$browser$Browser$Events$on, 0, 'keydown');
-var elm$browser$Browser$Events$onKeyPress = A2(elm$browser$Browser$Events$on, 0, 'keypress');
-var elm$browser$Browser$Events$onKeyUp = A2(elm$browser$Browser$Events$on, 0, 'keyup');
-var author$project$Main$keyboardSubscriptions = F2(
+var $elm$browser$Browser$Events$onKeyDown = A2($elm$browser$Browser$Events$on, 0, 'keydown');
+var $elm$browser$Browser$Events$onKeyPress = A2($elm$browser$Browser$Events$on, 0, 'keypress');
+var $elm$browser$Browser$Events$onKeyUp = A2($elm$browser$Browser$Events$on, 0, 'keyup');
+var $author$project$Main$keyboardSubscriptions = F2(
 	function (flags, maybeGame) {
-		var _n0 = _Utils_Tuple2(
-			author$project$Flags$isRunning(flags),
+		var _v0 = _Utils_Tuple2(
+			$author$project$Flags$isRunning(flags),
 			maybeGame);
-		if (_n0.a && (!_n0.b.$)) {
-			var game = _n0.b.a;
+		if (_v0.a && (!_v0.b.$)) {
+			var game = _v0.b.a;
 			var keyDecoder = function (toMsg) {
 				return A2(
-					elm$json$Json$Decode$map,
+					$elm$json$Json$Decode$map,
 					toMsg,
-					author$project$KeyCode$decoder(game.t));
+					$author$project$KeyCode$decoder(game.p));
 			};
 			return _List_fromArray(
 				[
-					elm$browser$Browser$Events$onKeyUp(
-					keyDecoder(author$project$Msg$KeyUp)),
-					elm$browser$Browser$Events$onKeyDown(
-					keyDecoder(author$project$Msg$KeyDown)),
-					elm$browser$Browser$Events$onKeyPress(
-					keyDecoder(author$project$Msg$KeyPress))
+					$elm$browser$Browser$Events$onKeyUp(
+					keyDecoder($author$project$Msg$KeyUp)),
+					$elm$browser$Browser$Events$onKeyDown(
+					keyDecoder($author$project$Msg$KeyDown)),
+					$elm$browser$Browser$Events$onKeyPress(
+					keyDecoder($author$project$Msg$KeyPress))
 				]);
 		} else {
 			return _List_Nil;
 		}
 	});
-var author$project$VirtualMachine$getFlags = function (virtualMachine) {
-	return virtualMachine.ah;
-};
-var elm$core$Platform$Sub$batch = _Platform_batch;
-var author$project$Main$subscriptions = function (model) {
-	var maybeGame = model.K;
-	var flags = author$project$VirtualMachine$getFlags(model.b);
+var $author$project$Main$subscriptions = function (model) {
+	var maybeGame = model.F;
+	var flags = $author$project$VirtualMachine$getFlags(model.b);
 	var subscriptionList = _Utils_ap(
-		A2(author$project$Main$keyboardSubscriptions, flags, maybeGame),
-		author$project$Main$clockSubscriptions(flags));
-	return elm$core$Platform$Sub$batch(subscriptionList);
+		A2($author$project$Main$keyboardSubscriptions, flags, maybeGame),
+		$author$project$Main$clockSubscriptions(flags));
+	return $elm$core$Platform$Sub$batch(subscriptionList);
 };
-var author$project$KeyCode$nibbleValue = function (_n0) {
-	var keyCode = _n0;
+var $author$project$KeyCode$nibbleValue = function (_v0) {
+	var keyCode = _v0;
 	return keyCode;
 };
-var author$project$Keypad$addKeyPress = F2(
+var $author$project$Keypad$addKeyPress = F2(
 	function (keyCode, keysPressed) {
 		return A3(
-			elm$core$Dict$insert,
-			author$project$KeyCode$nibbleValue(keyCode),
+			$elm$core$Dict$insert,
+			$author$project$KeyCode$nibbleValue(keyCode),
 			true,
 			keysPressed);
 	});
-var author$project$Flags$getWaitingForInputRegister = function (flags) {
-	return flags.ab;
+var $author$project$VirtualMachine$getRegisters = function (virtualMachine) {
+	return virtualMachine.ah;
 };
-var author$project$Flags$setWaitingForInputRegister = F2(
-	function (waitingForInputRegister, flags) {
-		return _Utils_update(
-			flags,
-			{ab: waitingForInputRegister});
-	});
-var author$project$Registers$setDataRegister = F3(
+var $author$project$Flags$getWaitingForInputRegister = function (flags) {
+	return flags.W;
+};
+var $author$project$Registers$setDataRegister = F3(
 	function (index, value, registers) {
-		var updatedDataRegisters = A3(elm$core$Array$set, index, value, registers.Q);
-		return (_Utils_cmp(index, author$project$Registers$dataRegisterCount) > 0) ? elm$core$Result$Err('Register index out of bounds') : elm$core$Result$Ok(
+		var updatedDataRegisters = A3($elm$core$Array$set, index, value, registers.L);
+		return (_Utils_cmp(index, $author$project$Registers$dataRegisterCount) > 0) ? $elm$core$Result$Err('Register index out of bounds') : $elm$core$Result$Ok(
 			_Utils_update(
 				registers,
-				{Q: updatedDataRegisters}));
+				{L: updatedDataRegisters}));
 	});
-var author$project$VirtualMachine$getRegisters = function (virtualMachine) {
-	return virtualMachine.ao;
-};
-var author$project$VirtualMachine$setFlags = F2(
+var $author$project$VirtualMachine$setFlags = F2(
 	function (flags, virtualMachine) {
 		return _Utils_update(
 			virtualMachine,
-			{ah: flags});
+			{aa: flags});
 	});
-var author$project$VirtualMachine$setRegisters = F2(
+var $author$project$VirtualMachine$setRegisters = F2(
 	function (registers, virtualMachine) {
 		return _Utils_update(
 			virtualMachine,
-			{ao: registers});
+			{ah: registers});
 	});
-var elm$core$Result$withDefault = F2(
+var $author$project$Flags$setWaitingForInputRegister = F2(
+	function (waitingForInputRegister, flags) {
+		return _Utils_update(
+			flags,
+			{W: waitingForInputRegister});
+	});
+var $elm$core$Result$withDefault = F2(
 	function (def, result) {
 		if (!result.$) {
 			var a = result.a;
@@ -6736,70 +6738,75 @@ var elm$core$Result$withDefault = F2(
 			return def;
 		}
 	});
-var author$project$Main$checkIfWaitingForKeyPress = F2(
+var $author$project$Main$checkIfWaitingForKeyPress = F2(
 	function (keyCode, virtualMachine) {
-		var _n0 = author$project$Flags$getWaitingForInputRegister(
-			author$project$VirtualMachine$getFlags(virtualMachine));
-		if (!_n0.$) {
-			var registerX = _n0.a;
-			var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var _v0 = $author$project$Flags$getWaitingForInputRegister(
+			$author$project$VirtualMachine$getFlags(virtualMachine));
+		if (!_v0.$) {
+			var registerX = _v0.a;
+			var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 			var newRegisters = A2(
-				elm$core$Result$withDefault,
+				$elm$core$Result$withDefault,
 				registers,
 				A3(
-					author$project$Registers$setDataRegister,
+					$author$project$Registers$setDataRegister,
 					registerX,
-					author$project$KeyCode$nibbleValue(keyCode),
+					$author$project$KeyCode$nibbleValue(keyCode),
 					registers));
 			var newFlags = A2(
-				author$project$Flags$setWaitingForInputRegister,
-				elm$core$Maybe$Nothing,
-				author$project$VirtualMachine$getFlags(virtualMachine));
+				$author$project$Flags$setWaitingForInputRegister,
+				$elm$core$Maybe$Nothing,
+				$author$project$VirtualMachine$getFlags(virtualMachine));
 			return _Utils_Tuple2(
 				A2(
-					author$project$VirtualMachine$setRegisters,
+					$author$project$VirtualMachine$setRegisters,
 					newRegisters,
-					A2(author$project$VirtualMachine$setFlags, newFlags, virtualMachine)),
-				elm$core$Platform$Cmd$none);
+					A2($author$project$VirtualMachine$setFlags, newFlags, virtualMachine)),
+				$elm$core$Platform$Cmd$none);
 		} else {
-			return _Utils_Tuple2(virtualMachine, elm$core$Platform$Cmd$none);
+			return _Utils_Tuple2(virtualMachine, $elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$VirtualMachine$getKeypad = function (virtualMachine) {
-	return virtualMachine.aj;
+var $author$project$VirtualMachine$getKeypad = function (virtualMachine) {
+	return virtualMachine.ac;
 };
-var author$project$VirtualMachine$setKeypad = F2(
+var $author$project$VirtualMachine$setKeypad = F2(
 	function (keypad, virtualMachine) {
 		return _Utils_update(
 			virtualMachine,
-			{aj: keypad});
+			{ac: keypad});
 	});
-var author$project$Main$addKeyCode = F2(
+var $author$project$Main$addKeyCode = F2(
 	function (maybeKeyCode, model) {
 		if (!maybeKeyCode.$) {
 			var keyCode = maybeKeyCode.a;
 			var newKeypad = A2(
-				author$project$Keypad$addKeyPress,
+				$author$project$Keypad$addKeyPress,
 				keyCode,
-				author$project$VirtualMachine$getKeypad(model.b));
-			var _n1 = A2(
-				author$project$Main$checkIfWaitingForKeyPress,
+				$author$project$VirtualMachine$getKeypad(model.b));
+			var _v1 = A2(
+				$author$project$Main$checkIfWaitingForKeyPress,
 				keyCode,
-				A2(author$project$VirtualMachine$setKeypad, newKeypad, model.b));
-			var newVirtualMachine = _n1.a;
-			var cmd = _n1.b;
+				A2($author$project$VirtualMachine$setKeypad, newKeypad, model.b));
+			var newVirtualMachine = _v1.a;
+			var cmd = _v1.b;
 			return _Utils_Tuple2(
 				_Utils_update(
 					model,
 					{b: newVirtualMachine}),
 				cmd);
 		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
-var elm$core$Basics$modBy = _Basics_modBy;
-var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var elm$core$List$any = F2(
+var $elm$core$List$isEmpty = function (xs) {
+	if (!xs.b) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
 		while (true) {
@@ -6820,34 +6827,91 @@ var elm$core$List$any = F2(
 			}
 		}
 	});
-var elm$core$List$member = F2(
+var $elm$core$List$member = F2(
 	function (x, xs) {
 		return A2(
-			elm$core$List$any,
+			$elm$core$List$any,
 			function (a) {
 				return _Utils_eq(a, x);
 			},
 			xs);
 	});
-var author$project$FetchDecodeExecuteLoop$getNibble = F2(
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $author$project$FetchDecodeExecuteLoop$getNibble = F2(
 	function (n, opcode) {
 		return A2(
-			elm$core$List$member,
+			$elm$core$List$member,
 			n,
 			_List_fromArray(
-				[0, 1, 2, 3])) ? elm$core$Result$Ok(
-			A2(elm$core$Basics$modBy, 65535, opcode << (4 * n)) >> 12) : elm$core$Result$Err(
-			'expected \'n\' to be in [0,1,2,3] was \'' + (elm$core$String$fromInt(n) + '\''));
+				[0, 1, 2, 3])) ? $elm$core$Result$Ok(
+			A2($elm$core$Basics$modBy, 65535, opcode << (4 * n)) >> 12) : $elm$core$Result$Err(
+			'expected \'n\' to be in [0,1,2,3] was \'' + ($elm$core$String$fromInt(n) + '\''));
 	});
-var author$project$FetchDecodeExecuteLoop$getByte = function (opcode) {
-	return A2(elm$core$Basics$modBy, 65535, opcode << 8) >> 8;
+var $author$project$VirtualMachine$setDisplay = F2(
+	function (display, virtualMachine) {
+		return _Utils_update(
+			virtualMachine,
+			{bu: display});
+	});
+var $author$project$Instructions$clearDisplay = function (virtualMachine) {
+	return _Utils_Tuple2(
+		A2($author$project$VirtualMachine$setDisplay, $author$project$Display$init, virtualMachine),
+		$elm$core$Platform$Cmd$none);
 };
-var elm$core$String$toUpper = _String_toUpper;
-var elm$core$Basics$negate = function (n) {
+var $author$project$FetchDecodeExecuteLoop$getByte = function (opcode) {
+	return A2($elm$core$Basics$modBy, 65535, opcode << 8) >> 8;
+};
+var $author$project$Registers$getStackPointer = function (registers) {
+	return registers.R;
+};
+var $author$project$Registers$decrementStackPointer = function (registers) {
+	return _Utils_update(
+		registers,
+		{
+			R: $author$project$Registers$getStackPointer(registers) - 1
+		});
+};
+var $author$project$VirtualMachine$getStack = function (virtualMachine) {
+	return virtualMachine.al;
+};
+var $author$project$Stack$pop = F2(
+	function (stackPointer, stack) {
+		return (_Utils_cmp(stackPointer, $author$project$Stack$stackSize) > -1) ? $elm$core$Result$Err('Stack pointer out of bounds') : $elm$core$Result$Ok(
+			A2(
+				$elm$core$Maybe$withDefault,
+				0,
+				A2($elm$core$Array$get, stackPointer, stack)));
+	});
+var $author$project$Registers$setProgramCounter = F2(
+	function (programCounter, registers) {
+		return _Utils_update(
+			registers,
+			{D: programCounter});
+	});
+var $author$project$Instructions$returnFromSubroutine = function (virtualMachine) {
+	var addressAtTopOfStack = A2(
+		$elm$core$Result$withDefault,
+		0,
+		A2(
+			$author$project$Stack$pop,
+			$author$project$Registers$getStackPointer(
+				$author$project$VirtualMachine$getRegisters(virtualMachine)),
+			$author$project$VirtualMachine$getStack(virtualMachine)));
+	var newRegisters = $author$project$Registers$decrementStackPointer(
+		A2(
+			$author$project$Registers$setProgramCounter,
+			addressAtTopOfStack,
+			$author$project$VirtualMachine$getRegisters(virtualMachine)));
+	return _Utils_Tuple2(
+		A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+		$elm$core$Platform$Cmd$none);
+};
+var $elm$core$String$fromList = _String_fromList;
+var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var elm$core$String$fromList = _String_fromList;
-var rtfeldman$elm_hex$Hex$unsafeToDigit = function (num) {
+var $rtfeldman$elm_hex$Hex$unsafeToDigit = function (num) {
 	unsafeToDigit:
 	while (true) {
 		switch (num) {
@@ -6890,20 +6954,20 @@ var rtfeldman$elm_hex$Hex$unsafeToDigit = function (num) {
 		}
 	}
 };
-var rtfeldman$elm_hex$Hex$unsafePositiveToDigits = F2(
+var $rtfeldman$elm_hex$Hex$unsafePositiveToDigits = F2(
 	function (digits, num) {
 		unsafePositiveToDigits:
 		while (true) {
 			if (num < 16) {
 				return A2(
-					elm$core$List$cons,
-					rtfeldman$elm_hex$Hex$unsafeToDigit(num),
+					$elm$core$List$cons,
+					$rtfeldman$elm_hex$Hex$unsafeToDigit(num),
 					digits);
 			} else {
 				var $temp$digits = A2(
-					elm$core$List$cons,
-					rtfeldman$elm_hex$Hex$unsafeToDigit(
-						A2(elm$core$Basics$modBy, 16, num)),
+					$elm$core$List$cons,
+					$rtfeldman$elm_hex$Hex$unsafeToDigit(
+						A2($elm$core$Basics$modBy, 16, num)),
 					digits),
 					$temp$num = (num / 16) | 0;
 				digits = $temp$digits;
@@ -6912,667 +6976,605 @@ var rtfeldman$elm_hex$Hex$unsafePositiveToDigits = F2(
 			}
 		}
 	});
-var rtfeldman$elm_hex$Hex$toString = function (num) {
-	return elm$core$String$fromList(
+var $rtfeldman$elm_hex$Hex$toString = function (num) {
+	return $elm$core$String$fromList(
 		(num < 0) ? A2(
-			elm$core$List$cons,
+			$elm$core$List$cons,
 			'-',
-			A2(rtfeldman$elm_hex$Hex$unsafePositiveToDigits, _List_Nil, -num)) : A2(rtfeldman$elm_hex$Hex$unsafePositiveToDigits, _List_Nil, num));
+			A2($rtfeldman$elm_hex$Hex$unsafePositiveToDigits, _List_Nil, -num)) : A2($rtfeldman$elm_hex$Hex$unsafePositiveToDigits, _List_Nil, num));
 };
-var author$project$FetchDecodeExecuteLoop$toHex = function (_int) {
-	return elm$core$String$toUpper(
-		rtfeldman$elm_hex$Hex$toString(_int));
+var $elm$core$String$toUpper = _String_toUpper;
+var $author$project$FetchDecodeExecuteLoop$toHex = function (_int) {
+	return $elm$core$String$toUpper(
+		$rtfeldman$elm_hex$Hex$toString(_int));
 };
-var author$project$VirtualMachine$setDisplay = F2(
-	function (display, virtualMachine) {
-		return _Utils_update(
-			virtualMachine,
-			{bx: display});
-	});
-var author$project$Instructions$clearDisplay = function (virtualMachine) {
-	return _Utils_Tuple2(
-		A2(author$project$VirtualMachine$setDisplay, author$project$Display$init, virtualMachine),
-		elm$core$Platform$Cmd$none);
-};
-var author$project$Registers$getStackPointer = function (registers) {
-	return registers.X;
-};
-var author$project$Registers$decrementStackPointer = function (registers) {
-	return _Utils_update(
-		registers,
-		{
-			X: author$project$Registers$getStackPointer(registers) - 1
-		});
-};
-var author$project$Registers$setProgramCounter = F2(
-	function (programCounter, registers) {
-		return _Utils_update(
-			registers,
-			{I: programCounter});
-	});
-var author$project$Stack$pop = F2(
-	function (stackPointer, stack) {
-		return (_Utils_cmp(stackPointer, author$project$Stack$stackSize) > -1) ? elm$core$Result$Err('Stack pointer out of bounds') : elm$core$Result$Ok(
-			A2(
-				elm$core$Maybe$withDefault,
-				0,
-				A2(elm$core$Array$get, stackPointer, stack)));
-	});
-var author$project$VirtualMachine$getStack = function (virtualMachine) {
-	return virtualMachine.as;
-};
-var author$project$Instructions$returnFromSubroutine = function (virtualMachine) {
-	var addressAtTopOfStack = A2(
-		elm$core$Result$withDefault,
-		0,
-		A2(
-			author$project$Stack$pop,
-			author$project$Registers$getStackPointer(
-				author$project$VirtualMachine$getRegisters(virtualMachine)),
-			author$project$VirtualMachine$getStack(virtualMachine)));
-	var newRegisters = author$project$Registers$decrementStackPointer(
-		A2(
-			author$project$Registers$setProgramCounter,
-			addressAtTopOfStack,
-			author$project$VirtualMachine$getRegisters(virtualMachine)));
-	return _Utils_Tuple2(
-		A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-		elm$core$Platform$Cmd$none);
-};
-var author$project$FetchDecodeExecuteLoop$handle0 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle0 = F2(
 	function (virtualMachine, opcode) {
-		var _n0 = author$project$FetchDecodeExecuteLoop$getByte(opcode);
-		switch (_n0) {
+		var _v0 = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
+		switch (_v0) {
 			case 224:
-				return elm$core$Result$Ok(
-					author$project$Instructions$clearDisplay(virtualMachine));
+				return $elm$core$Result$Ok(
+					$author$project$Instructions$clearDisplay(virtualMachine));
 			case 238:
-				return elm$core$Result$Ok(
-					author$project$Instructions$returnFromSubroutine(virtualMachine));
+				return $elm$core$Result$Ok(
+					$author$project$Instructions$returnFromSubroutine(virtualMachine));
 			default:
-				return elm$core$Result$Err(
-					'Unknown opcode: ' + author$project$FetchDecodeExecuteLoop$toHex(opcode));
+				return $elm$core$Result$Err(
+					'Unknown opcode: ' + $author$project$FetchDecodeExecuteLoop$toHex(opcode));
 		}
 	});
-var author$project$FetchDecodeExecuteLoop$dropFirstNibble = function (opcode) {
-	return A2(elm$core$Basics$modBy, 65535, opcode << 4) >> 4;
+var $author$project$FetchDecodeExecuteLoop$dropFirstNibble = function (opcode) {
+	return A2($elm$core$Basics$modBy, 65535, opcode << 4) >> 4;
 };
-var author$project$Registers$getProgramCounter = function (registers) {
-	return registers.I;
+var $author$project$Registers$getProgramCounter = function (registers) {
+	return registers.D;
 };
-var author$project$Registers$decrementProgramCounter = function (registers) {
+var $author$project$Registers$decrementProgramCounter = function (registers) {
 	return _Utils_update(
 		registers,
 		{
-			I: author$project$Registers$getProgramCounter(registers) - 2
+			D: $author$project$Registers$getProgramCounter(registers) - 2
 		});
 };
-var author$project$Instructions$jumpAbsolute = F2(
+var $author$project$Instructions$jumpAbsolute = F2(
 	function (virtualMachine, location) {
-		var newRegisters = author$project$Registers$decrementProgramCounter(
+		var newRegisters = $author$project$Registers$decrementProgramCounter(
 			A2(
-				author$project$Registers$setProgramCounter,
+				$author$project$Registers$setProgramCounter,
 				location,
-				author$project$VirtualMachine$getRegisters(virtualMachine)));
+				$author$project$VirtualMachine$getRegisters(virtualMachine)));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle1 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle1 = F2(
 	function (virtualMachine, opcode) {
-		return elm$core$Result$Ok(
+		return $elm$core$Result$Ok(
 			A2(
-				author$project$Instructions$jumpAbsolute,
+				$author$project$Instructions$jumpAbsolute,
 				virtualMachine,
-				author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
+				$author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
 	});
-var author$project$Registers$incrementStackPointer = function (registers) {
+var $author$project$Registers$incrementStackPointer = function (registers) {
 	return _Utils_update(
 		registers,
 		{
-			X: author$project$Registers$getStackPointer(registers) + 1
+			R: $author$project$Registers$getStackPointer(registers) + 1
 		});
 };
-var author$project$Stack$put = F3(
+var $author$project$Stack$put = F3(
 	function (stackPointer, value, stack) {
-		return (_Utils_cmp(stackPointer, author$project$Stack$stackSize) > -1) ? elm$core$Result$Err('Stack pointer out of bounds') : elm$core$Result$Ok(
-			A3(elm$core$Array$set, stackPointer, value, stack));
+		return (_Utils_cmp(stackPointer, $author$project$Stack$stackSize) > -1) ? $elm$core$Result$Err('Stack pointer out of bounds') : $elm$core$Result$Ok(
+			A3($elm$core$Array$set, stackPointer, value, stack));
 	});
-var author$project$VirtualMachine$setStack = F2(
+var $author$project$VirtualMachine$setStack = F2(
 	function (stack, virtualMachine) {
 		return _Utils_update(
 			virtualMachine,
-			{as: stack});
+			{al: stack});
 	});
-var author$project$Instructions$callSubroutine = F2(
+var $author$project$Instructions$callSubroutine = F2(
 	function (virtualMachine, location) {
-		var stack = author$project$VirtualMachine$getStack(virtualMachine);
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
-		var oldProgramCounter = author$project$Registers$getProgramCounter(registers);
-		var newRegisters = author$project$Registers$decrementProgramCounter(
+		var stack = $author$project$VirtualMachine$getStack(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
+		var oldProgramCounter = $author$project$Registers$getProgramCounter(registers);
+		var newRegisters = $author$project$Registers$decrementProgramCounter(
 			A2(
-				author$project$Registers$setProgramCounter,
+				$author$project$Registers$setProgramCounter,
 				location,
-				author$project$Registers$incrementStackPointer(registers)));
+				$author$project$Registers$incrementStackPointer(registers)));
 		var newStack = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			stack,
 			A3(
-				author$project$Stack$put,
-				author$project$Registers$getStackPointer(newRegisters),
+				$author$project$Stack$put,
+				$author$project$Registers$getStackPointer(newRegisters),
 				oldProgramCounter,
 				stack));
 		var newVirtualMachine = A2(
-			author$project$VirtualMachine$setStack,
+			$author$project$VirtualMachine$setStack,
 			newStack,
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine));
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine));
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle2 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle2 = F2(
 	function (virtualMachine, opcode) {
-		return elm$core$Result$Ok(
+		return $elm$core$Result$Ok(
 			A2(
-				author$project$Instructions$callSubroutine,
+				$author$project$Instructions$callSubroutine,
 				virtualMachine,
-				author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
+				$author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
 	});
-var author$project$Registers$getDataRegister = F2(
+var $author$project$Registers$getDataRegister = F2(
 	function (index, registers) {
-		return (_Utils_cmp(index, author$project$Registers$dataRegisterCount) > -1) ? elm$core$Result$Err(
-			'Data register index out of bounds: ' + elm$core$String$fromInt(index)) : elm$core$Result$Ok(
+		return (_Utils_cmp(index, $author$project$Registers$dataRegisterCount) > -1) ? $elm$core$Result$Err(
+			'Data register index out of bounds: ' + $elm$core$String$fromInt(index)) : $elm$core$Result$Ok(
 			A2(
-				elm$core$Maybe$withDefault,
+				$elm$core$Maybe$withDefault,
 				0,
-				A2(elm$core$Array$get, index, registers.Q)));
+				A2($elm$core$Array$get, index, registers.L)));
 	});
-var author$project$Registers$incrementProgramCounter = function (registers) {
+var $author$project$Registers$incrementProgramCounter = function (registers) {
 	return _Utils_update(
 		registers,
 		{
-			I: author$project$Registers$getProgramCounter(registers) + 2
+			D: $author$project$Registers$getProgramCounter(registers) + 2
 		});
 };
-var author$project$Instructions$skipNextIfEqualConstant = F3(
+var $author$project$Instructions$skipNextIfEqualConstant = F3(
 	function (virtualMachine, register, _byte) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, register, registers));
-		var newRegisters = _Utils_eq(registerValue, _byte) ? author$project$Registers$incrementProgramCounter(registers) : registers;
+			A2($author$project$Registers$getDataRegister, register, registers));
+		var newRegisters = _Utils_eq(registerValue, _byte) ? $author$project$Registers$incrementProgramCounter(registers) : registers;
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle3 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle3 = F2(
 	function (virtualMachine, opcode) {
-		var value = author$project$FetchDecodeExecuteLoop$getByte(opcode);
+		var value = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
 		var register = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		return elm$core$Result$Ok(
-			A3(author$project$Instructions$skipNextIfEqualConstant, virtualMachine, register, value));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		return $elm$core$Result$Ok(
+			A3($author$project$Instructions$skipNextIfEqualConstant, virtualMachine, register, value));
 	});
-var elm$core$Basics$neq = _Utils_notEqual;
-var author$project$Instructions$skipNextIfNotEqualConstant = F3(
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$Instructions$skipNextIfNotEqualConstant = F3(
 	function (virtualMachine, register, value) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, register, registers));
-		var newRegisters = (!_Utils_eq(registerValue, value)) ? author$project$Registers$incrementProgramCounter(registers) : registers;
+			A2($author$project$Registers$getDataRegister, register, registers));
+		var newRegisters = (!_Utils_eq(registerValue, value)) ? $author$project$Registers$incrementProgramCounter(registers) : registers;
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle4 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle4 = F2(
 	function (virtualMachine, opcode) {
-		var value = author$project$FetchDecodeExecuteLoop$getByte(opcode);
+		var value = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
 		var register = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		return elm$core$Result$Ok(
-			A3(author$project$Instructions$skipNextIfNotEqualConstant, virtualMachine, register, value));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		return $elm$core$Result$Ok(
+			A3($author$project$Instructions$skipNextIfNotEqualConstant, virtualMachine, register, value));
 	});
-var author$project$Instructions$skipNextIfRegistersEqual = F3(
+var $author$project$Instructions$skipNextIfRegistersEqual = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerValueY = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerValueX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
-		var newRegisters = _Utils_eq(registerValueX, registerValueY) ? author$project$Registers$incrementProgramCounter(
-			author$project$VirtualMachine$getRegisters(virtualMachine)) : author$project$VirtualMachine$getRegisters(virtualMachine);
+			A2($author$project$Registers$getDataRegister, registerX, registers));
+		var newRegisters = _Utils_eq(registerValueX, registerValueY) ? $author$project$Registers$incrementProgramCounter(
+			$author$project$VirtualMachine$getRegisters(virtualMachine)) : $author$project$VirtualMachine$getRegisters(virtualMachine);
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle5 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle5 = F2(
 	function (virtualMachine, opcode) {
 		var registerY = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		return A2(
-			elm$core$Result$withDefault,
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		return (!(!A2(
+			$elm$core$Result$withDefault,
 			-1,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode)) ? elm$core$Result$Err(
-			'Unknown opcode: ' + author$project$FetchDecodeExecuteLoop$toHex(opcode)) : elm$core$Result$Ok(
-			A3(author$project$Instructions$skipNextIfRegistersEqual, virtualMachine, registerX, registerY));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode)))) ? $elm$core$Result$Err(
+			'Unknown opcode: ' + $author$project$FetchDecodeExecuteLoop$toHex(opcode)) : $elm$core$Result$Ok(
+			A3($author$project$Instructions$skipNextIfRegistersEqual, virtualMachine, registerX, registerY));
 	});
-var author$project$Instructions$setRegisterToConstant = F3(
+var $author$project$Instructions$setRegisterToConstant = F3(
 	function (virtualMachine, register, value) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, register, value, registers));
+			A3($author$project$Registers$setDataRegister, register, value, registers));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle6 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle6 = F2(
 	function (virtualMachine, opcode) {
-		var value = author$project$FetchDecodeExecuteLoop$getByte(opcode);
+		var value = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		return elm$core$Result$Ok(
-			A3(author$project$Instructions$setRegisterToConstant, virtualMachine, registerX, value));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		return $elm$core$Result$Ok(
+			A3($author$project$Instructions$setRegisterToConstant, virtualMachine, registerX, value));
 	});
-var author$project$Instructions$addToRegister = F3(
+var $author$project$Instructions$addToRegister = F3(
 	function (virtualMachine, register, value) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var currentRegisterValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, register, registers));
-		var newRegisterValue = A2(elm$core$Basics$modBy, 256, currentRegisterValue + value);
+			A2($author$project$Registers$getDataRegister, register, registers));
+		var newRegisterValue = A2($elm$core$Basics$modBy, 256, currentRegisterValue + value);
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, register, newRegisterValue, registers));
+			A3($author$project$Registers$setDataRegister, register, newRegisterValue, registers));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle7 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle7 = F2(
 	function (virtualMachine, opcode) {
-		var value = author$project$FetchDecodeExecuteLoop$getByte(opcode);
+		var value = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		return elm$core$Result$Ok(
-			A3(author$project$Instructions$addToRegister, virtualMachine, registerX, value));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		return $elm$core$Result$Ok(
+			A3($author$project$Instructions$addToRegister, virtualMachine, registerX, value));
 	});
-var elm$core$Result$andThen = F2(
+var $elm$core$Result$andThen = F2(
 	function (callback, result) {
 		if (!result.$) {
 			var value = result.a;
 			return callback(value);
 		} else {
 			var msg = result.a;
-			return elm$core$Result$Err(msg);
+			return $elm$core$Result$Err(msg);
 		}
 	});
-var author$project$Instructions$setRegisterAdd = F3(
+var $author$project$Instructions$setRegisterAdd = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerYValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
+			A2($author$project$Registers$getDataRegister, registerX, registers));
 		var registerSum = registerXValue + registerYValue;
 		var carryValue = (registerSum > 255) ? 1 : 0;
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
 			A2(
-				elm$core$Result$andThen,
-				A2(author$project$Registers$setDataRegister, 15, carryValue),
+				$elm$core$Result$andThen,
+				A2($author$project$Registers$setDataRegister, 15, carryValue),
 				A3(
-					author$project$Registers$setDataRegister,
+					$author$project$Registers$setDataRegister,
 					registerX,
-					A2(elm$core$Basics$modBy, 256, registerSum),
+					A2($elm$core$Basics$modBy, 256, registerSum),
 					registers)));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$setRegisterAnd = F3(
+var $author$project$Instructions$setRegisterAnd = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerYValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
+			A2($author$project$Registers$getDataRegister, registerX, registers));
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, registerX, registerXValue & registerYValue, registers));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+			A3($author$project$Registers$setDataRegister, registerX, registerXValue & registerYValue, registers));
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var elm$core$Bitwise$or = _Bitwise_or;
-var author$project$Instructions$setRegisterOr = F3(
+var $elm$core$Bitwise$or = _Bitwise_or;
+var $author$project$Instructions$setRegisterOr = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerYValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
+			A2($author$project$Registers$getDataRegister, registerX, registers));
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, registerX, registerXValue | registerYValue, registers));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+			A3($author$project$Registers$setDataRegister, registerX, registerXValue | registerYValue, registers));
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$setRegisterShiftLeft = F2(
+var $author$project$Instructions$setRegisterShiftLeft = F2(
 	function (virtualMachine, registerX) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
-		var newRegisterValue = A2(elm$core$Basics$modBy, 256, registerXValue * 2);
+			A2($author$project$Registers$getDataRegister, registerX, registers));
+		var newRegisterValue = A2($elm$core$Basics$modBy, 256, registerXValue * 2);
 		var carryValue = registerXValue >> 7;
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
 			A2(
-				elm$core$Result$andThen,
-				A2(author$project$Registers$setDataRegister, registerX, newRegisterValue),
-				A3(author$project$Registers$setDataRegister, 15, carryValue, registers)));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+				$elm$core$Result$andThen,
+				A2($author$project$Registers$setDataRegister, registerX, newRegisterValue),
+				A3($author$project$Registers$setDataRegister, 15, carryValue, registers)));
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$setRegisterShiftRight = F2(
+var $author$project$Instructions$setRegisterShiftRight = F2(
 	function (virtualMachine, registerX) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
+			A2($author$project$Registers$getDataRegister, registerX, registers));
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
 			A2(
-				elm$core$Result$andThen,
-				A2(author$project$Registers$setDataRegister, registerX, (registerXValue / 2) | 0),
+				$elm$core$Result$andThen,
+				A2($author$project$Registers$setDataRegister, registerX, (registerXValue / 2) | 0),
 				A3(
-					author$project$Registers$setDataRegister,
+					$author$project$Registers$setDataRegister,
 					15,
-					A2(elm$core$Basics$modBy, 2, registerXValue),
+					A2($elm$core$Basics$modBy, 2, registerXValue),
 					registers)));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$setRegisterSub = F3(
+var $author$project$Instructions$setRegisterSub = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerYValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
+			A2($author$project$Registers$getDataRegister, registerX, registers));
 		var newRegisterValue = ((registerXValue - registerYValue) < 0) ? ((registerXValue - registerYValue) + 256) : (registerXValue - registerYValue);
 		var carryValue = (_Utils_cmp(registerXValue, registerYValue) > 0) ? 1 : 0;
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
 			A2(
-				elm$core$Result$andThen,
-				A2(author$project$Registers$setDataRegister, 15, carryValue),
-				A3(author$project$Registers$setDataRegister, registerX, newRegisterValue, registers)));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+				$elm$core$Result$andThen,
+				A2($author$project$Registers$setDataRegister, 15, carryValue),
+				A3($author$project$Registers$setDataRegister, registerX, newRegisterValue, registers)));
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$setRegisterSubFlipped = F3(
+var $author$project$Instructions$setRegisterSubFlipped = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerYValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
+			A2($author$project$Registers$getDataRegister, registerX, registers));
 		var newRegisterValue = ((registerYValue - registerXValue) < 0) ? ((registerYValue - registerXValue) + 256) : (registerYValue - registerXValue);
 		var carryValue = (_Utils_cmp(registerYValue, registerXValue) > 0) ? 1 : 0;
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
 			A2(
-				elm$core$Result$andThen,
-				A2(author$project$Registers$setDataRegister, 15, carryValue),
-				A3(author$project$Registers$setDataRegister, registerX, newRegisterValue, registers)));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+				$elm$core$Result$andThen,
+				A2($author$project$Registers$setDataRegister, 15, carryValue),
+				A3($author$project$Registers$setDataRegister, registerX, newRegisterValue, registers)));
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$setRegisterToRegister = F3(
+var $author$project$Instructions$setRegisterToRegister = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var newRegisterXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, registerX, newRegisterXValue, registers));
+			A3($author$project$Registers$setDataRegister, registerX, newRegisterXValue, registers));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var elm$core$Bitwise$xor = _Bitwise_xor;
-var author$project$Instructions$setRegisterXor = F3(
+var $elm$core$Bitwise$xor = _Bitwise_xor;
+var $author$project$Instructions$setRegisterXor = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerYValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
+			A2($author$project$Registers$getDataRegister, registerX, registers));
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, registerX, registerXValue ^ registerYValue, registers));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+			A3($author$project$Registers$setDataRegister, registerX, registerXValue ^ registerYValue, registers));
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle8 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle8 = F2(
 	function (virtualMachine, opcode) {
 		var registerY = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
 		var nibble = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode));
 		switch (nibble) {
 			case 0:
-				return elm$core$Result$Ok(
-					A3(author$project$Instructions$setRegisterToRegister, virtualMachine, registerX, registerY));
+				return $elm$core$Result$Ok(
+					A3($author$project$Instructions$setRegisterToRegister, virtualMachine, registerX, registerY));
 			case 1:
-				return elm$core$Result$Ok(
-					A3(author$project$Instructions$setRegisterOr, virtualMachine, registerX, registerY));
+				return $elm$core$Result$Ok(
+					A3($author$project$Instructions$setRegisterOr, virtualMachine, registerX, registerY));
 			case 2:
-				return elm$core$Result$Ok(
-					A3(author$project$Instructions$setRegisterAnd, virtualMachine, registerX, registerY));
+				return $elm$core$Result$Ok(
+					A3($author$project$Instructions$setRegisterAnd, virtualMachine, registerX, registerY));
 			case 3:
-				return elm$core$Result$Ok(
-					A3(author$project$Instructions$setRegisterXor, virtualMachine, registerX, registerY));
+				return $elm$core$Result$Ok(
+					A3($author$project$Instructions$setRegisterXor, virtualMachine, registerX, registerY));
 			case 4:
-				return elm$core$Result$Ok(
-					A3(author$project$Instructions$setRegisterAdd, virtualMachine, registerX, registerY));
+				return $elm$core$Result$Ok(
+					A3($author$project$Instructions$setRegisterAdd, virtualMachine, registerX, registerY));
 			case 5:
-				return elm$core$Result$Ok(
-					A3(author$project$Instructions$setRegisterSub, virtualMachine, registerX, registerY));
+				return $elm$core$Result$Ok(
+					A3($author$project$Instructions$setRegisterSub, virtualMachine, registerX, registerY));
 			case 6:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$setRegisterShiftRight, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$setRegisterShiftRight, virtualMachine, registerX));
 			case 7:
-				return elm$core$Result$Ok(
-					A3(author$project$Instructions$setRegisterSubFlipped, virtualMachine, registerX, registerY));
+				return $elm$core$Result$Ok(
+					A3($author$project$Instructions$setRegisterSubFlipped, virtualMachine, registerX, registerY));
 			case 14:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$setRegisterShiftLeft, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$setRegisterShiftLeft, virtualMachine, registerX));
 			default:
-				var other = nibble;
-				return elm$core$Result$Err(
-					'Unknown opcode: ' + author$project$FetchDecodeExecuteLoop$toHex(opcode));
+				return $elm$core$Result$Err(
+					'Unknown opcode: ' + $author$project$FetchDecodeExecuteLoop$toHex(opcode));
 		}
 	});
-var author$project$Instructions$skipNextIfRegistersNotEqual = F3(
+var $author$project$Instructions$skipNextIfRegistersNotEqual = F3(
 	function (virtualMachine, registerX, registerY) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerYValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerY, registers));
+			A2($author$project$Registers$getDataRegister, registerY, registers));
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
-		var newRegisters = (!_Utils_eq(registerXValue, registerYValue)) ? author$project$Registers$incrementProgramCounter(registers) : registers;
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+			A2($author$project$Registers$getDataRegister, registerX, registers));
+		var newRegisters = (!_Utils_eq(registerXValue, registerYValue)) ? $author$project$Registers$incrementProgramCounter(registers) : registers;
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handle9 = F2(
+var $author$project$FetchDecodeExecuteLoop$handle9 = F2(
 	function (virtualMachine, opcode) {
 		var registerY = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
 		var nibble = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode));
-		return nibble ? elm$core$Result$Err(
-			'Unknown opcode: ' + author$project$FetchDecodeExecuteLoop$toHex(opcode)) : elm$core$Result$Ok(
-			A3(author$project$Instructions$skipNextIfRegistersNotEqual, virtualMachine, registerX, registerY));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode));
+		return (!(!nibble)) ? $elm$core$Result$Err(
+			'Unknown opcode: ' + $author$project$FetchDecodeExecuteLoop$toHex(opcode)) : $elm$core$Result$Ok(
+			A3($author$project$Instructions$skipNextIfRegistersNotEqual, virtualMachine, registerX, registerY));
 	});
-var author$project$Registers$setAddressRegister = F2(
+var $author$project$Registers$setAddressRegister = F2(
 	function (address, registers) {
 		return _Utils_update(
 			registers,
-			{ac: address});
+			{X: address});
 	});
-var author$project$Instructions$setAddressRegisterToConstant = F2(
+var $author$project$Instructions$setAddressRegisterToConstant = F2(
 	function (virtualMachine, location) {
 		var newRegisters = A2(
-			author$project$Registers$setAddressRegister,
+			$author$project$Registers$setAddressRegister,
 			location,
-			author$project$VirtualMachine$getRegisters(virtualMachine));
+			$author$project$VirtualMachine$getRegisters(virtualMachine));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handleA = F2(
+var $author$project$FetchDecodeExecuteLoop$handleA = F2(
 	function (virtualMachine, opcode) {
-		return elm$core$Result$Ok(
+		return $elm$core$Result$Ok(
 			A2(
-				author$project$Instructions$setAddressRegisterToConstant,
+				$author$project$Instructions$setAddressRegisterToConstant,
 				virtualMachine,
-				author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
+				$author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
 	});
-var author$project$Instructions$jumpRelative = F2(
+var $author$project$Instructions$jumpRelative = F2(
 	function (virtualMachine, location) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var newProgramCounter = location + A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, 0, registers));
+			A2($author$project$Registers$getDataRegister, 0, registers));
 		var newRegisters = A2(
-			author$project$Registers$setProgramCounter,
+			$author$project$Registers$setProgramCounter,
 			newProgramCounter,
-			author$project$VirtualMachine$getRegisters(virtualMachine));
+			$author$project$VirtualMachine$getRegisters(virtualMachine));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handleB = F2(
+var $author$project$FetchDecodeExecuteLoop$handleB = F2(
 	function (virtualMachine, opcode) {
-		return elm$core$Result$Ok(
+		return $elm$core$Result$Ok(
 			A2(
-				author$project$Instructions$jumpRelative,
+				$author$project$Instructions$jumpRelative,
 				virtualMachine,
-				author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
+				$author$project$FetchDecodeExecuteLoop$dropFirstNibble(opcode)));
 	});
-var author$project$VirtualMachine$getRandomSeed = function (virtualMachine) {
-	return virtualMachine.an;
+var $author$project$VirtualMachine$getRandomSeed = function (virtualMachine) {
+	return virtualMachine.ag;
 };
-var author$project$VirtualMachine$setRandomSeed = F2(
-	function (seed, virtualMachine) {
-		return _Utils_update(
-			virtualMachine,
-			{an: seed});
-	});
-var elm$random$Random$Generator = elm$core$Basics$identity;
-var elm$random$Random$peel = function (_n0) {
-	var state = _n0.a;
+var $elm$random$Random$Generator = $elm$core$Basics$identity;
+var $elm$random$Random$peel = function (_v0) {
+	var state = _v0.a;
 	var word = (state ^ (state >>> ((state >>> 28) + 4))) * 277803737;
 	return ((word >>> 22) ^ word) >>> 0;
 };
-var elm$random$Random$int = F2(
+var $elm$random$Random$int = F2(
 	function (a, b) {
 		return function (seed0) {
-			var _n0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
-			var lo = _n0.a;
-			var hi = _n0.b;
+			var _v0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
+			var lo = _v0.a;
+			var hi = _v0.b;
 			var range = (hi - lo) + 1;
 			if (!((range - 1) & range)) {
 				return _Utils_Tuple2(
-					(((range - 1) & elm$random$Random$peel(seed0)) >>> 0) + lo,
-					elm$random$Random$next(seed0));
+					(((range - 1) & $elm$random$Random$peel(seed0)) >>> 0) + lo,
+					$elm$random$Random$next(seed0));
 			} else {
 				var threshhold = (((-range) >>> 0) % range) >>> 0;
 				var accountForBias = function (seed) {
 					accountForBias:
 					while (true) {
-						var x = elm$random$Random$peel(seed);
-						var seedN = elm$random$Random$next(seed);
+						var x = $elm$random$Random$peel(seed);
+						var seedN = $elm$random$Random$next(seed);
 						if (_Utils_cmp(x, threshhold) < 0) {
 							var $temp$seed = seedN;
 							seed = $temp$seed;
@@ -7586,986 +7588,916 @@ var elm$random$Random$int = F2(
 			}
 		};
 	});
-var elm$random$Random$step = F2(
-	function (_n0, seed) {
-		var generator = _n0;
+var $author$project$VirtualMachine$setRandomSeed = F2(
+	function (seed, virtualMachine) {
+		return _Utils_update(
+			virtualMachine,
+			{ag: seed});
+	});
+var $elm$random$Random$step = F2(
+	function (_v0, seed) {
+		var generator = _v0;
 		return generator(seed);
 	});
-var author$project$Instructions$setRegisterRandom = F3(
+var $author$project$Instructions$setRegisterRandom = F3(
 	function (virtualMachine, registerX, value) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
-		var _n0 = A2(
-			elm$random$Random$step,
-			A2(elm$random$Random$int, 0, 255),
-			author$project$VirtualMachine$getRandomSeed(virtualMachine));
-		var random = _n0.a;
-		var newSeed = _n0.b;
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
+		var _v0 = A2(
+			$elm$random$Random$step,
+			A2($elm$random$Random$int, 0, 255),
+			$author$project$VirtualMachine$getRandomSeed(virtualMachine));
+		var random = _v0.a;
+		var newSeed = _v0.b;
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, registerX, random & value, registers));
+			A3($author$project$Registers$setDataRegister, registerX, random & value, registers));
 		return _Utils_Tuple2(
 			A2(
-				author$project$VirtualMachine$setRandomSeed,
+				$author$project$VirtualMachine$setRandomSeed,
 				newSeed,
-				A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine)),
-			elm$core$Platform$Cmd$none);
+				A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine)),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handleC = F2(
+var $author$project$FetchDecodeExecuteLoop$handleC = F2(
 	function (virtualMachine, opcode) {
-		var value = author$project$FetchDecodeExecuteLoop$getByte(opcode);
+		var value = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		return elm$core$Result$Ok(
-			A3(author$project$Instructions$setRegisterRandom, virtualMachine, registerX, value));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		return $elm$core$Result$Ok(
+			A3($author$project$Instructions$setRegisterRandom, virtualMachine, registerX, value));
 	});
-var elm$core$Basics$composeR = F3(
+var $author$project$Registers$getAddressRegister = function (registers) {
+	return registers.X;
+};
+var $author$project$Memory$getCell = F2(
+	function (index, memory) {
+		return (_Utils_cmp(index, $author$project$Memory$memorySize) > -1) ? $elm$core$Result$Err('Memory index out of bounds') : $elm$core$Result$Ok(
+			A2(
+				$elm$core$Maybe$withDefault,
+				0,
+				A2($elm$core$Array$get, index, memory)));
+	});
+var $author$project$VirtualMachine$getMemory = function (virtualMachine) {
+	return virtualMachine.ae;
+};
+var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
 		return g(
 			f(x));
 	});
-var elm$core$String$foldr = _String_foldr;
-var elm$core$String$toList = function (string) {
-	return A3(elm$core$String$foldr, elm$core$List$cons, _List_Nil, string);
-};
-var fredcy$elm_parseint$ParseInt$InvalidChar = function (a) {
+var $fredcy$elm_parseint$ParseInt$InvalidChar = function (a) {
 	return {$: 0, a: a};
 };
-var fredcy$elm_parseint$ParseInt$OutOfRange = function (a) {
+var $fredcy$elm_parseint$ParseInt$OutOfRange = function (a) {
 	return {$: 1, a: a};
 };
-var fredcy$elm_parseint$ParseInt$charOffset = F2(
+var $fredcy$elm_parseint$ParseInt$charOffset = F2(
 	function (basis, c) {
-		return elm$core$Char$toCode(c) - elm$core$Char$toCode(basis);
+		return $elm$core$Char$toCode(c) - $elm$core$Char$toCode(basis);
 	});
-var fredcy$elm_parseint$ParseInt$isBetween = F3(
+var $fredcy$elm_parseint$ParseInt$isBetween = F3(
 	function (lower, upper, c) {
-		var ci = elm$core$Char$toCode(c);
+		var ci = $elm$core$Char$toCode(c);
 		return (_Utils_cmp(
-			elm$core$Char$toCode(lower),
+			$elm$core$Char$toCode(lower),
 			ci) < 1) && (_Utils_cmp(
 			ci,
-			elm$core$Char$toCode(upper)) < 1);
+			$elm$core$Char$toCode(upper)) < 1);
 	});
-var fredcy$elm_parseint$ParseInt$intFromChar = F2(
+var $fredcy$elm_parseint$ParseInt$intFromChar = F2(
 	function (radix, c) {
 		var validInt = function (i) {
-			return (_Utils_cmp(i, radix) < 0) ? elm$core$Result$Ok(i) : elm$core$Result$Err(
-				fredcy$elm_parseint$ParseInt$OutOfRange(c));
+			return (_Utils_cmp(i, radix) < 0) ? $elm$core$Result$Ok(i) : $elm$core$Result$Err(
+				$fredcy$elm_parseint$ParseInt$OutOfRange(c));
 		};
-		var toInt = A3(fredcy$elm_parseint$ParseInt$isBetween, '0', '9', c) ? elm$core$Result$Ok(
-			A2(fredcy$elm_parseint$ParseInt$charOffset, '0', c)) : (A3(fredcy$elm_parseint$ParseInt$isBetween, 'a', 'z', c) ? elm$core$Result$Ok(
-			10 + A2(fredcy$elm_parseint$ParseInt$charOffset, 'a', c)) : (A3(fredcy$elm_parseint$ParseInt$isBetween, 'A', 'Z', c) ? elm$core$Result$Ok(
-			10 + A2(fredcy$elm_parseint$ParseInt$charOffset, 'A', c)) : elm$core$Result$Err(
-			fredcy$elm_parseint$ParseInt$InvalidChar(c))));
-		return A2(elm$core$Result$andThen, validInt, toInt);
+		var toInt = A3($fredcy$elm_parseint$ParseInt$isBetween, '0', '9', c) ? $elm$core$Result$Ok(
+			A2($fredcy$elm_parseint$ParseInt$charOffset, '0', c)) : (A3($fredcy$elm_parseint$ParseInt$isBetween, 'a', 'z', c) ? $elm$core$Result$Ok(
+			10 + A2($fredcy$elm_parseint$ParseInt$charOffset, 'a', c)) : (A3($fredcy$elm_parseint$ParseInt$isBetween, 'A', 'Z', c) ? $elm$core$Result$Ok(
+			10 + A2($fredcy$elm_parseint$ParseInt$charOffset, 'A', c)) : $elm$core$Result$Err(
+			$fredcy$elm_parseint$ParseInt$InvalidChar(c))));
+		return A2($elm$core$Result$andThen, validInt, toInt);
 	});
-var elm$core$String$cons = _String_cons;
-var elm$core$String$fromChar = function (_char) {
-	return A2(elm$core$String$cons, _char, '');
+var $elm$core$String$foldr = _String_foldr;
+var $elm$core$String$toList = function (string) {
+	return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
 };
-var elm$core$Char$fromCode = _Char_fromCode;
-var fredcy$elm_parseint$ParseInt$charFromInt = function (i) {
-	return (i < 10) ? elm$core$Char$fromCode(
-		i + elm$core$Char$toCode('0')) : ((i < 36) ? elm$core$Char$fromCode(
-		(i - 10) + elm$core$Char$toCode('A')) : '?');
+var $elm$core$Char$fromCode = _Char_fromCode;
+var $fredcy$elm_parseint$ParseInt$charFromInt = function (i) {
+	return (i < 10) ? $elm$core$Char$fromCode(
+		i + $elm$core$Char$toCode('0')) : ((i < 36) ? $elm$core$Char$fromCode(
+		(i - 10) + $elm$core$Char$toCode('A')) : '?');
 };
-var fredcy$elm_parseint$ParseInt$toRadixUnsafe = F2(
+var $elm$core$String$cons = _String_cons;
+var $elm$core$String$fromChar = function (_char) {
+	return A2($elm$core$String$cons, _char, '');
+};
+var $fredcy$elm_parseint$ParseInt$toRadixUnsafe = F2(
 	function (radix, i) {
-		return (_Utils_cmp(i, radix) < 0) ? elm$core$String$fromChar(
-			fredcy$elm_parseint$ParseInt$charFromInt(i)) : _Utils_ap(
-			A2(fredcy$elm_parseint$ParseInt$toRadixUnsafe, radix, (i / radix) | 0),
-			elm$core$String$fromChar(
-				fredcy$elm_parseint$ParseInt$charFromInt(
-					A2(elm$core$Basics$modBy, radix, i))));
+		return (_Utils_cmp(i, radix) < 0) ? $elm$core$String$fromChar(
+			$fredcy$elm_parseint$ParseInt$charFromInt(i)) : _Utils_ap(
+			A2($fredcy$elm_parseint$ParseInt$toRadixUnsafe, radix, (i / radix) | 0),
+			$elm$core$String$fromChar(
+				$fredcy$elm_parseint$ParseInt$charFromInt(
+					A2($elm$core$Basics$modBy, radix, i))));
 	});
-var author$project$Instructions$hexToBitPattern = function (number) {
+var $author$project$Instructions$hexToBitPattern = function (number) {
 	var radix = 2;
 	var paddingByte = '00000000';
 	var binaryString = _Utils_ap(
 		paddingByte,
-		A2(fredcy$elm_parseint$ParseInt$toRadixUnsafe, radix, number));
+		A2($fredcy$elm_parseint$ParseInt$toRadixUnsafe, radix, number));
 	var trimmedString = A2(
-		elm$core$String$dropLeft,
-		elm$core$String$length(binaryString) - 8,
+		$elm$core$String$dropLeft,
+		$elm$core$String$length(binaryString) - 8,
 		binaryString);
 	return A2(
-		elm$core$List$map,
+		$elm$core$List$map,
 		A2(
-			elm$core$Basics$composeR,
-			elm$core$Result$toMaybe,
+			$elm$core$Basics$composeR,
+			$elm$core$Result$toMaybe,
 			A2(
-				elm$core$Basics$composeR,
-				elm$core$Maybe$withDefault(0),
+				$elm$core$Basics$composeR,
+				$elm$core$Maybe$withDefault(0),
 				function (x) {
 					return x > 0;
 				})),
 		A2(
-			elm$core$List$map,
-			fredcy$elm_parseint$ParseInt$intFromChar(radix),
-			elm$core$String$toList(trimmedString)));
+			$elm$core$List$map,
+			$fredcy$elm_parseint$ParseInt$intFromChar(radix),
+			$elm$core$String$toList(trimmedString)));
 };
-var author$project$Instructions$calculatePosition = F4(
+var $elm_community$list_extra$List$Extra$indexedFoldl = F3(
+	function (func, acc, list) {
+		var step = F2(
+			function (x, _v0) {
+				var i = _v0.a;
+				var thisAcc = _v0.b;
+				return _Utils_Tuple2(
+					i + 1,
+					A3(func, i, x, thisAcc));
+			});
+		return A3(
+			$elm$core$List$foldl,
+			step,
+			_Utils_Tuple2(0, acc),
+			list).b;
+	});
+var $author$project$Instructions$calculatePosition = F4(
 	function (registers, register, idx, max) {
 		var registerValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, register, registers));
-		return A2(elm$core$Basics$modBy, max, registerValue + idx);
+			A2($author$project$Registers$getDataRegister, register, registers));
+		return A2($elm$core$Basics$modBy, max, registerValue + idx);
 	});
-var author$project$Display$getCell = F3(
+var $author$project$Display$getCell = F3(
 	function (display, column, row) {
 		var value = A2(
-			elm$core$Maybe$withDefault,
+			$elm$core$Maybe$withDefault,
 			false,
 			A2(
-				elm$core$Maybe$andThen,
-				elm$core$Array$get(row),
-				A2(elm$core$Array$get, column, display)));
-		return {ad: column, aE: row, aK: value};
+				$elm$core$Maybe$andThen,
+				$elm$core$Array$get(row),
+				A2($elm$core$Array$get, column, display)));
+		return {Y: column, aw: row, aC: value};
 	});
-var author$project$Display$setCell = F2(
+var $author$project$VirtualMachine$getDisplay = function (virtualMachine) {
+	return virtualMachine.bu;
+};
+var $author$project$Display$setCell = F2(
 	function (cell, display) {
 		var updatedColumn = A2(
-			elm$core$Maybe$withDefault,
-			elm$core$Array$empty,
+			$elm$core$Maybe$withDefault,
+			$elm$core$Array$empty,
 			A2(
-				elm$core$Maybe$map,
-				A2(elm$core$Array$set, cell.aE, cell.aK),
-				A2(elm$core$Array$get, cell.ad, display)));
-		return A3(elm$core$Array$set, cell.ad, updatedColumn, display);
+				$elm$core$Maybe$map,
+				A2($elm$core$Array$set, cell.aw, cell.aC),
+				A2($elm$core$Array$get, cell.Y, display)));
+		return A3($elm$core$Array$set, cell.Y, updatedColumn, display);
 	});
-var author$project$VirtualMachine$getDisplay = function (virtualMachine) {
-	return virtualMachine.bx;
-};
-var elm$core$Basics$xor = _Basics_xor;
-var author$project$Instructions$setBit = F4(
+var $elm$core$Basics$xor = _Basics_xor;
+var $author$project$Instructions$setBit = F4(
 	function (x, y, newBitValue, virtualMachine) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
-		var display = author$project$VirtualMachine$getDisplay(virtualMachine);
-		var oldBitValue = A2(
-			author$project$Display$getCell(display),
-			x,
-			y).aK;
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
+		var display = $author$project$VirtualMachine$getDisplay(virtualMachine);
+		var oldBitValue = A3($author$project$Display$getCell, display, x, y).aC;
 		var carry = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, 15, registers));
+			A2($author$project$Registers$getDataRegister, 15, registers));
 		var newCarry = ((!carry) && (oldBitValue && newBitValue)) ? 1 : carry;
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, 15, newCarry, registers));
-		var _n0 = _Utils_Tuple2(64, 32);
-		var displayWidth = _n0.a;
-		var displayHeight = _n0.b;
+			A3($author$project$Registers$setDataRegister, 15, newCarry, registers));
+		var _v0 = _Utils_Tuple2(64, 32);
+		var displayWidth = _v0.a;
+		var displayHeight = _v0.b;
 		var newY = (_Utils_cmp(y, displayHeight - 1) > 0) ? (y - displayHeight) : y;
 		var newX = (_Utils_cmp(x, displayWidth - 1) > 0) ? (x - displayWidth) : x;
 		var newDisplay = A2(
-			author$project$Display$setCell,
-			{ad: newX, aE: newY, aK: oldBitValue !== newBitValue},
+			$author$project$Display$setCell,
+			{Y: newX, aw: newY, aC: oldBitValue !== newBitValue},
 			display);
 		return A2(
-			author$project$VirtualMachine$setDisplay,
+			$author$project$VirtualMachine$setDisplay,
 			newDisplay,
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine));
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine));
 	});
-var author$project$Instructions$setBitForRowColumn = F6(
-	function (_n0, _n1, row, column, bit, virtualMachine) {
-		var displayWidth = _n0.a;
-		var displayHeight = _n0.b;
-		var registerX = _n1.a;
-		var registerY = _n1.b;
+var $author$project$Instructions$setBitForRowColumn = F6(
+	function (_v0, _v1, row, column, bit, virtualMachine) {
+		var displayWidth = _v0.a;
+		var displayHeight = _v0.b;
+		var registerX = _v1.a;
+		var registerY = _v1.b;
 		return A4(
-			author$project$Instructions$setBit,
+			$author$project$Instructions$setBit,
 			A4(
-				author$project$Instructions$calculatePosition,
-				author$project$VirtualMachine$getRegisters(virtualMachine),
+				$author$project$Instructions$calculatePosition,
+				$author$project$VirtualMachine$getRegisters(virtualMachine),
 				registerX,
 				column,
 				displayWidth),
 			A4(
-				author$project$Instructions$calculatePosition,
-				author$project$VirtualMachine$getRegisters(virtualMachine),
+				$author$project$Instructions$calculatePosition,
+				$author$project$VirtualMachine$getRegisters(virtualMachine),
 				registerY,
 				row,
 				displayHeight),
 			bit,
 			virtualMachine);
 	});
-var elm_community$list_extra$List$Extra$indexedFoldl = F3(
-	function (func, acc, list) {
-		var step = F2(
-			function (x, _n0) {
-				var i = _n0.a;
-				var thisAcc = _n0.b;
-				return _Utils_Tuple2(
-					i + 1,
-					A3(func, i, x, thisAcc));
-			});
-		return A3(
-			elm$core$List$foldl,
-			step,
-			_Utils_Tuple2(0, acc),
-			list).b;
-	});
-var author$project$Instructions$setBitsForRow = F5(
+var $author$project$Instructions$setBitsForRow = F5(
 	function (display, registers, row, bits, virtualMachine) {
 		return A3(
-			elm_community$list_extra$List$Extra$indexedFoldl,
-			A3(author$project$Instructions$setBitForRowColumn, display, registers, row),
+			$elm_community$list_extra$List$Extra$indexedFoldl,
+			A3($author$project$Instructions$setBitForRowColumn, display, registers, row),
 			virtualMachine,
 			bits);
 	});
-var author$project$Memory$getCell = F2(
-	function (index, memory) {
-		return (_Utils_cmp(index, author$project$Memory$memorySize) > -1) ? elm$core$Result$Err('Memory index out of bounds') : elm$core$Result$Ok(
-			A2(
-				elm$core$Maybe$withDefault,
-				0,
-				A2(elm$core$Array$get, index, memory)));
-	});
-var author$project$Registers$getAddressRegister = function (registers) {
-	return registers.ac;
-};
-var author$project$VirtualMachine$getMemory = function (virtualMachine) {
-	return virtualMachine.al;
-};
-var author$project$Instructions$displaySprite = F4(
+var $author$project$Instructions$displaySprite = F4(
 	function (virtualMachine, registerX, registerY, n) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
-		var memory = author$project$VirtualMachine$getMemory(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
+		var memory = $author$project$VirtualMachine$getMemory(virtualMachine);
 		var display = _Utils_Tuple2(64, 32);
-		var addressRegister = author$project$Registers$getAddressRegister(registers);
-		var sprites = elm$core$Array$toList(
+		var addressRegister = $author$project$Registers$getAddressRegister(registers);
+		var sprites = $elm$core$Array$toList(
 			A2(
-				elm$core$Array$initialize,
+				$elm$core$Array$initialize,
 				n,
 				function (i) {
 					return A2(
-						elm$core$Result$withDefault,
+						$elm$core$Result$withDefault,
 						0,
-						A2(author$project$Memory$getCell, addressRegister + i, memory));
+						A2($author$project$Memory$getCell, addressRegister + i, memory));
 				}));
 		var newVirtualMachine = A3(
-			elm_community$list_extra$List$Extra$indexedFoldl,
+			$elm_community$list_extra$List$Extra$indexedFoldl,
 			F3(
 				function (row, sprite, accVirtualMachine) {
 					return A5(
-						author$project$Instructions$setBitsForRow,
+						$author$project$Instructions$setBitsForRow,
 						display,
 						_Utils_Tuple2(registerX, registerY),
 						row,
-						author$project$Instructions$hexToBitPattern(sprite),
+						$author$project$Instructions$hexToBitPattern(sprite),
 						accVirtualMachine);
 				}),
 			A2(
-				author$project$VirtualMachine$setRegisters,
+				$author$project$VirtualMachine$setRegisters,
 				A2(
-					elm$core$Result$withDefault,
+					$elm$core$Result$withDefault,
 					registers,
-					A3(author$project$Registers$setDataRegister, 15, 0, registers)),
+					A3($author$project$Registers$setDataRegister, 15, 0, registers)),
 				virtualMachine),
 			sprites);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handleD = F2(
+var $author$project$FetchDecodeExecuteLoop$handleD = F2(
 	function (virtualMachine, opcode) {
 		var registerY = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 2, opcode));
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
 		var n = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode));
-		return elm$core$Result$Ok(
-			A4(author$project$Instructions$displaySprite, virtualMachine, registerX, registerY, n));
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 3, opcode));
+		return $elm$core$Result$Ok(
+			A4($author$project$Instructions$displaySprite, virtualMachine, registerX, registerY, n));
 	});
-var elm$core$List$filter = F2(
+var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
-			elm$core$List$foldr,
+			$elm$core$List$foldr,
 			F2(
 				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
 				}),
 			_List_Nil,
 			list);
 	});
-var author$project$Keypad$getKeysPressed = function (keyPad) {
+var $author$project$Keypad$getKeysPressed = function (keyPad) {
 	return A2(
-		elm$core$List$map,
-		elm$core$Tuple$first,
+		$elm$core$List$map,
+		$elm$core$Tuple$first,
 		A2(
-			elm$core$List$filter,
+			$elm$core$List$filter,
 			A2(
-				elm$core$Basics$composeR,
-				elm$core$Tuple$second,
-				elm$core$Basics$eq(true)),
-			elm$core$Dict$toList(keyPad)));
+				$elm$core$Basics$composeR,
+				$elm$core$Tuple$second,
+				$elm$core$Basics$eq(true)),
+			$elm$core$Dict$toList(keyPad)));
 };
-var author$project$Instructions$skipNextIfKeyNotPressed = F2(
+var $author$project$Instructions$skipNextIfKeyNotPressed = F2(
 	function (virtualMachine, registerX) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Registers$getDataRegister, registerX, registers));
-		var keysPressed = author$project$Keypad$getKeysPressed(
-			author$project$VirtualMachine$getKeypad(virtualMachine));
-		var newRegisters = (!A2(elm$core$List$member, registerXValue, keysPressed)) ? author$project$Registers$incrementProgramCounter(registers) : registers;
+			A2($author$project$Registers$getDataRegister, registerX, registers));
+		var keysPressed = $author$project$Keypad$getKeysPressed(
+			$author$project$VirtualMachine$getKeypad(virtualMachine));
+		var newRegisters = (!A2($elm$core$List$member, registerXValue, keysPressed)) ? $author$project$Registers$incrementProgramCounter(registers) : registers;
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$skipNextIfKeyPressed = F2(
+var $author$project$Instructions$skipNextIfKeyPressed = F2(
 	function (virtualMachine, registerX) {
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
 			A2(
-				author$project$Registers$getDataRegister,
+				$author$project$Registers$getDataRegister,
 				registerX,
-				author$project$VirtualMachine$getRegisters(virtualMachine)));
-		var keysPressed = author$project$Keypad$getKeysPressed(
-			author$project$VirtualMachine$getKeypad(virtualMachine));
-		var newRegisters = A2(elm$core$List$member, registerXValue, keysPressed) ? author$project$Registers$incrementProgramCounter(
-			author$project$VirtualMachine$getRegisters(virtualMachine)) : author$project$VirtualMachine$getRegisters(virtualMachine);
+				$author$project$VirtualMachine$getRegisters(virtualMachine)));
+		var keysPressed = $author$project$Keypad$getKeysPressed(
+			$author$project$VirtualMachine$getKeypad(virtualMachine));
+		var newRegisters = A2($elm$core$List$member, registerXValue, keysPressed) ? $author$project$Registers$incrementProgramCounter(
+			$author$project$VirtualMachine$getRegisters(virtualMachine)) : $author$project$VirtualMachine$getRegisters(virtualMachine);
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handleE = F2(
+var $author$project$FetchDecodeExecuteLoop$handleE = F2(
 	function (virtualMachine, opcode) {
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		var _byte = author$project$FetchDecodeExecuteLoop$getByte(opcode);
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		var _byte = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
 		switch (_byte) {
 			case 158:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$skipNextIfKeyPressed, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$skipNextIfKeyPressed, virtualMachine, registerX));
 			case 161:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$skipNextIfKeyNotPressed, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$skipNextIfKeyNotPressed, virtualMachine, registerX));
 			default:
-				var other = _byte;
-				return elm$core$Result$Err(
-					'Unknown opcode: ' + author$project$FetchDecodeExecuteLoop$toHex(opcode));
+				return $elm$core$Result$Err(
+					'Unknown opcode: ' + $author$project$FetchDecodeExecuteLoop$toHex(opcode));
 		}
 	});
-var author$project$Instructions$addToAddressRegister = F2(
+var $author$project$Instructions$addToAddressRegister = F2(
 	function (virtualMachine, registerX) {
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
 			A2(
-				author$project$Registers$getDataRegister,
+				$author$project$Registers$getDataRegister,
 				registerX,
-				author$project$VirtualMachine$getRegisters(virtualMachine)));
-		var newAddressRegister = registerXValue + author$project$Registers$getAddressRegister(
-			author$project$VirtualMachine$getRegisters(virtualMachine));
+				$author$project$VirtualMachine$getRegisters(virtualMachine)));
+		var newAddressRegister = registerXValue + $author$project$Registers$getAddressRegister(
+			$author$project$VirtualMachine$getRegisters(virtualMachine));
 		var newRegisters = A2(
-			author$project$Registers$setAddressRegister,
+			$author$project$Registers$setAddressRegister,
 			newAddressRegister,
-			author$project$VirtualMachine$getRegisters(virtualMachine));
+			$author$project$VirtualMachine$getRegisters(virtualMachine));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$readRegistersFromAddressRegister = F2(
+var $author$project$Instructions$readRegistersFromAddressRegister = F2(
 	function (virtualMachine, registerX) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
-		var memory = author$project$VirtualMachine$getMemory(virtualMachine);
-		var addressRegister = author$project$Registers$getAddressRegister(registers);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
+		var memory = $author$project$VirtualMachine$getMemory(virtualMachine);
+		var addressRegister = $author$project$Registers$getAddressRegister(registers);
 		var newRegisters = A3(
-			elm$core$List$foldl,
+			$elm$core$List$foldl,
 			F2(
 				function (registerY, accRegisters) {
 					return A2(
-						elm$core$Result$withDefault,
+						$elm$core$Result$withDefault,
 						accRegisters,
 						A3(
-							author$project$Registers$setDataRegister,
+							$author$project$Registers$setDataRegister,
 							registerY,
 							A2(
-								elm$core$Result$withDefault,
+								$elm$core$Result$withDefault,
 								0,
-								A2(author$project$Memory$getCell, addressRegister + registerY, memory)),
+								A2($author$project$Memory$getCell, addressRegister + registerY, memory)),
 							accRegisters));
 				}),
 			registers,
-			A2(elm$core$List$range, 0, registerX));
+			A2($elm$core$List$range, 0, registerX));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$setAddressRegisterToSpriteLocation = F2(
+var $author$project$Instructions$setAddressRegisterToSpriteLocation = F2(
 	function (virtualMachine, registerX) {
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
 			A2(
-				author$project$Registers$getDataRegister,
+				$author$project$Registers$getDataRegister,
 				registerX,
-				author$project$VirtualMachine$getRegisters(virtualMachine)));
+				$author$project$VirtualMachine$getRegisters(virtualMachine)));
 		var newRegisters = A2(
-			author$project$Registers$setAddressRegister,
+			$author$project$Registers$setAddressRegister,
 			registerXValue * 5,
-			author$project$VirtualMachine$getRegisters(virtualMachine));
+			$author$project$VirtualMachine$getRegisters(virtualMachine));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$Registers$setDelayTimer = F2(
+var $author$project$VirtualMachine$getTimers = function (virtualMachine) {
+	return virtualMachine.am;
+};
+var $author$project$Registers$setDelayTimer = F2(
 	function (delay, registers) {
 		return _Utils_update(
 			registers,
-			{af: delay});
+			{Z: delay});
 	});
-var author$project$Timers$getDelay = function (timers) {
-	return timers.ae;
-};
-var author$project$Timers$isRunning = function (delay) {
-	return delay.ap;
-};
-var author$project$Timers$setDelay = F2(
-	function (delay, timers) {
+var $author$project$VirtualMachine$setTimers = F2(
+	function (timers, virtualMachine) {
 		return _Utils_update(
-			timers,
-			{ae: delay});
+			virtualMachine,
+			{am: timers});
 	});
-var author$project$Timers$setRunning = F2(
-	function (running, delay) {
+var $author$project$Timers$getDelay = function (_v0) {
+	var delay = _v0;
+	return delay;
+};
+var $author$project$Timers$isRunning = function (_v0) {
+	var delay = _v0;
+	return delay.ai;
+};
+var $author$project$Timers$setDelay = F2(
+	function (delay, _v0) {
+		return delay;
+	});
+var $author$project$Timers$setRunning = F2(
+	function (running, _v0) {
+		var delay = _v0;
 		return _Utils_update(
 			delay,
-			{ap: running});
+			{ai: running});
 	});
-var author$project$Msg$DelayTick = {$: 3};
-var author$project$Registers$getDelayTimer = function (registers) {
-	return registers.af;
+var $author$project$Msg$DelayTick = {$: 3};
+var $author$project$Registers$getDelayTimer = function (registers) {
+	return registers.Z;
 };
-var elm$core$Process$sleep = _Process_sleep;
-var author$project$Timers$setTimeout = F2(
+var $author$project$Timers$getTickLength = function (_v0) {
+	var delay = _v0;
+	return delay.bh;
+};
+var $elm$core$Process$sleep = _Process_sleep;
+var $author$project$Timers$setTimeout = F2(
 	function (time, msg) {
 		return A2(
-			elm$core$Task$perform,
-			function (_n0) {
+			$elm$core$Task$perform,
+			function (_v0) {
 				return msg;
 			},
-			elm$core$Process$sleep(time));
+			$elm$core$Process$sleep(time));
 	});
-var author$project$Timers$tick = F2(
+var $author$project$Timers$tick = F2(
 	function (registers, timers) {
-		var delayTimer = author$project$Registers$getDelayTimer(registers);
-		var delay = author$project$Timers$getDelay(timers);
-		return (author$project$Timers$isRunning(delay) && (delayTimer > 0)) ? _Utils_Tuple2(
+		var delayTimer = $author$project$Registers$getDelayTimer(registers);
+		var delay = $author$project$Timers$getDelay(timers);
+		return ($author$project$Timers$isRunning(delay) && (delayTimer > 0)) ? _Utils_Tuple2(
 			_Utils_Tuple2(
-				A2(author$project$Registers$setDelayTimer, delayTimer - 1, registers),
+				A2($author$project$Registers$setDelayTimer, delayTimer - 1, registers),
 				timers),
-			A2(author$project$Timers$setTimeout, delay.at, author$project$Msg$DelayTick)) : _Utils_Tuple2(
+			A2(
+				$author$project$Timers$setTimeout,
+				$author$project$Timers$getTickLength(delay),
+				$author$project$Msg$DelayTick)) : _Utils_Tuple2(
 			_Utils_Tuple2(
 				registers,
 				A2(
-					author$project$Timers$setDelay,
-					A2(author$project$Timers$setRunning, false, delay),
+					$author$project$Timers$setDelay,
+					A2($author$project$Timers$setRunning, false, delay),
 					timers)),
-			elm$core$Platform$Cmd$none);
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$Timers$startDelayTimer = F2(
+var $author$project$Timers$startDelayTimer = F2(
 	function (registers, timers) {
-		if (!author$project$Timers$isRunning(
-			author$project$Timers$getDelay(timers))) {
+		if (!$author$project$Timers$isRunning(
+			$author$project$Timers$getDelay(timers))) {
 			var flip = F3(
 				function (f, a, b) {
 					return A2(f, b, a);
 				});
 			var updatedTimers = A2(
-				flip(author$project$Timers$setDelay),
+				flip($author$project$Timers$setDelay),
 				timers,
 				A2(
-					author$project$Timers$setRunning,
+					$author$project$Timers$setRunning,
 					true,
-					author$project$Timers$getDelay(timers)));
-			return A2(author$project$Timers$tick, registers, updatedTimers);
+					$author$project$Timers$getDelay(timers)));
+			return A2($author$project$Timers$tick, registers, updatedTimers);
 		} else {
 			return _Utils_Tuple2(
 				_Utils_Tuple2(registers, timers),
-				elm$core$Platform$Cmd$none);
+				$elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$VirtualMachine$getTimers = function (virtualMachine) {
-	return virtualMachine.au;
-};
-var author$project$VirtualMachine$setTimers = F2(
-	function (timers, virtualMachine) {
-		return _Utils_update(
-			virtualMachine,
-			{au: timers});
-	});
-var author$project$Instructions$setDelayTimerToRegisterValue = F2(
+var $author$project$Instructions$setDelayTimerToRegisterValue = F2(
 	function (virtualMachine, registerX) {
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
 			A2(
-				author$project$Registers$getDataRegister,
+				$author$project$Registers$getDataRegister,
 				registerX,
-				author$project$VirtualMachine$getRegisters(virtualMachine)));
-		var _n0 = A2(
-			author$project$Timers$startDelayTimer,
+				$author$project$VirtualMachine$getRegisters(virtualMachine)));
+		var _v0 = A2(
+			$author$project$Timers$startDelayTimer,
 			A2(
-				author$project$Registers$setDelayTimer,
+				$author$project$Registers$setDelayTimer,
 				registerXValue,
-				author$project$VirtualMachine$getRegisters(virtualMachine)),
-			author$project$VirtualMachine$getTimers(virtualMachine));
-		var _n1 = _n0.a;
-		var newRegisters = _n1.a;
-		var newTimers = _n1.b;
-		var cmd = _n0.b;
+				$author$project$VirtualMachine$getRegisters(virtualMachine)),
+			$author$project$VirtualMachine$getTimers(virtualMachine));
+		var _v1 = _v0.a;
+		var newRegisters = _v1.a;
+		var newTimers = _v1.b;
+		var cmd = _v0.b;
 		return _Utils_Tuple2(
 			A2(
-				author$project$VirtualMachine$setRegisters,
+				$author$project$VirtualMachine$setRegisters,
 				newRegisters,
-				A2(author$project$VirtualMachine$setTimers, newTimers, virtualMachine)),
+				A2($author$project$VirtualMachine$setTimers, newTimers, virtualMachine)),
 			cmd);
 	});
-var author$project$Instructions$setRegisterToDelayTimer = F2(
+var $author$project$Instructions$setRegisterToDelayTimer = F2(
 	function (virtualMachine, registerX) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
-		var delayTimer = author$project$Registers$getDelayTimer(registers);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
+		var delayTimer = $author$project$Registers$getDelayTimer(registers);
 		var newRegisters = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			registers,
-			A3(author$project$Registers$setDataRegister, registerX, delayTimer, registers));
-		var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
-		return _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none);
+			A3($author$project$Registers$setDataRegister, registerX, delayTimer, registers));
+		var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, virtualMachine);
+		return _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none);
 	});
-var elm$json$Json$Encode$int = _Json_wrap;
-var author$project$Timers$playSound = _Platform_outgoingPort('playSound', elm$json$Json$Encode$int);
-var author$project$Instructions$setSoundTimerToRegisterValue = F2(
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$Timers$playSound = _Platform_outgoingPort('playSound', $elm$json$Json$Encode$int);
+var $author$project$Instructions$setSoundTimerToRegisterValue = F2(
 	function (virtualMachine, registerX) {
 		var newSoundTimer = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
 			A2(
-				author$project$Registers$getDataRegister,
+				$author$project$Registers$getDataRegister,
 				registerX,
-				author$project$VirtualMachine$getRegisters(virtualMachine)));
-		var cmd = author$project$Timers$playSound(newSoundTimer);
+				$author$project$VirtualMachine$getRegisters(virtualMachine)));
+		var cmd = $author$project$Timers$playSound(newSoundTimer);
 		return _Utils_Tuple2(virtualMachine, cmd);
 	});
-var author$project$VirtualMachine$setMemory = F2(
+var $author$project$VirtualMachine$setMemory = F2(
 	function (memory, virtualMachine) {
 		return _Utils_update(
 			virtualMachine,
-			{al: memory});
+			{ae: memory});
 	});
-var author$project$Instructions$storeBcdOfRegister = F2(
+var $author$project$Instructions$storeBcdOfRegister = F2(
 	function (virtualMachine, registerX) {
 		var registerXValue = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
 			A2(
-				author$project$Registers$getDataRegister,
+				$author$project$Registers$getDataRegister,
 				registerX,
-				author$project$VirtualMachine$getRegisters(virtualMachine)));
-		var memory = author$project$VirtualMachine$getMemory(virtualMachine);
-		var addressRegister = author$project$Registers$getAddressRegister(
-			author$project$VirtualMachine$getRegisters(virtualMachine));
+				$author$project$VirtualMachine$getRegisters(virtualMachine)));
+		var memory = $author$project$VirtualMachine$getMemory(virtualMachine);
+		var addressRegister = $author$project$Registers$getAddressRegister(
+			$author$project$VirtualMachine$getRegisters(virtualMachine));
 		var newMemory = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			memory,
 			A2(
-				elm$core$Result$andThen,
+				$elm$core$Result$andThen,
 				A2(
-					author$project$Memory$setCell,
+					$author$project$Memory$setCell,
 					addressRegister + 2,
-					A2(elm$core$Basics$modBy, 10, registerXValue)),
+					A2($elm$core$Basics$modBy, 10, registerXValue)),
 				A2(
-					elm$core$Result$andThen,
+					$elm$core$Result$andThen,
 					A2(
-						author$project$Memory$setCell,
+						$author$project$Memory$setCell,
 						addressRegister + 1,
-						(A2(elm$core$Basics$modBy, 100, registerXValue) / 10) | 0),
-					A3(author$project$Memory$setCell, addressRegister, (registerXValue / 100) | 0, memory))));
+						(A2($elm$core$Basics$modBy, 100, registerXValue) / 10) | 0),
+					A3($author$project$Memory$setCell, addressRegister, (registerXValue / 100) | 0, memory))));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setMemory, newMemory, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setMemory, newMemory, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$storeRegistersAtAddressRegister = F2(
+var $author$project$Instructions$storeRegistersAtAddressRegister = F2(
 	function (virtualMachine, registerX) {
-		var registers = author$project$VirtualMachine$getRegisters(virtualMachine);
-		var addressRegister = author$project$Registers$getAddressRegister(registers);
+		var registers = $author$project$VirtualMachine$getRegisters(virtualMachine);
+		var addressRegister = $author$project$Registers$getAddressRegister(registers);
 		var newMemory = A3(
-			elm$core$List$foldl,
+			$elm$core$List$foldl,
 			F2(
 				function (registerY, accMemory) {
 					return A2(
-						elm$core$Result$withDefault,
+						$elm$core$Result$withDefault,
 						accMemory,
 						A3(
-							author$project$Memory$setCell,
+							$author$project$Memory$setCell,
 							addressRegister + registerY,
 							A2(
-								elm$core$Result$withDefault,
+								$elm$core$Result$withDefault,
 								0,
-								A2(author$project$Registers$getDataRegister, registerY, registers)),
+								A2($author$project$Registers$getDataRegister, registerY, registers)),
 							accMemory));
 				}),
-			author$project$VirtualMachine$getMemory(virtualMachine),
-			A2(elm$core$List$range, 0, registerX));
+			$author$project$VirtualMachine$getMemory(virtualMachine),
+			A2($elm$core$List$range, 0, registerX));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setMemory, newMemory, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setMemory, newMemory, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$Instructions$waitForKeyPress = F2(
+var $author$project$Instructions$waitForKeyPress = F2(
 	function (virtualMachine, registerX) {
 		var newFlags = A2(
-			author$project$Flags$setWaitingForInputRegister,
-			elm$core$Maybe$Just(registerX),
-			author$project$VirtualMachine$getFlags(virtualMachine));
+			$author$project$Flags$setWaitingForInputRegister,
+			$elm$core$Maybe$Just(registerX),
+			$author$project$VirtualMachine$getFlags(virtualMachine));
 		return _Utils_Tuple2(
-			A2(author$project$VirtualMachine$setFlags, newFlags, virtualMachine),
-			elm$core$Platform$Cmd$none);
+			A2($author$project$VirtualMachine$setFlags, newFlags, virtualMachine),
+			$elm$core$Platform$Cmd$none);
 	});
-var author$project$FetchDecodeExecuteLoop$handleF = F2(
+var $author$project$FetchDecodeExecuteLoop$handleF = F2(
 	function (virtualMachine, opcode) {
 		var registerX = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
-		var _byte = author$project$FetchDecodeExecuteLoop$getByte(opcode);
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 1, opcode));
+		var _byte = $author$project$FetchDecodeExecuteLoop$getByte(opcode);
 		switch (_byte) {
 			case 7:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$setRegisterToDelayTimer, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$setRegisterToDelayTimer, virtualMachine, registerX));
 			case 10:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$waitForKeyPress, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$waitForKeyPress, virtualMachine, registerX));
 			case 21:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$setDelayTimerToRegisterValue, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$setDelayTimerToRegisterValue, virtualMachine, registerX));
 			case 24:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$setSoundTimerToRegisterValue, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$setSoundTimerToRegisterValue, virtualMachine, registerX));
 			case 30:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$addToAddressRegister, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$addToAddressRegister, virtualMachine, registerX));
 			case 41:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$setAddressRegisterToSpriteLocation, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$setAddressRegisterToSpriteLocation, virtualMachine, registerX));
 			case 51:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$storeBcdOfRegister, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$storeBcdOfRegister, virtualMachine, registerX));
 			case 85:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$storeRegistersAtAddressRegister, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$storeRegistersAtAddressRegister, virtualMachine, registerX));
 			case 101:
-				return elm$core$Result$Ok(
-					A2(author$project$Instructions$readRegistersFromAddressRegister, virtualMachine, registerX));
+				return $elm$core$Result$Ok(
+					A2($author$project$Instructions$readRegistersFromAddressRegister, virtualMachine, registerX));
 			default:
-				var other = _byte;
-				return elm$core$Result$Err(
-					'Unknown opcode: ' + author$project$FetchDecodeExecuteLoop$toHex(opcode));
+				return $elm$core$Result$Err(
+					'Unknown opcode: ' + $author$project$FetchDecodeExecuteLoop$toHex(opcode));
 		}
 	});
-var author$project$FetchDecodeExecuteLoop$executeOpcode = F2(
+var $author$project$FetchDecodeExecuteLoop$executeOpcode = F2(
 	function (virtualMachine, opcode) {
-		var _n0 = A2(
-			elm$core$Result$withDefault,
+		var _v0 = A2(
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$FetchDecodeExecuteLoop$getNibble, 0, opcode));
-		switch (_n0) {
+			A2($author$project$FetchDecodeExecuteLoop$getNibble, 0, opcode));
+		switch (_v0) {
 			case 0:
-				return A2(author$project$FetchDecodeExecuteLoop$handle0, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle0, virtualMachine, opcode);
 			case 1:
-				return A2(author$project$FetchDecodeExecuteLoop$handle1, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle1, virtualMachine, opcode);
 			case 2:
-				return A2(author$project$FetchDecodeExecuteLoop$handle2, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle2, virtualMachine, opcode);
 			case 3:
-				return A2(author$project$FetchDecodeExecuteLoop$handle3, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle3, virtualMachine, opcode);
 			case 4:
-				return A2(author$project$FetchDecodeExecuteLoop$handle4, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle4, virtualMachine, opcode);
 			case 5:
-				return A2(author$project$FetchDecodeExecuteLoop$handle5, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle5, virtualMachine, opcode);
 			case 6:
-				return A2(author$project$FetchDecodeExecuteLoop$handle6, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle6, virtualMachine, opcode);
 			case 7:
-				return A2(author$project$FetchDecodeExecuteLoop$handle7, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle7, virtualMachine, opcode);
 			case 8:
-				return A2(author$project$FetchDecodeExecuteLoop$handle8, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle8, virtualMachine, opcode);
 			case 9:
-				return A2(author$project$FetchDecodeExecuteLoop$handle9, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handle9, virtualMachine, opcode);
 			case 10:
-				return A2(author$project$FetchDecodeExecuteLoop$handleA, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handleA, virtualMachine, opcode);
 			case 11:
-				return A2(author$project$FetchDecodeExecuteLoop$handleB, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handleB, virtualMachine, opcode);
 			case 12:
-				return A2(author$project$FetchDecodeExecuteLoop$handleC, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handleC, virtualMachine, opcode);
 			case 13:
-				return A2(author$project$FetchDecodeExecuteLoop$handleD, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handleD, virtualMachine, opcode);
 			case 14:
-				return A2(author$project$FetchDecodeExecuteLoop$handleE, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handleE, virtualMachine, opcode);
 			case 15:
-				return A2(author$project$FetchDecodeExecuteLoop$handleF, virtualMachine, opcode);
+				return A2($author$project$FetchDecodeExecuteLoop$handleF, virtualMachine, opcode);
 			default:
-				var other = _n0;
-				return elm$core$Result$Err(
-					'Unknown opcode: ' + author$project$FetchDecodeExecuteLoop$toHex(opcode));
+				return $elm$core$Result$Err(
+					'Unknown opcode: ' + $author$project$FetchDecodeExecuteLoop$toHex(opcode));
 		}
 	});
-var author$project$FetchDecodeExecuteLoop$fetchOpcode = F2(
+var $author$project$FetchDecodeExecuteLoop$fetchOpcode = F2(
 	function (memory, programCounter) {
 		var secondByte = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Memory$getCell, programCounter + 1, memory));
+			A2($author$project$Memory$getCell, programCounter + 1, memory));
 		var firstByte = A2(
-			elm$core$Result$withDefault,
+			$elm$core$Result$withDefault,
 			0,
-			A2(author$project$Memory$getCell, programCounter, memory));
+			A2($author$project$Memory$getCell, programCounter, memory));
 		return (firstByte << 8) | secondByte;
 	});
-var author$project$FetchDecodeExecuteLoop$performCycle = F2(
+var $author$project$FetchDecodeExecuteLoop$performCycle = F2(
 	function (flags, virtualMachine) {
-		if (author$project$Flags$isWaitingForInput(flags)) {
-			return _Utils_Tuple2(virtualMachine, elm$core$Platform$Cmd$none);
+		if ($author$project$Flags$isWaitingForInput(flags)) {
+			return _Utils_Tuple2(virtualMachine, $elm$core$Platform$Cmd$none);
 		} else {
-			var programCounter = author$project$Registers$getProgramCounter(
-				author$project$VirtualMachine$getRegisters(virtualMachine));
-			var memory = author$project$VirtualMachine$getMemory(virtualMachine);
-			var opcode = A2(author$project$FetchDecodeExecuteLoop$fetchOpcode, memory, programCounter);
-			var _n0 = function () {
-				var _n1 = A2(author$project$FetchDecodeExecuteLoop$executeOpcode, virtualMachine, opcode);
-				if (!_n1.$) {
-					var result = _n1.a;
+			var programCounter = $author$project$Registers$getProgramCounter(
+				$author$project$VirtualMachine$getRegisters(virtualMachine));
+			var memory = $author$project$VirtualMachine$getMemory(virtualMachine);
+			var opcode = A2($author$project$FetchDecodeExecuteLoop$fetchOpcode, memory, programCounter);
+			var _v0 = function () {
+				var _v1 = A2($author$project$FetchDecodeExecuteLoop$executeOpcode, virtualMachine, opcode);
+				if (!_v1.$) {
+					var result = _v1.a;
 					return result;
 				} else {
-					var error = _n1.a;
-					return _Utils_Tuple2(virtualMachine, elm$core$Platform$Cmd$none);
+					return _Utils_Tuple2(virtualMachine, $elm$core$Platform$Cmd$none);
 				}
 			}();
-			var resultVirtualMachine = _n0.a;
-			var resultCmd = _n0.b;
-			var newRegisters = author$project$Registers$incrementProgramCounter(
-				author$project$VirtualMachine$getRegisters(resultVirtualMachine));
-			var newVirtualMachine = A2(author$project$VirtualMachine$setRegisters, newRegisters, resultVirtualMachine);
+			var resultVirtualMachine = _v0.a;
+			var resultCmd = _v0.b;
+			var newRegisters = $author$project$Registers$incrementProgramCounter(
+				$author$project$VirtualMachine$getRegisters(resultVirtualMachine));
+			var newVirtualMachine = A2($author$project$VirtualMachine$setRegisters, newRegisters, resultVirtualMachine);
 			return _Utils_Tuple2(newVirtualMachine, resultCmd);
 		}
 	});
-var elm$core$List$isEmpty = function (xs) {
-	if (!xs.b) {
-		return true;
-	} else {
-		return false;
-	}
-};
-var author$project$FetchDecodeExecuteLoop$tick = F2(
+var $author$project$FetchDecodeExecuteLoop$tick = F2(
 	function (instructions, virtualMachine) {
-		var _n0 = A3(
-			elm$core$List$foldl,
+		var _v0 = A3(
+			$elm$core$List$foldl,
 			F2(
-				function (_n1, _n2) {
-					var accVirtualMachine = _n2.a;
-					var accCmds = _n2.b;
-					var flags = author$project$VirtualMachine$getFlags(accVirtualMachine);
-					var running = author$project$Flags$isRunning(flags);
-					var _n3 = A2(author$project$FetchDecodeExecuteLoop$performCycle, flags, accVirtualMachine);
-					var updatedVirtualMachine = _n3.a;
-					var cmd = _n3.b;
+				function (_v1, _v2) {
+					var accVirtualMachine = _v2.a;
+					var accCmds = _v2.b;
+					var flags = $author$project$VirtualMachine$getFlags(accVirtualMachine);
+					var _v3 = A2($author$project$FetchDecodeExecuteLoop$performCycle, flags, accVirtualMachine);
+					var updatedVirtualMachine = _v3.a;
+					var cmd = _v3.b;
 					return _Utils_Tuple2(
 						updatedVirtualMachine,
-						A2(elm$core$List$cons, cmd, accCmds));
+						A2($elm$core$List$cons, cmd, accCmds));
 				}),
 			_Utils_Tuple2(virtualMachine, _List_Nil),
-			A2(elm$core$List$range, 0, instructions));
-		var newVirtualMachine = _n0.a;
-		var newCmds = _n0.b;
-		return elm$core$List$isEmpty(newCmds) ? _Utils_Tuple2(newVirtualMachine, elm$core$Platform$Cmd$none) : _Utils_Tuple2(
+			A2($elm$core$List$range, 0, instructions));
+		var newVirtualMachine = _v0.a;
+		var newCmds = _v0.b;
+		return $elm$core$List$isEmpty(newCmds) ? _Utils_Tuple2(newVirtualMachine, $elm$core$Platform$Cmd$none) : _Utils_Tuple2(
 			newVirtualMachine,
-			elm$core$Platform$Cmd$batch(
-				elm$core$List$reverse(newCmds)));
+			$elm$core$Platform$Cmd$batch(
+				$elm$core$List$reverse(newCmds)));
 	});
-var author$project$Main$clockTick = function (model) {
+var $author$project$Main$clockTick = function (model) {
 	var tickSpeed = 2;
-	var flags = author$project$VirtualMachine$getFlags(model.b);
-	var running = author$project$Flags$isRunning(flags);
-	var waitingForInput = author$project$Flags$isWaitingForInput(flags);
+	var flags = $author$project$VirtualMachine$getFlags(model.b);
+	var running = $author$project$Flags$isRunning(flags);
+	var waitingForInput = $author$project$Flags$isWaitingForInput(flags);
 	if (running && (!waitingForInput)) {
-		var _n0 = A2(author$project$FetchDecodeExecuteLoop$tick, tickSpeed, model.b);
-		var newVirtualMachine = _n0.a;
-		var cmd = _n0.b;
+		var _v0 = A2($author$project$FetchDecodeExecuteLoop$tick, tickSpeed, model.b);
+		var newVirtualMachine = _v0.a;
+		var cmd = _v0.b;
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
 				{b: newVirtualMachine}),
 			cmd);
 	} else {
-		return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	}
 };
-var author$project$Main$delayTick = function (model) {
-	var _n0 = A2(
-		author$project$Timers$tick,
-		author$project$VirtualMachine$getRegisters(model.b),
-		author$project$VirtualMachine$getTimers(model.b));
-	var _n1 = _n0.a;
-	var newRegisters = _n1.a;
-	var newTimers = _n1.b;
-	var cmd = _n0.b;
+var $author$project$Main$delayTick = function (model) {
+	var _v0 = A2(
+		$author$project$Timers$tick,
+		$author$project$VirtualMachine$getRegisters(model.b),
+		$author$project$VirtualMachine$getTimers(model.b));
+	var _v1 = _v0.a;
+	var newRegisters = _v1.a;
+	var newTimers = _v1.b;
+	var cmd = _v0.b;
 	var newVirtualMachine = A2(
-		author$project$VirtualMachine$setTimers,
+		$author$project$VirtualMachine$setTimers,
 		newTimers,
-		A2(author$project$VirtualMachine$setRegisters, newRegisters, model.b));
+		A2($author$project$VirtualMachine$setRegisters, newRegisters, model.b));
 	return _Utils_Tuple2(
 		_Utils_update(
 			model,
 			{b: newVirtualMachine}),
 		cmd);
 };
-var author$project$Flags$setRunning = F2(
+var $author$project$Flags$setRunning = F2(
 	function (running, flags) {
 		return _Utils_update(
 			flags,
-			{ap: running});
+			{ai: running});
 	});
-var author$project$Main$readProgram = F2(
+var $author$project$Main$readProgram = F2(
 	function (programBytesResult, model) {
 		if (programBytesResult.$ === 1) {
-			var error = programBytesResult.a;
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		} else {
 			var programBytes = programBytesResult.a;
 			var programStart = 512;
 			var newRegisters = A2(
-				author$project$Registers$setProgramCounter,
+				$author$project$Registers$setProgramCounter,
 				programStart,
 				A2(
-					author$project$Registers$setAddressRegister,
+					$author$project$Registers$setAddressRegister,
 					0,
-					author$project$VirtualMachine$getRegisters(model.b)));
+					$author$project$VirtualMachine$getRegisters(model.b)));
 			var newFlags = A2(
-				author$project$Flags$setRunning,
+				$author$project$Flags$setRunning,
 				true,
-				author$project$VirtualMachine$getFlags(model.b));
-			var memory = author$project$VirtualMachine$getMemory(model.b);
+				$author$project$VirtualMachine$getFlags(model.b));
+			var memory = $author$project$VirtualMachine$getMemory(model.b);
 			var newMemory = A3(
-				elm_community$list_extra$List$Extra$indexedFoldl,
+				$elm_community$list_extra$List$Extra$indexedFoldl,
 				F3(
 					function (idx, value, accMemory) {
 						return A2(
-							elm$core$Result$withDefault,
+							$elm$core$Result$withDefault,
 							accMemory,
-							A3(author$project$Memory$setCell, programStart + idx, value, accMemory));
+							A3($author$project$Memory$setCell, programStart + idx, value, accMemory));
 					}),
 				memory,
-				elm$core$Array$toList(programBytes));
+				$elm$core$Array$toList(programBytes));
 			var newVirtualMachine = A2(
-				author$project$VirtualMachine$setFlags,
+				$author$project$VirtualMachine$setFlags,
 				newFlags,
 				A2(
-					author$project$VirtualMachine$setRegisters,
+					$author$project$VirtualMachine$setRegisters,
 					newRegisters,
-					A2(author$project$VirtualMachine$setMemory, newMemory, model.b)));
+					A2($author$project$VirtualMachine$setMemory, newMemory, model.b)));
 			return _Utils_Tuple2(
 				_Utils_update(
 					model,
 					{b: newVirtualMachine}),
-				elm$core$Platform$Cmd$none);
+				$elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Msg$LoadedGame = function (a) {
+var $author$project$Msg$LoadedGame = function (a) {
 	return {$: 7, a: a};
 };
-var elm$bytes$Bytes$Decode$Done = function (a) {
-	return {$: 1, a: a};
+var $elm$http$Http$BadBody = function (a) {
+	return {$: 4, a: a};
 };
-var elm$bytes$Bytes$Decode$Loop = function (a) {
+var $elm$http$Http$BadStatus = function (a) {
+	return {$: 3, a: a};
+};
+var $elm$http$Http$BadUrl = function (a) {
 	return {$: 0, a: a};
 };
-var elm$bytes$Bytes$Decode$Decoder = elm$core$Basics$identity;
-var elm$bytes$Bytes$Decode$map = F2(
-	function (func, _n0) {
-		var decodeA = _n0;
-		return F2(
-			function (bites, offset) {
-				var _n1 = A2(decodeA, bites, offset);
-				var aOffset = _n1.a;
-				var a = _n1.b;
-				return _Utils_Tuple2(
-					aOffset,
-					func(a));
-			});
-	});
-var elm$bytes$Bytes$Decode$succeed = function (a) {
-	return F2(
-		function (_n0, offset) {
-			return _Utils_Tuple2(offset, a);
-		});
-};
-var author$project$Request$listStep = F2(
-	function (decoder, _n0) {
-		var n = _n0.a;
-		var xs = _n0.b;
-		return (n <= 0) ? elm$bytes$Bytes$Decode$succeed(
-			elm$bytes$Bytes$Decode$Done(
-				elm$core$List$reverse(xs))) : A2(
-			elm$bytes$Bytes$Decode$map,
-			function (x) {
-				return elm$bytes$Bytes$Decode$Loop(
-					_Utils_Tuple2(
-						n - 1,
-						A2(elm$core$List$cons, x, xs)));
-			},
-			decoder);
-	});
-var elm$bytes$Bytes$Decode$loopHelp = F4(
-	function (state, callback, bites, offset) {
-		loopHelp:
-		while (true) {
-			var _n0 = callback(state);
-			var decoder = _n0;
-			var _n1 = A2(decoder, bites, offset);
-			var newOffset = _n1.a;
-			var step = _n1.b;
-			if (!step.$) {
-				var newState = step.a;
-				var $temp$state = newState,
-					$temp$callback = callback,
-					$temp$bites = bites,
-					$temp$offset = newOffset;
-				state = $temp$state;
-				callback = $temp$callback;
-				bites = $temp$bites;
-				offset = $temp$offset;
-				continue loopHelp;
-			} else {
-				var result = step.a;
-				return _Utils_Tuple2(newOffset, result);
-			}
-		}
-	});
-var elm$bytes$Bytes$Decode$loop = F2(
-	function (state, callback) {
-		return A2(elm$bytes$Bytes$Decode$loopHelp, state, callback);
-	});
-var author$project$Request$byteListDecoder = F2(
-	function (decoder, width) {
-		return A2(
-			elm$bytes$Bytes$Decode$loop,
-			_Utils_Tuple2(width, _List_Nil),
-			author$project$Request$listStep(decoder));
-	});
-var elm$bytes$Bytes$Encode$getWidth = function (builder) {
+var $elm$http$Http$NetworkError = {$: 2};
+var $elm$http$Http$Timeout = {$: 1};
+var $elm$bytes$Bytes$Encode$getWidth = function (builder) {
 	switch (builder.$) {
 		case 0:
 			return 1;
@@ -8594,8 +8526,8 @@ var elm$bytes$Bytes$Encode$getWidth = function (builder) {
 			return _Bytes_width(bs);
 	}
 };
-var elm$bytes$Bytes$LE = 0;
-var elm$bytes$Bytes$Encode$write = F3(
+var $elm$bytes$Bytes$LE = 0;
+var $elm$bytes$Bytes$Encode$write = F3(
 	function (builder, mb, offset) {
 		switch (builder.$) {
 			case 0:
@@ -8630,7 +8562,7 @@ var elm$bytes$Bytes$Encode$write = F3(
 				return A4(_Bytes_write_f64, mb, offset, n, !e);
 			case 8:
 				var bs = builder.b;
-				return A3(elm$bytes$Bytes$Encode$writeSequence, bs, mb, offset);
+				return A3($elm$bytes$Bytes$Encode$writeSequence, bs, mb, offset);
 			case 9:
 				var s = builder.b;
 				return A3(_Bytes_write_string, mb, offset, s);
@@ -8639,7 +8571,7 @@ var elm$bytes$Bytes$Encode$write = F3(
 				return A3(_Bytes_write_bytes, mb, offset, bs);
 		}
 	});
-var elm$bytes$Bytes$Encode$writeSequence = F3(
+var $elm$bytes$Bytes$Encode$writeSequence = F3(
 	function (builders, mb, offset) {
 		writeSequence:
 		while (true) {
@@ -8650,7 +8582,7 @@ var elm$bytes$Bytes$Encode$writeSequence = F3(
 				var bs = builders.b;
 				var $temp$builders = bs,
 					$temp$mb = mb,
-					$temp$offset = A3(elm$bytes$Bytes$Encode$write, b, mb, offset);
+					$temp$offset = A3($elm$bytes$Bytes$Encode$write, b, mb, offset);
 				builders = $temp$builders;
 				mb = $temp$mb;
 				offset = $temp$offset;
@@ -8658,64 +8590,155 @@ var elm$bytes$Bytes$Encode$writeSequence = F3(
 			}
 		}
 	});
-var elm$bytes$Bytes$Decode$unsignedInt8 = _Bytes_read_u8;
-var author$project$Request$romDecoder = function (width) {
-	return A2(
-		elm$bytes$Bytes$Decode$map,
-		elm$core$Array$fromList,
-		A2(author$project$Request$byteListDecoder, elm$bytes$Bytes$Decode$unsignedInt8, width));
-};
-var elm$bytes$Bytes$width = _Bytes_width;
-var elm$bytes$Bytes$Decode$decode = F2(
-	function (_n0, bs) {
-		var decoder = _n0;
+var $elm$bytes$Bytes$Decode$decode = F2(
+	function (_v0, bs) {
+		var decoder = _v0;
 		return A2(_Bytes_decode, decoder, bs);
 	});
-var elm$http$Http$BadBody = function (a) {
-	return {$: 4, a: a};
+var $elm$bytes$Bytes$Decode$Done = function (a) {
+	return {$: 1, a: a};
 };
-var elm$http$Http$BadStatus = function (a) {
-	return {$: 3, a: a};
-};
-var elm$http$Http$BadUrl = function (a) {
+var $elm$bytes$Bytes$Decode$Loop = function (a) {
 	return {$: 0, a: a};
 };
-var elm$http$Http$NetworkError = {$: 2};
-var elm$http$Http$Timeout = {$: 1};
-var author$project$Request$decodeBytesResponse = function (response) {
+var $elm$bytes$Bytes$Decode$Decoder = $elm$core$Basics$identity;
+var $elm$bytes$Bytes$Decode$map = F2(
+	function (func, _v0) {
+		var decodeA = _v0;
+		return F2(
+			function (bites, offset) {
+				var _v1 = A2(decodeA, bites, offset);
+				var aOffset = _v1.a;
+				var a = _v1.b;
+				return _Utils_Tuple2(
+					aOffset,
+					func(a));
+			});
+	});
+var $elm$bytes$Bytes$Decode$succeed = function (a) {
+	return F2(
+		function (_v0, offset) {
+			return _Utils_Tuple2(offset, a);
+		});
+};
+var $author$project$Request$listStep = F2(
+	function (decoder, _v0) {
+		var n = _v0.a;
+		var xs = _v0.b;
+		return (n <= 0) ? $elm$bytes$Bytes$Decode$succeed(
+			$elm$bytes$Bytes$Decode$Done(
+				$elm$core$List$reverse(xs))) : A2(
+			$elm$bytes$Bytes$Decode$map,
+			function (x) {
+				return $elm$bytes$Bytes$Decode$Loop(
+					_Utils_Tuple2(
+						n - 1,
+						A2($elm$core$List$cons, x, xs)));
+			},
+			decoder);
+	});
+var $elm$bytes$Bytes$Decode$loopHelp = F4(
+	function (state, callback, bites, offset) {
+		loopHelp:
+		while (true) {
+			var _v0 = callback(state);
+			var decoder = _v0;
+			var _v1 = A2(decoder, bites, offset);
+			var newOffset = _v1.a;
+			var step = _v1.b;
+			if (!step.$) {
+				var newState = step.a;
+				var $temp$state = newState,
+					$temp$callback = callback,
+					$temp$bites = bites,
+					$temp$offset = newOffset;
+				state = $temp$state;
+				callback = $temp$callback;
+				bites = $temp$bites;
+				offset = $temp$offset;
+				continue loopHelp;
+			} else {
+				var result = step.a;
+				return _Utils_Tuple2(newOffset, result);
+			}
+		}
+	});
+var $elm$bytes$Bytes$Decode$loop = F2(
+	function (state, callback) {
+		return A2($elm$bytes$Bytes$Decode$loopHelp, state, callback);
+	});
+var $author$project$Request$byteListDecoder = F2(
+	function (decoder, width) {
+		return A2(
+			$elm$bytes$Bytes$Decode$loop,
+			_Utils_Tuple2(width, _List_Nil),
+			$author$project$Request$listStep(decoder));
+	});
+var $elm$bytes$Bytes$Decode$unsignedInt8 = _Bytes_read_u8;
+var $author$project$Request$romDecoder = function (width) {
+	return A2(
+		$elm$bytes$Bytes$Decode$map,
+		$elm$core$Array$fromList,
+		A2($author$project$Request$byteListDecoder, $elm$bytes$Bytes$Decode$unsignedInt8, width));
+};
+var $elm$bytes$Bytes$width = _Bytes_width;
+var $author$project$Request$decodeBytesResponse = function (response) {
 	switch (response.$) {
 		case 0:
 			var url = response.a;
-			return elm$core$Result$Err(
-				elm$http$Http$BadUrl(url));
+			return $elm$core$Result$Err(
+				$elm$http$Http$BadUrl(url));
 		case 1:
-			return elm$core$Result$Err(elm$http$Http$Timeout);
+			return $elm$core$Result$Err($elm$http$Http$Timeout);
 		case 2:
-			return elm$core$Result$Err(elm$http$Http$NetworkError);
+			return $elm$core$Result$Err($elm$http$Http$NetworkError);
 		case 3:
 			var metadata = response.a;
-			var body = response.b;
-			return elm$core$Result$Err(
-				elm$http$Http$BadStatus(metadata.bZ));
+			return $elm$core$Result$Err(
+				$elm$http$Http$BadStatus(metadata.bX));
 		default:
-			var metadata = response.a;
 			var bytes = response.b;
-			var _n1 = A2(
-				elm$bytes$Bytes$Decode$decode,
-				author$project$Request$romDecoder(
-					elm$bytes$Bytes$width(bytes)),
+			var _v1 = A2(
+				$elm$bytes$Bytes$Decode$decode,
+				$author$project$Request$romDecoder(
+					$elm$bytes$Bytes$width(bytes)),
 				bytes);
-			if (!_n1.$) {
-				var rom = _n1.a;
-				return elm$core$Result$Ok(rom);
+			if (!_v1.$) {
+				var rom = _v1.a;
+				return $elm$core$Result$Ok(rom);
 			} else {
-				return elm$core$Result$Err(
-					elm$http$Http$BadBody('Could not decode bytes payload'));
+				return $elm$core$Result$Err(
+					$elm$http$Http$BadBody('Could not decode bytes payload'));
 			}
 	}
 };
-var author$project$Request$romsUrlPrefix = '/chip-8/roms/';
-var elm$core$Dict$getMin = function (dict) {
+var $elm$http$Http$BadStatus_ = F2(
+	function (a, b) {
+		return {$: 3, a: a, b: b};
+	});
+var $elm$http$Http$BadUrl_ = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$http$Http$GoodStatus_ = F2(
+	function (a, b) {
+		return {$: 4, a: a, b: b};
+	});
+var $elm$http$Http$NetworkError_ = {$: 2};
+var $elm$http$Http$Receiving = function (a) {
+	return {$: 1, a: a};
+};
+var $elm$http$Http$Sending = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$http$Http$Timeout_ = {$: 1};
+var $elm$core$Maybe$isJust = function (maybe) {
+	if (!maybe.$) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$Dict$getMin = function (dict) {
 	getMin:
 	while (true) {
 		if ((dict.$ === -1) && (dict.d.$ === -1)) {
@@ -8728,195 +8751,195 @@ var elm$core$Dict$getMin = function (dict) {
 		}
 	}
 };
-var elm$core$Dict$moveRedLeft = function (dict) {
+var $elm$core$Dict$moveRedLeft = function (dict) {
 	if (((dict.$ === -1) && (dict.d.$ === -1)) && (dict.e.$ === -1)) {
 		if ((dict.e.d.$ === -1) && (!dict.e.d.a)) {
 			var clr = dict.a;
 			var k = dict.b;
 			var v = dict.c;
-			var _n1 = dict.d;
-			var lClr = _n1.a;
-			var lK = _n1.b;
-			var lV = _n1.c;
-			var lLeft = _n1.d;
-			var lRight = _n1.e;
-			var _n2 = dict.e;
-			var rClr = _n2.a;
-			var rK = _n2.b;
-			var rV = _n2.c;
-			var rLeft = _n2.d;
-			var _n3 = rLeft.a;
+			var _v1 = dict.d;
+			var lClr = _v1.a;
+			var lK = _v1.b;
+			var lV = _v1.c;
+			var lLeft = _v1.d;
+			var lRight = _v1.e;
+			var _v2 = dict.e;
+			var rClr = _v2.a;
+			var rK = _v2.b;
+			var rV = _v2.c;
+			var rLeft = _v2.d;
+			var _v3 = rLeft.a;
 			var rlK = rLeft.b;
 			var rlV = rLeft.c;
 			var rlL = rLeft.d;
 			var rlR = rLeft.e;
-			var rRight = _n2.e;
+			var rRight = _v2.e;
 			return A5(
-				elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$RBNode_elm_builtin,
 				0,
 				rlK,
 				rlV,
 				A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
 					rlL),
-				A5(elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rlR, rRight));
+				A5($elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rlR, rRight));
 		} else {
 			var clr = dict.a;
 			var k = dict.b;
 			var v = dict.c;
-			var _n4 = dict.d;
-			var lClr = _n4.a;
-			var lK = _n4.b;
-			var lV = _n4.c;
-			var lLeft = _n4.d;
-			var lRight = _n4.e;
-			var _n5 = dict.e;
-			var rClr = _n5.a;
-			var rK = _n5.b;
-			var rV = _n5.c;
-			var rLeft = _n5.d;
-			var rRight = _n5.e;
+			var _v4 = dict.d;
+			var lClr = _v4.a;
+			var lK = _v4.b;
+			var lV = _v4.c;
+			var lLeft = _v4.d;
+			var lRight = _v4.e;
+			var _v5 = dict.e;
+			var rClr = _v5.a;
+			var rK = _v5.b;
+			var rV = _v5.c;
+			var rLeft = _v5.d;
+			var rRight = _v5.e;
 			if (clr === 1) {
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			} else {
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			}
 		}
 	} else {
 		return dict;
 	}
 };
-var elm$core$Dict$moveRedRight = function (dict) {
+var $elm$core$Dict$moveRedRight = function (dict) {
 	if (((dict.$ === -1) && (dict.d.$ === -1)) && (dict.e.$ === -1)) {
 		if ((dict.d.d.$ === -1) && (!dict.d.d.a)) {
 			var clr = dict.a;
 			var k = dict.b;
 			var v = dict.c;
-			var _n1 = dict.d;
-			var lClr = _n1.a;
-			var lK = _n1.b;
-			var lV = _n1.c;
-			var _n2 = _n1.d;
-			var _n3 = _n2.a;
-			var llK = _n2.b;
-			var llV = _n2.c;
-			var llLeft = _n2.d;
-			var llRight = _n2.e;
-			var lRight = _n1.e;
-			var _n4 = dict.e;
-			var rClr = _n4.a;
-			var rK = _n4.b;
-			var rV = _n4.c;
-			var rLeft = _n4.d;
-			var rRight = _n4.e;
+			var _v1 = dict.d;
+			var lClr = _v1.a;
+			var lK = _v1.b;
+			var lV = _v1.c;
+			var _v2 = _v1.d;
+			var _v3 = _v2.a;
+			var llK = _v2.b;
+			var llV = _v2.c;
+			var llLeft = _v2.d;
+			var llRight = _v2.e;
+			var lRight = _v1.e;
+			var _v4 = dict.e;
+			var rClr = _v4.a;
+			var rK = _v4.b;
+			var rV = _v4.c;
+			var rLeft = _v4.d;
+			var rRight = _v4.e;
 			return A5(
-				elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$RBNode_elm_builtin,
 				0,
 				lK,
 				lV,
-				A5(elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
+				A5($elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
 				A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					1,
 					k,
 					v,
 					lRight,
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight)));
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight)));
 		} else {
 			var clr = dict.a;
 			var k = dict.b;
 			var v = dict.c;
-			var _n5 = dict.d;
-			var lClr = _n5.a;
-			var lK = _n5.b;
-			var lV = _n5.c;
-			var lLeft = _n5.d;
-			var lRight = _n5.e;
-			var _n6 = dict.e;
-			var rClr = _n6.a;
-			var rK = _n6.b;
-			var rV = _n6.c;
-			var rLeft = _n6.d;
-			var rRight = _n6.e;
+			var _v5 = dict.d;
+			var lClr = _v5.a;
+			var lK = _v5.b;
+			var lV = _v5.c;
+			var lLeft = _v5.d;
+			var lRight = _v5.e;
+			var _v6 = dict.e;
+			var rClr = _v6.a;
+			var rK = _v6.b;
+			var rV = _v6.c;
+			var rLeft = _v6.d;
+			var rRight = _v6.e;
 			if (clr === 1) {
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			} else {
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					1,
 					k,
 					v,
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, rK, rV, rLeft, rRight));
 			}
 		}
 	} else {
 		return dict;
 	}
 };
-var elm$core$Dict$removeHelpPrepEQGT = F7(
+var $elm$core$Dict$removeHelpPrepEQGT = F7(
 	function (targetKey, dict, color, key, value, left, right) {
 		if ((left.$ === -1) && (!left.a)) {
-			var _n1 = left.a;
+			var _v1 = left.a;
 			var lK = left.b;
 			var lV = left.c;
 			var lLeft = left.d;
 			var lRight = left.e;
 			return A5(
-				elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$RBNode_elm_builtin,
 				color,
 				lK,
 				lV,
 				lLeft,
-				A5(elm$core$Dict$RBNode_elm_builtin, 0, key, value, lRight, right));
+				A5($elm$core$Dict$RBNode_elm_builtin, 0, key, value, lRight, right));
 		} else {
-			_n2$2:
+			_v2$2:
 			while (true) {
 				if ((right.$ === -1) && (right.a === 1)) {
 					if (right.d.$ === -1) {
 						if (right.d.a === 1) {
-							var _n3 = right.a;
-							var _n4 = right.d;
-							var _n5 = _n4.a;
-							return elm$core$Dict$moveRedRight(dict);
+							var _v3 = right.a;
+							var _v4 = right.d;
+							var _v5 = _v4.a;
+							return $elm$core$Dict$moveRedRight(dict);
 						} else {
-							break _n2$2;
+							break _v2$2;
 						}
 					} else {
-						var _n6 = right.a;
-						var _n7 = right.d;
-						return elm$core$Dict$moveRedRight(dict);
+						var _v6 = right.a;
+						var _v7 = right.d;
+						return $elm$core$Dict$moveRedRight(dict);
 					}
 				} else {
-					break _n2$2;
+					break _v2$2;
 				}
 			}
 			return dict;
 		}
 	});
-var elm$core$Dict$removeMin = function (dict) {
+var $elm$core$Dict$removeMin = function (dict) {
 	if ((dict.$ === -1) && (dict.d.$ === -1)) {
 		var color = dict.a;
 		var key = dict.b;
@@ -8927,50 +8950,50 @@ var elm$core$Dict$removeMin = function (dict) {
 		var right = dict.e;
 		if (lColor === 1) {
 			if ((lLeft.$ === -1) && (!lLeft.a)) {
-				var _n3 = lLeft.a;
+				var _v3 = lLeft.a;
 				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$RBNode_elm_builtin,
 					color,
 					key,
 					value,
-					elm$core$Dict$removeMin(left),
+					$elm$core$Dict$removeMin(left),
 					right);
 			} else {
-				var _n4 = elm$core$Dict$moveRedLeft(dict);
-				if (_n4.$ === -1) {
-					var nColor = _n4.a;
-					var nKey = _n4.b;
-					var nValue = _n4.c;
-					var nLeft = _n4.d;
-					var nRight = _n4.e;
+				var _v4 = $elm$core$Dict$moveRedLeft(dict);
+				if (_v4.$ === -1) {
+					var nColor = _v4.a;
+					var nKey = _v4.b;
+					var nValue = _v4.c;
+					var nLeft = _v4.d;
+					var nRight = _v4.e;
 					return A5(
-						elm$core$Dict$balance,
+						$elm$core$Dict$balance,
 						nColor,
 						nKey,
 						nValue,
-						elm$core$Dict$removeMin(nLeft),
+						$elm$core$Dict$removeMin(nLeft),
 						nRight);
 				} else {
-					return elm$core$Dict$RBEmpty_elm_builtin;
+					return $elm$core$Dict$RBEmpty_elm_builtin;
 				}
 			}
 		} else {
 			return A5(
-				elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$RBNode_elm_builtin,
 				color,
 				key,
 				value,
-				elm$core$Dict$removeMin(left),
+				$elm$core$Dict$removeMin(left),
 				right);
 		}
 	} else {
-		return elm$core$Dict$RBEmpty_elm_builtin;
+		return $elm$core$Dict$RBEmpty_elm_builtin;
 	}
 };
-var elm$core$Dict$removeHelp = F2(
+var $elm$core$Dict$removeHelp = F2(
 	function (targetKey, dict) {
 		if (dict.$ === -2) {
-			return elm$core$Dict$RBEmpty_elm_builtin;
+			return $elm$core$Dict$RBEmpty_elm_builtin;
 		} else {
 			var color = dict.a;
 			var key = dict.b;
@@ -8979,54 +9002,54 @@ var elm$core$Dict$removeHelp = F2(
 			var right = dict.e;
 			if (_Utils_cmp(targetKey, key) < 0) {
 				if ((left.$ === -1) && (left.a === 1)) {
-					var _n4 = left.a;
+					var _v4 = left.a;
 					var lLeft = left.d;
 					if ((lLeft.$ === -1) && (!lLeft.a)) {
-						var _n6 = lLeft.a;
+						var _v6 = lLeft.a;
 						return A5(
-							elm$core$Dict$RBNode_elm_builtin,
+							$elm$core$Dict$RBNode_elm_builtin,
 							color,
 							key,
 							value,
-							A2(elm$core$Dict$removeHelp, targetKey, left),
+							A2($elm$core$Dict$removeHelp, targetKey, left),
 							right);
 					} else {
-						var _n7 = elm$core$Dict$moveRedLeft(dict);
-						if (_n7.$ === -1) {
-							var nColor = _n7.a;
-							var nKey = _n7.b;
-							var nValue = _n7.c;
-							var nLeft = _n7.d;
-							var nRight = _n7.e;
+						var _v7 = $elm$core$Dict$moveRedLeft(dict);
+						if (_v7.$ === -1) {
+							var nColor = _v7.a;
+							var nKey = _v7.b;
+							var nValue = _v7.c;
+							var nLeft = _v7.d;
+							var nRight = _v7.e;
 							return A5(
-								elm$core$Dict$balance,
+								$elm$core$Dict$balance,
 								nColor,
 								nKey,
 								nValue,
-								A2(elm$core$Dict$removeHelp, targetKey, nLeft),
+								A2($elm$core$Dict$removeHelp, targetKey, nLeft),
 								nRight);
 						} else {
-							return elm$core$Dict$RBEmpty_elm_builtin;
+							return $elm$core$Dict$RBEmpty_elm_builtin;
 						}
 					}
 				} else {
 					return A5(
-						elm$core$Dict$RBNode_elm_builtin,
+						$elm$core$Dict$RBNode_elm_builtin,
 						color,
 						key,
 						value,
-						A2(elm$core$Dict$removeHelp, targetKey, left),
+						A2($elm$core$Dict$removeHelp, targetKey, left),
 						right);
 				}
 			} else {
 				return A2(
-					elm$core$Dict$removeHelpEQGT,
+					$elm$core$Dict$removeHelpEQGT,
 					targetKey,
-					A7(elm$core$Dict$removeHelpPrepEQGT, targetKey, dict, color, key, value, left, right));
+					A7($elm$core$Dict$removeHelpPrepEQGT, targetKey, dict, color, key, value, left, right));
 			}
 		}
 	});
-var elm$core$Dict$removeHelpEQGT = F2(
+var $elm$core$Dict$removeHelpEQGT = F2(
 	function (targetKey, dict) {
 		if (dict.$ === -1) {
 			var color = dict.a;
@@ -9035,127 +9058,90 @@ var elm$core$Dict$removeHelpEQGT = F2(
 			var left = dict.d;
 			var right = dict.e;
 			if (_Utils_eq(targetKey, key)) {
-				var _n1 = elm$core$Dict$getMin(right);
-				if (_n1.$ === -1) {
-					var minKey = _n1.b;
-					var minValue = _n1.c;
+				var _v1 = $elm$core$Dict$getMin(right);
+				if (_v1.$ === -1) {
+					var minKey = _v1.b;
+					var minValue = _v1.c;
 					return A5(
-						elm$core$Dict$balance,
+						$elm$core$Dict$balance,
 						color,
 						minKey,
 						minValue,
 						left,
-						elm$core$Dict$removeMin(right));
+						$elm$core$Dict$removeMin(right));
 				} else {
-					return elm$core$Dict$RBEmpty_elm_builtin;
+					return $elm$core$Dict$RBEmpty_elm_builtin;
 				}
 			} else {
 				return A5(
-					elm$core$Dict$balance,
+					$elm$core$Dict$balance,
 					color,
 					key,
 					value,
 					left,
-					A2(elm$core$Dict$removeHelp, targetKey, right));
+					A2($elm$core$Dict$removeHelp, targetKey, right));
 			}
 		} else {
-			return elm$core$Dict$RBEmpty_elm_builtin;
+			return $elm$core$Dict$RBEmpty_elm_builtin;
 		}
 	});
-var elm$core$Dict$remove = F2(
+var $elm$core$Dict$remove = F2(
 	function (key, dict) {
-		var _n0 = A2(elm$core$Dict$removeHelp, key, dict);
-		if ((_n0.$ === -1) && (!_n0.a)) {
-			var _n1 = _n0.a;
-			var k = _n0.b;
-			var v = _n0.c;
-			var l = _n0.d;
-			var r = _n0.e;
-			return A5(elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
+		var _v0 = A2($elm$core$Dict$removeHelp, key, dict);
+		if ((_v0.$ === -1) && (!_v0.a)) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
 		} else {
-			var x = _n0;
+			var x = _v0;
 			return x;
 		}
 	});
-var elm$core$Dict$update = F3(
+var $elm$core$Dict$update = F3(
 	function (targetKey, alter, dictionary) {
-		var _n0 = alter(
-			A2(elm$core$Dict$get, targetKey, dictionary));
-		if (!_n0.$) {
-			var value = _n0.a;
-			return A3(elm$core$Dict$insert, targetKey, value, dictionary);
+		var _v0 = alter(
+			A2($elm$core$Dict$get, targetKey, dictionary));
+		if (!_v0.$) {
+			var value = _v0.a;
+			return A3($elm$core$Dict$insert, targetKey, value, dictionary);
 		} else {
-			return A2(elm$core$Dict$remove, targetKey, dictionary);
+			return A2($elm$core$Dict$remove, targetKey, dictionary);
 		}
 	});
-var elm$core$Maybe$isJust = function (maybe) {
-	if (!maybe.$) {
-		return true;
-	} else {
-		return false;
-	}
-};
-var elm$core$Result$map = F2(
-	function (func, ra) {
-		if (!ra.$) {
-			var a = ra.a;
-			return elm$core$Result$Ok(
-				func(a));
-		} else {
-			var e = ra.a;
-			return elm$core$Result$Err(e);
-		}
-	});
-var elm$http$Http$BadStatus_ = F2(
-	function (a, b) {
-		return {$: 3, a: a, b: b};
-	});
-var elm$http$Http$BadUrl_ = function (a) {
-	return {$: 0, a: a};
-};
-var elm$http$Http$GoodStatus_ = F2(
-	function (a, b) {
-		return {$: 4, a: a, b: b};
-	});
-var elm$http$Http$NetworkError_ = {$: 2};
-var elm$http$Http$Receiving = function (a) {
-	return {$: 1, a: a};
-};
-var elm$http$Http$Sending = function (a) {
-	return {$: 0, a: a};
-};
-var elm$http$Http$Timeout_ = {$: 1};
-var elm$http$Http$expectBytesResponse = F2(
+var $elm$http$Http$expectBytesResponse = F2(
 	function (toMsg, toResult) {
 		return A3(
 			_Http_expect,
 			'arraybuffer',
 			_Http_toDataView,
-			A2(elm$core$Basics$composeR, toResult, toMsg));
+			A2($elm$core$Basics$composeR, toResult, toMsg));
 	});
-var elm$http$Http$emptyBody = _Http_emptyBody;
-var elm$http$Http$Request = function (a) {
+var $elm$http$Http$emptyBody = _Http_emptyBody;
+var $elm$http$Http$Request = function (a) {
 	return {$: 1, a: a};
 };
-var elm$http$Http$State = F2(
+var $elm$http$Http$State = F2(
 	function (reqs, subs) {
-		return {bb: reqs, bl: subs};
+		return {a4: reqs, bf: subs};
 	});
-var elm$http$Http$init = elm$core$Task$succeed(
-	A2(elm$http$Http$State, elm$core$Dict$empty, _List_Nil));
-var elm$http$Http$updateReqs = F3(
+var $elm$http$Http$init = $elm$core$Task$succeed(
+	A2($elm$http$Http$State, $elm$core$Dict$empty, _List_Nil));
+var $elm$http$Http$updateReqs = F3(
 	function (router, cmds, reqs) {
 		updateReqs:
 		while (true) {
 			if (!cmds.b) {
-				return elm$core$Task$succeed(reqs);
+				return $elm$core$Task$succeed(reqs);
 			} else {
 				var cmd = cmds.a;
 				var otherCmds = cmds.b;
 				if (!cmd.$) {
 					var tracker = cmd.a;
-					var _n2 = A2(elm$core$Dict$get, tracker, reqs);
-					if (_n2.$ === 1) {
+					var _v2 = A2($elm$core$Dict$get, tracker, reqs);
+					if (_v2.$ === 1) {
 						var $temp$router = router,
 							$temp$cmds = otherCmds,
 							$temp$reqs = reqs;
@@ -9164,642 +9150,644 @@ var elm$http$Http$updateReqs = F3(
 						reqs = $temp$reqs;
 						continue updateReqs;
 					} else {
-						var pid = _n2.a;
+						var pid = _v2.a;
 						return A2(
-							elm$core$Task$andThen,
-							function (_n3) {
+							$elm$core$Task$andThen,
+							function (_v3) {
 								return A3(
-									elm$http$Http$updateReqs,
+									$elm$http$Http$updateReqs,
 									router,
 									otherCmds,
-									A2(elm$core$Dict$remove, tracker, reqs));
+									A2($elm$core$Dict$remove, tracker, reqs));
 							},
-							elm$core$Process$kill(pid));
+							$elm$core$Process$kill(pid));
 					}
 				} else {
 					var req = cmd.a;
 					return A2(
-						elm$core$Task$andThen,
+						$elm$core$Task$andThen,
 						function (pid) {
-							var _n4 = req.r;
-							if (_n4.$ === 1) {
-								return A3(elm$http$Http$updateReqs, router, otherCmds, reqs);
+							var _v4 = req.bi;
+							if (_v4.$ === 1) {
+								return A3($elm$http$Http$updateReqs, router, otherCmds, reqs);
 							} else {
-								var tracker = _n4.a;
+								var tracker = _v4.a;
 								return A3(
-									elm$http$Http$updateReqs,
+									$elm$http$Http$updateReqs,
 									router,
 									otherCmds,
-									A3(elm$core$Dict$insert, tracker, pid, reqs));
+									A3($elm$core$Dict$insert, tracker, pid, reqs));
 							}
 						},
-						elm$core$Process$spawn(
+						$elm$core$Process$spawn(
 							A3(
 								_Http_toTask,
 								router,
-								elm$core$Platform$sendToApp(router),
+								$elm$core$Platform$sendToApp(router),
 								req)));
 				}
 			}
 		}
 	});
-var elm$http$Http$onEffects = F4(
+var $elm$http$Http$onEffects = F4(
 	function (router, cmds, subs, state) {
 		return A2(
-			elm$core$Task$andThen,
+			$elm$core$Task$andThen,
 			function (reqs) {
-				return elm$core$Task$succeed(
-					A2(elm$http$Http$State, reqs, subs));
+				return $elm$core$Task$succeed(
+					A2($elm$http$Http$State, reqs, subs));
 			},
-			A3(elm$http$Http$updateReqs, router, cmds, state.bb));
+			A3($elm$http$Http$updateReqs, router, cmds, state.a4));
 	});
-var elm$http$Http$maybeSend = F4(
-	function (router, desiredTracker, progress, _n0) {
-		var actualTracker = _n0.a;
-		var toMsg = _n0.b;
-		return _Utils_eq(desiredTracker, actualTracker) ? elm$core$Maybe$Just(
+var $elm$http$Http$maybeSend = F4(
+	function (router, desiredTracker, progress, _v0) {
+		var actualTracker = _v0.a;
+		var toMsg = _v0.b;
+		return _Utils_eq(desiredTracker, actualTracker) ? $elm$core$Maybe$Just(
 			A2(
-				elm$core$Platform$sendToApp,
+				$elm$core$Platform$sendToApp,
 				router,
-				toMsg(progress))) : elm$core$Maybe$Nothing;
+				toMsg(progress))) : $elm$core$Maybe$Nothing;
 	});
-var elm$http$Http$onSelfMsg = F3(
-	function (router, _n0, state) {
-		var tracker = _n0.a;
-		var progress = _n0.b;
+var $elm$http$Http$onSelfMsg = F3(
+	function (router, _v0, state) {
+		var tracker = _v0.a;
+		var progress = _v0.b;
 		return A2(
-			elm$core$Task$andThen,
-			function (_n1) {
-				return elm$core$Task$succeed(state);
+			$elm$core$Task$andThen,
+			function (_v1) {
+				return $elm$core$Task$succeed(state);
 			},
-			elm$core$Task$sequence(
+			$elm$core$Task$sequence(
 				A2(
-					elm$core$List$filterMap,
-					A3(elm$http$Http$maybeSend, router, tracker, progress),
-					state.bl)));
+					$elm$core$List$filterMap,
+					A3($elm$http$Http$maybeSend, router, tracker, progress),
+					state.bf)));
 	});
-var elm$http$Http$Cancel = function (a) {
+var $elm$http$Http$Cancel = function (a) {
 	return {$: 0, a: a};
 };
-var elm$http$Http$cmdMap = F2(
+var $elm$http$Http$cmdMap = F2(
 	function (func, cmd) {
 		if (!cmd.$) {
 			var tracker = cmd.a;
-			return elm$http$Http$Cancel(tracker);
+			return $elm$http$Http$Cancel(tracker);
 		} else {
 			var r = cmd.a;
-			return elm$http$Http$Request(
+			return $elm$http$Http$Request(
 				{
-					E: r.E,
-					bs: r.bs,
-					bA: A2(_Http_mapExpect, func, r.bA),
-					i: r.i,
-					n: r.n,
-					q: r.q,
-					r: r.r,
-					b4: r.b4
+					bm: r.bm,
+					bp: r.bp,
+					bx: A2(_Http_mapExpect, func, r.bx),
+					aO: r.aO,
+					bF: r.bF,
+					b0: r.b0,
+					bi: r.bi,
+					b3: r.b3
 				});
 		}
 	});
-var elm$http$Http$MySub = F2(
+var $elm$http$Http$MySub = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
 	});
-var elm$http$Http$subMap = F2(
-	function (func, _n0) {
-		var tracker = _n0.a;
-		var toMsg = _n0.b;
+var $elm$http$Http$subMap = F2(
+	function (func, _v0) {
+		var tracker = _v0.a;
+		var toMsg = _v0.b;
 		return A2(
-			elm$http$Http$MySub,
+			$elm$http$Http$MySub,
 			tracker,
-			A2(elm$core$Basics$composeR, toMsg, func));
+			A2($elm$core$Basics$composeR, toMsg, func));
 	});
-_Platform_effectManagers['Http'] = _Platform_createManager(elm$http$Http$init, elm$http$Http$onEffects, elm$http$Http$onSelfMsg, elm$http$Http$cmdMap, elm$http$Http$subMap);
-var elm$http$Http$command = _Platform_leaf('Http');
-var elm$http$Http$subscription = _Platform_leaf('Http');
-var elm$http$Http$request = function (r) {
-	return elm$http$Http$command(
-		elm$http$Http$Request(
-			{E: false, bs: r.bs, bA: r.bA, i: r.i, n: r.n, q: r.q, r: r.r, b4: r.b4}));
+_Platform_effectManagers['Http'] = _Platform_createManager($elm$http$Http$init, $elm$http$Http$onEffects, $elm$http$Http$onSelfMsg, $elm$http$Http$cmdMap, $elm$http$Http$subMap);
+var $elm$http$Http$command = _Platform_leaf('Http');
+var $elm$http$Http$subscription = _Platform_leaf('Http');
+var $elm$http$Http$request = function (r) {
+	return $elm$http$Http$command(
+		$elm$http$Http$Request(
+			{bm: false, bp: r.bp, bx: r.bx, aO: r.aO, bF: r.bF, b0: r.b0, bi: r.bi, b3: r.b3}));
 };
-var elm$http$Http$get = function (r) {
-	return elm$http$Http$request(
-		{bs: elm$http$Http$emptyBody, bA: r.bA, i: _List_Nil, n: 'GET', q: elm$core$Maybe$Nothing, r: elm$core$Maybe$Nothing, b4: r.b4});
+var $elm$http$Http$get = function (r) {
+	return $elm$http$Http$request(
+		{bp: $elm$http$Http$emptyBody, bx: r.bx, aO: _List_Nil, bF: 'GET', b0: $elm$core$Maybe$Nothing, bi: $elm$core$Maybe$Nothing, b3: r.b3});
 };
-var author$project$Request$fetchRom = F2(
+var $author$project$Request$romsUrlPrefix = '/roms/';
+var $author$project$Request$fetchRom = F2(
 	function (romName, toMsg) {
-		return elm$http$Http$get(
+		return $elm$http$Http$get(
 			{
-				bA: A2(elm$http$Http$expectBytesResponse, toMsg, author$project$Request$decodeBytesResponse),
-				b4: _Utils_ap(author$project$Request$romsUrlPrefix, romName)
+				bx: A2($elm$http$Http$expectBytesResponse, toMsg, $author$project$Request$decodeBytesResponse),
+				b3: _Utils_ap($author$project$Request$romsUrlPrefix, romName)
 			});
 	});
-var author$project$Main$loadGame = function (gameName) {
-	return A2(author$project$Request$fetchRom, gameName, author$project$Msg$LoadedGame);
+var $author$project$Main$loadGame = function (gameName) {
+	return A2($author$project$Request$fetchRom, gameName, $author$project$Msg$LoadedGame);
 };
-var author$project$Main$selectGame = F2(
+var $author$project$Main$selectGame = F2(
 	function (gameName, model) {
 		var selectedGame = A2(
-			elm_community$list_extra$List$Extra$find,
+			$elm_community$list_extra$List$Extra$find,
 			A2(
-				elm$core$Basics$composeR,
+				$elm$core$Basics$composeR,
 				function ($) {
-					return $.v;
+					return $.r;
 				},
-				elm$core$Basics$eq(gameName)),
-			model.ai);
-		var newVirtualMachine = author$project$VirtualMachine$init;
+				$elm$core$Basics$eq(gameName)),
+			model.ab);
+		var newVirtualMachine = $author$project$VirtualMachine$init;
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
-				{ay: elm$core$Maybe$Nothing, K: selectedGame, b: newVirtualMachine}),
-			author$project$Main$loadGame(gameName));
+				{aq: $elm$core$Maybe$Nothing, F: selectedGame, b: newVirtualMachine}),
+			$author$project$Main$loadGame(gameName));
 	});
-var author$project$Main$reloadGame = function (model) {
-	var _n0 = model.K;
-	if (!_n0.$) {
-		var game = _n0.a;
-		var _n1 = A2(author$project$Main$selectGame, game.v, model);
-		var newModel = _n1.a;
-		var cmd = _n1.b;
+var $author$project$Main$reloadGame = function (model) {
+	var _v0 = model.F;
+	if (!_v0.$) {
+		var game = _v0.a;
+		var _v1 = A2($author$project$Main$selectGame, game.r, model);
+		var newModel = _v1.a;
+		var cmd = _v1.b;
 		return _Utils_Tuple2(newModel, cmd);
 	} else {
-		return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	}
 };
-var author$project$Keypad$removeKeyPress = F2(
+var $author$project$Keypad$removeKeyPress = F2(
 	function (keyCode, keysPressed) {
 		return A3(
-			elm$core$Dict$insert,
-			author$project$KeyCode$nibbleValue(keyCode),
+			$elm$core$Dict$insert,
+			$author$project$KeyCode$nibbleValue(keyCode),
 			false,
 			keysPressed);
 	});
-var author$project$Main$removeKeyCode = F2(
+var $author$project$Main$removeKeyCode = F2(
 	function (maybeKeyCode, model) {
 		if (!maybeKeyCode.$) {
 			var keyCode = maybeKeyCode.a;
 			var newKeypad = A2(
-				author$project$Keypad$removeKeyPress,
+				$author$project$Keypad$removeKeyPress,
 				keyCode,
-				author$project$VirtualMachine$getKeypad(model.b));
-			var newVirtualMachine = A2(author$project$VirtualMachine$setKeypad, newKeypad, model.b);
+				$author$project$VirtualMachine$getKeypad(model.b));
+			var newVirtualMachine = A2($author$project$VirtualMachine$setKeypad, newKeypad, model.b);
 			return _Utils_Tuple2(
 				_Utils_update(
 					model,
 					{b: newVirtualMachine}),
-				elm$core$Platform$Cmd$none);
+				$elm$core$Platform$Cmd$none);
 		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Main$update = F2(
+var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 1:
 				var maybeKeyCode = msg.a;
-				return A2(author$project$Main$addKeyCode, maybeKeyCode, model);
+				return A2($author$project$Main$addKeyCode, maybeKeyCode, model);
 			case 0:
 				var maybeKeyCode = msg.a;
-				return A2(author$project$Main$removeKeyCode, maybeKeyCode, model);
+				return A2($author$project$Main$removeKeyCode, maybeKeyCode, model);
 			case 2:
-				var keyCode = msg.a;
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			case 3:
-				return author$project$Main$delayTick(model);
+				return $author$project$Main$delayTick(model);
 			case 4:
-				return author$project$Main$clockTick(model);
+				return $author$project$Main$clockTick(model);
 			case 5:
 				var gameName = msg.a;
-				return A2(author$project$Main$selectGame, gameName, model);
+				return A2($author$project$Main$selectGame, gameName, model);
 			case 6:
-				return author$project$Main$reloadGame(model);
+				return $author$project$Main$reloadGame(model);
 			default:
 				var gameBytesResult = msg.a;
-				return A2(author$project$Main$readProgram, gameBytesResult, model);
+				return A2($author$project$Main$readProgram, gameBytesResult, model);
 		}
 	});
-var author$project$Main$cellSize = 10;
-var author$project$Main$height = 32 * author$project$Main$cellSize;
-var author$project$Main$backgroundColor = {P: 227, R: 246, V: 253};
-var author$project$Main$cellColor = {P: 41, R: 37, V: 33};
-var elm$json$Json$Encode$float = _Json_wrap;
-var joakin$elm_canvas$Canvas$Commands = elm$core$Basics$identity;
-var joakin$elm_canvas$Canvas$addTo = F2(
-	function (_n0, cmd) {
-		var list = _n0;
-		return A2(elm$core$List$cons, cmd, list);
+var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $joakin$elm_canvas$Canvas$Commands = $elm$core$Basics$identity;
+var $joakin$elm_canvas$Canvas$addTo = F2(
+	function (_v0, cmd) {
+		var list = _v0;
+		return A2($elm$core$List$cons, cmd, list);
 	});
-var elm$json$Json$Encode$list = F2(
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $elm$json$Json$Encode$list = F2(
 	function (func, entries) {
 		return _Json_wrap(
 			A3(
-				elm$core$List$foldl,
+				$elm$core$List$foldl,
 				_Json_addEntry(func),
 				_Json_emptyArray(0),
 				entries));
 	});
-var elm$json$Json$Encode$object = function (pairs) {
+var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
-			elm$core$List$foldl,
+			$elm$core$List$foldl,
 			F2(
-				function (_n0, obj) {
-					var k = _n0.a;
-					var v = _n0.b;
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
 					return A3(_Json_addField, k, v, obj);
 				}),
 			_Json_emptyObject(0),
 			pairs));
 };
-var elm$json$Json$Encode$string = _Json_wrap;
-var joakin$elm_canvas$Canvas$fn = F2(
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $joakin$elm_canvas$Canvas$fn = F2(
 	function (name, args) {
-		return elm$json$Json$Encode$object(
+		return $elm$json$Json$Encode$object(
 			_List_fromArray(
 				[
 					_Utils_Tuple2(
 					'type',
-					elm$json$Json$Encode$string('function')),
+					$elm$json$Json$Encode$string('function')),
 					_Utils_Tuple2(
 					'name',
-					elm$json$Json$Encode$string(name)),
+					$elm$json$Json$Encode$string(name)),
 					_Utils_Tuple2(
 					'args',
-					A2(elm$json$Json$Encode$list, elm$core$Basics$identity, args))
+					A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, args))
 				]));
 	});
-var joakin$elm_canvas$Canvas$fillRect = F5(
-	function (x, y, w, h, cmds) {
-		return A2(
-			joakin$elm_canvas$Canvas$addTo,
-			cmds,
-			A2(
-				joakin$elm_canvas$Canvas$fn,
-				'fillRect',
-				_List_fromArray(
-					[
-						elm$json$Json$Encode$float(x),
-						elm$json$Json$Encode$float(y),
-						elm$json$Json$Encode$float(w),
-						elm$json$Json$Encode$float(h)
-					])));
-	});
-var elm$core$String$fromFloat = _String_fromNumber;
-var elm$core$Basics$round = _Basics_round;
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var elm$core$Basics$pi = _Basics_pi;
-var elm$core$Basics$degrees = function (angleInDegrees) {
-	return (angleInDegrees * elm$core$Basics$pi) / 180;
-};
-var joakin$elm_canvas$CanvasColor$fmod = F2(
-	function (f, n) {
-		var integer = elm$core$Basics$floor(f);
-		return ((integer % n) + f) - integer;
-	});
-var joakin$elm_canvas$CanvasColor$hslToRgb = F3(
-	function (hue, saturation, lightness) {
-		var normHue = hue / elm$core$Basics$degrees(60);
-		var chroma = (1 - elm$core$Basics$abs((2 * lightness) - 1)) * saturation;
-		var m = lightness - (chroma / 2);
-		var x = chroma * (1 - elm$core$Basics$abs(
-			A2(joakin$elm_canvas$CanvasColor$fmod, normHue, 2) - 1));
-		var _n0 = (normHue < 0) ? _Utils_Tuple3(0, 0, 0) : ((normHue < 1) ? _Utils_Tuple3(chroma, x, 0) : ((normHue < 2) ? _Utils_Tuple3(x, chroma, 0) : ((normHue < 3) ? _Utils_Tuple3(0, chroma, x) : ((normHue < 4) ? _Utils_Tuple3(0, x, chroma) : ((normHue < 5) ? _Utils_Tuple3(x, 0, chroma) : ((normHue < 6) ? _Utils_Tuple3(chroma, 0, x) : _Utils_Tuple3(0, 0, 0)))))));
-		var r = _n0.a;
-		var g = _n0.b;
-		var b = _n0.c;
-		return _Utils_Tuple3(r + m, g + m, b + m);
-	});
-var joakin$elm_canvas$CanvasColor$toRgb = function (color) {
-	if (!color.$) {
-		var r = color.a;
-		var g = color.b;
-		var b = color.c;
-		var a = color.d;
-		return {bq: a, P: b, R: g, V: r};
-	} else {
-		var h = color.a;
-		var s = color.b;
-		var l = color.c;
-		var a = color.d;
-		var _n1 = A3(joakin$elm_canvas$CanvasColor$hslToRgb, h, s, l);
-		var r = _n1.a;
-		var g = _n1.b;
-		var b = _n1.c;
-		return {
-			bq: a,
-			P: elm$core$Basics$round(255 * b),
-			R: elm$core$Basics$round(255 * g),
-			V: elm$core$Basics$round(255 * r)
-		};
-	}
-};
-var joakin$elm_canvas$Canvas$colorToCSSString = function (color) {
-	var _n0 = joakin$elm_canvas$CanvasColor$toRgb(color);
-	var red = _n0.V;
-	var green = _n0.R;
-	var blue = _n0.P;
-	var alpha = _n0.bq;
-	return 'rgba(' + (elm$core$String$fromInt(red) + (', ' + (elm$core$String$fromInt(green) + (', ' + (elm$core$String$fromInt(blue) + (', ' + (elm$core$String$fromFloat(alpha) + ')')))))));
-};
-var joakin$elm_canvas$Canvas$field = F2(
-	function (name, value) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'type',
-					elm$json$Json$Encode$string('field')),
-					_Utils_Tuple2(
-					'name',
-					elm$json$Json$Encode$string(name)),
-					_Utils_Tuple2('value', value)
-				]));
-	});
-var joakin$elm_canvas$Canvas$fillStyle = F2(
-	function (color, cmds) {
-		return A2(
-			joakin$elm_canvas$Canvas$addTo,
-			cmds,
-			A2(
-				joakin$elm_canvas$Canvas$field,
-				'fillStyle',
-				elm$json$Json$Encode$string(
-					joakin$elm_canvas$Canvas$colorToCSSString(color))));
-	});
-var joakin$elm_canvas$CanvasColor$RGBA = F4(
-	function (a, b, c, d) {
-		return {$: 0, a: a, b: b, c: c, d: d};
-	});
-var joakin$elm_canvas$CanvasColor$rgba = joakin$elm_canvas$CanvasColor$RGBA;
-var author$project$Main$renderCell = F4(
-	function (rowIdx, columnIdx, cellValue, commands) {
-		var color = cellValue ? A4(joakin$elm_canvas$CanvasColor$rgba, author$project$Main$cellColor.V, author$project$Main$cellColor.R, author$project$Main$cellColor.P, 1) : A4(joakin$elm_canvas$CanvasColor$rgba, author$project$Main$backgroundColor.V, author$project$Main$backgroundColor.R, author$project$Main$backgroundColor.P, 1);
-		var _n0 = _Utils_Tuple2(rowIdx * author$project$Main$cellSize, columnIdx * author$project$Main$cellSize);
-		var x = _n0.a;
-		var y = _n0.b;
-		return A5(
-			joakin$elm_canvas$Canvas$fillRect,
-			x,
-			y,
-			author$project$Main$cellSize,
-			author$project$Main$cellSize,
-			A2(joakin$elm_canvas$Canvas$fillStyle, color, commands));
-	});
-var author$project$Main$renderCellRow = F3(
-	function (rowIdx, rowCells, commands) {
-		return A3(
-			elm_community$list_extra$List$Extra$indexedFoldl,
-			author$project$Main$renderCell(rowIdx),
-			commands,
-			elm$core$Array$toList(rowCells));
-	});
-var author$project$Main$renderDisplay = F2(
-	function (displayCells, commands) {
-		return A3(
-			elm_community$list_extra$List$Extra$indexedFoldl,
-			author$project$Main$renderCellRow,
-			commands,
-			elm$core$Array$toList(displayCells));
-	});
-var author$project$Main$width = 64 * author$project$Main$cellSize;
-var joakin$elm_canvas$Canvas$clearRect = F5(
+var $joakin$elm_canvas$Canvas$clearRect = F5(
 	function (x, y, width, height, cmds) {
 		return A2(
-			joakin$elm_canvas$Canvas$addTo,
+			$joakin$elm_canvas$Canvas$addTo,
 			cmds,
 			A2(
-				joakin$elm_canvas$Canvas$fn,
+				$joakin$elm_canvas$Canvas$fn,
 				'clearRect',
 				_List_fromArray(
 					[
-						elm$json$Json$Encode$float(x),
-						elm$json$Json$Encode$float(y),
-						elm$json$Json$Encode$float(width),
-						elm$json$Json$Encode$float(height)
+						$elm$json$Json$Encode$float(x),
+						$elm$json$Json$Encode$float(y),
+						$elm$json$Json$Encode$float(width),
+						$elm$json$Json$Encode$float(height)
 					])));
 	});
-var elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
-		}
-	});
-var elm$core$List$concat = function (lists) {
-	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
-};
-var elm$html$Html$canvas = _VirtualDom_node('canvas');
-var elm$virtual_dom$VirtualDom$node = function (tag) {
-	return _VirtualDom_node(
-		_VirtualDom_noScript(tag));
-};
-var elm$html$Html$node = elm$virtual_dom$VirtualDom$node;
-var elm$html$Html$Attributes$height = function (n) {
-	return A2(
-		_VirtualDom_attribute,
-		'height',
-		elm$core$String$fromInt(n));
-};
-var elm$html$Html$Attributes$width = function (n) {
-	return A2(
-		_VirtualDom_attribute,
-		'width',
-		elm$core$String$fromInt(n));
-};
-var elm$virtual_dom$VirtualDom$property = F2(
+var $elm$html$Html$canvas = _VirtualDom_node('canvas');
+var $elm$virtual_dom$VirtualDom$property = F2(
 	function (key, value) {
 		return A2(
 			_VirtualDom_property,
 			_VirtualDom_noInnerHtmlOrFormAction(key),
 			_VirtualDom_noJavaScriptOrHtmlUri(value));
 	});
-var elm$html$Html$Attributes$property = elm$virtual_dom$VirtualDom$property;
-var joakin$elm_canvas$Canvas$commands = function (_n0) {
-	var list = _n0;
+var $elm$html$Html$Attributes$property = $elm$virtual_dom$VirtualDom$property;
+var $joakin$elm_canvas$Canvas$commands = function (_v0) {
+	var list = _v0;
 	return A2(
-		elm$html$Html$Attributes$property,
+		$elm$html$Html$Attributes$property,
 		'cmds',
-		A2(elm$json$Json$Encode$list, elm$core$Basics$identity, list));
+		A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, list));
 };
-var joakin$elm_canvas$Canvas$element = F4(
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
+var $elm$html$Html$Attributes$height = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'height',
+		$elm$core$String$fromInt(n));
+};
+var $elm$virtual_dom$VirtualDom$node = function (tag) {
+	return _VirtualDom_node(
+		_VirtualDom_noScript(tag));
+};
+var $elm$html$Html$node = $elm$virtual_dom$VirtualDom$node;
+var $elm$html$Html$Attributes$width = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'width',
+		$elm$core$String$fromInt(n));
+};
+var $joakin$elm_canvas$Canvas$element = F4(
 	function (w, h, attrs, cmds) {
 		return A3(
-			elm$html$Html$node,
+			$elm$html$Html$node,
 			'elm-canvas',
 			_List_fromArray(
 				[
-					joakin$elm_canvas$Canvas$commands(cmds)
+					$joakin$elm_canvas$Canvas$commands(cmds)
 				]),
 			_List_fromArray(
 				[
 					A2(
-					elm$html$Html$canvas,
-					elm$core$List$concat(
+					$elm$html$Html$canvas,
+					$elm$core$List$concat(
 						_List_fromArray(
 							[
 								_List_fromArray(
 								[
-									elm$html$Html$Attributes$height(h),
-									elm$html$Html$Attributes$width(w)
+									$elm$html$Html$Attributes$height(h),
+									$elm$html$Html$Attributes$width(w)
 								]),
 								attrs
 							])),
 					_List_Nil)
 				]));
 	});
-var joakin$elm_canvas$Canvas$empty = _List_Nil;
-var author$project$Main$viewCanvas = function (model) {
+var $joakin$elm_canvas$Canvas$empty = _List_Nil;
+var $author$project$Main$cellSize = 10;
+var $author$project$Main$height = 32 * $author$project$Main$cellSize;
+var $author$project$Main$backgroundColor = {K: 227, M: 246, Q: 253};
+var $author$project$Main$cellColor = {K: 41, M: 37, Q: 33};
+var $joakin$elm_canvas$Canvas$fillRect = F5(
+	function (x, y, w, h, cmds) {
+		return A2(
+			$joakin$elm_canvas$Canvas$addTo,
+			cmds,
+			A2(
+				$joakin$elm_canvas$Canvas$fn,
+				'fillRect',
+				_List_fromArray(
+					[
+						$elm$json$Json$Encode$float(x),
+						$elm$json$Json$Encode$float(y),
+						$elm$json$Json$Encode$float(w),
+						$elm$json$Json$Encode$float(h)
+					])));
+	});
+var $elm$core$String$fromFloat = _String_fromNumber;
+var $elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var $elm$core$Basics$pi = _Basics_pi;
+var $elm$core$Basics$degrees = function (angleInDegrees) {
+	return (angleInDegrees * $elm$core$Basics$pi) / 180;
+};
+var $joakin$elm_canvas$CanvasColor$fmod = F2(
+	function (f, n) {
+		var integer = $elm$core$Basics$floor(f);
+		return ((integer % n) + f) - integer;
+	});
+var $joakin$elm_canvas$CanvasColor$hslToRgb = F3(
+	function (hue, saturation, lightness) {
+		var normHue = hue / $elm$core$Basics$degrees(60);
+		var chroma = (1 - $elm$core$Basics$abs((2 * lightness) - 1)) * saturation;
+		var m = lightness - (chroma / 2);
+		var x = chroma * (1 - $elm$core$Basics$abs(
+			A2($joakin$elm_canvas$CanvasColor$fmod, normHue, 2) - 1));
+		var _v0 = (normHue < 0) ? _Utils_Tuple3(0, 0, 0) : ((normHue < 1) ? _Utils_Tuple3(chroma, x, 0) : ((normHue < 2) ? _Utils_Tuple3(x, chroma, 0) : ((normHue < 3) ? _Utils_Tuple3(0, chroma, x) : ((normHue < 4) ? _Utils_Tuple3(0, x, chroma) : ((normHue < 5) ? _Utils_Tuple3(x, 0, chroma) : ((normHue < 6) ? _Utils_Tuple3(chroma, 0, x) : _Utils_Tuple3(0, 0, 0)))))));
+		var r = _v0.a;
+		var g = _v0.b;
+		var b = _v0.c;
+		return _Utils_Tuple3(r + m, g + m, b + m);
+	});
+var $elm$core$Basics$round = _Basics_round;
+var $joakin$elm_canvas$CanvasColor$toRgb = function (color) {
+	if (!color.$) {
+		var r = color.a;
+		var g = color.b;
+		var b = color.c;
+		var a = color.d;
+		return {bn: a, K: b, M: g, Q: r};
+	} else {
+		var h = color.a;
+		var s = color.b;
+		var l = color.c;
+		var a = color.d;
+		var _v1 = A3($joakin$elm_canvas$CanvasColor$hslToRgb, h, s, l);
+		var r = _v1.a;
+		var g = _v1.b;
+		var b = _v1.c;
+		return {
+			bn: a,
+			K: $elm$core$Basics$round(255 * b),
+			M: $elm$core$Basics$round(255 * g),
+			Q: $elm$core$Basics$round(255 * r)
+		};
+	}
+};
+var $joakin$elm_canvas$Canvas$colorToCSSString = function (color) {
+	var _v0 = $joakin$elm_canvas$CanvasColor$toRgb(color);
+	var red = _v0.Q;
+	var green = _v0.M;
+	var blue = _v0.K;
+	var alpha = _v0.bn;
+	return 'rgba(' + ($elm$core$String$fromInt(red) + (', ' + ($elm$core$String$fromInt(green) + (', ' + ($elm$core$String$fromInt(blue) + (', ' + ($elm$core$String$fromFloat(alpha) + ')')))))));
+};
+var $joakin$elm_canvas$Canvas$field = F2(
+	function (name, value) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'type',
+					$elm$json$Json$Encode$string('field')),
+					_Utils_Tuple2(
+					'name',
+					$elm$json$Json$Encode$string(name)),
+					_Utils_Tuple2('value', value)
+				]));
+	});
+var $joakin$elm_canvas$Canvas$fillStyle = F2(
+	function (color, cmds) {
+		return A2(
+			$joakin$elm_canvas$Canvas$addTo,
+			cmds,
+			A2(
+				$joakin$elm_canvas$Canvas$field,
+				'fillStyle',
+				$elm$json$Json$Encode$string(
+					$joakin$elm_canvas$Canvas$colorToCSSString(color))));
+	});
+var $joakin$elm_canvas$CanvasColor$RGBA = F4(
+	function (a, b, c, d) {
+		return {$: 0, a: a, b: b, c: c, d: d};
+	});
+var $joakin$elm_canvas$CanvasColor$rgba = $joakin$elm_canvas$CanvasColor$RGBA;
+var $author$project$Main$renderCell = F4(
+	function (rowIdx, columnIdx, cellValue, commands) {
+		var color = cellValue ? A4($joakin$elm_canvas$CanvasColor$rgba, $author$project$Main$cellColor.Q, $author$project$Main$cellColor.M, $author$project$Main$cellColor.K, 1) : A4($joakin$elm_canvas$CanvasColor$rgba, $author$project$Main$backgroundColor.Q, $author$project$Main$backgroundColor.M, $author$project$Main$backgroundColor.K, 1);
+		var _v0 = _Utils_Tuple2(rowIdx * $author$project$Main$cellSize, columnIdx * $author$project$Main$cellSize);
+		var x = _v0.a;
+		var y = _v0.b;
+		return A5(
+			$joakin$elm_canvas$Canvas$fillRect,
+			x,
+			y,
+			$author$project$Main$cellSize,
+			$author$project$Main$cellSize,
+			A2($joakin$elm_canvas$Canvas$fillStyle, color, commands));
+	});
+var $author$project$Main$renderCellRow = F3(
+	function (rowIdx, rowCells, commands) {
+		return A3(
+			$elm_community$list_extra$List$Extra$indexedFoldl,
+			$author$project$Main$renderCell(rowIdx),
+			commands,
+			$elm$core$Array$toList(rowCells));
+	});
+var $author$project$Main$renderDisplay = F2(
+	function (displayCells, commands) {
+		return A3(
+			$elm_community$list_extra$List$Extra$indexedFoldl,
+			$author$project$Main$renderCellRow,
+			commands,
+			$elm$core$Array$toList(displayCells));
+	});
+var $author$project$Main$width = 64 * $author$project$Main$cellSize;
+var $author$project$Main$viewCanvas = function (model) {
 	return A4(
-		joakin$elm_canvas$Canvas$element,
-		author$project$Main$width,
-		author$project$Main$height,
+		$joakin$elm_canvas$Canvas$element,
+		$author$project$Main$width,
+		$author$project$Main$height,
 		_List_Nil,
 		A2(
-			author$project$Main$renderDisplay,
-			model.b.bx,
-			A5(joakin$elm_canvas$Canvas$clearRect, 0, 0, author$project$Main$width, author$project$Main$height, joakin$elm_canvas$Canvas$empty)));
+			$author$project$Main$renderDisplay,
+			model.b.bu,
+			A5($joakin$elm_canvas$Canvas$clearRect, 0, 0, $author$project$Main$width, $author$project$Main$height, $joakin$elm_canvas$Canvas$empty)));
 };
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 0, a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
-	});
-var elm$html$Html$Events$targetValue = A2(
-	elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	elm$json$Json$Decode$string);
-var author$project$Main$onChange = function (tagger) {
-	return A2(
-		elm$html$Html$Events$on,
-		'change',
-		A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue));
-};
-var author$project$Msg$ReloadGame = {$: 6};
-var author$project$Msg$SelectGame = function (a) {
+var $author$project$Msg$ReloadGame = {$: 6};
+var $author$project$Msg$SelectGame = function (a) {
 	return {$: 5, a: a};
 };
-var elm$html$Html$button = _VirtualDom_node('button');
-var elm$html$Html$div = _VirtualDom_node('div');
-var elm$html$Html$option = _VirtualDom_node('option');
-var elm$html$Html$section = _VirtualDom_node('section');
-var elm$html$Html$select = _VirtualDom_node('select');
-var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
-var elm$html$Html$Attributes$stringProperty = F2(
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
 			_VirtualDom_property,
 			key,
-			elm$json$Json$Encode$string(string));
+			$elm$json$Json$Encode$string(string));
 	});
-var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
-var elm$html$Html$Attributes$id = elm$html$Html$Attributes$stringProperty('id');
-var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
-var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
-var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('value');
-var elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 0, a: a};
 };
-var author$project$Main$viewGameSelector = function (model) {
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $author$project$Main$onChange = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'change',
+		A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue));
+};
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$html$Html$option = _VirtualDom_node('option');
+var $elm$html$Html$section = _VirtualDom_node('section');
+var $elm$html$Html$select = _VirtualDom_node('select');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Main$viewGameSelector = function (model) {
 	var reloadButton = _List_fromArray(
 		[
 			A2(
-			elm$html$Html$button,
+			$elm$html$Html$button,
 			_List_fromArray(
 				[
-					elm$html$Html$Attributes$id('game-reload'),
-					elm$html$Html$Attributes$class('nes-btn is-warning'),
-					A2(elm$html$Html$Attributes$style, 'margin-left', '0.5em'),
-					elm$html$Html$Events$onClick(author$project$Msg$ReloadGame)
+					$elm$html$Html$Attributes$id('game-reload'),
+					$elm$html$Html$Attributes$class('nes-btn is-warning'),
+					A2($elm$html$Html$Attributes$style, 'margin-left', '0.5em'),
+					$elm$html$Html$Events$onClick($author$project$Msg$ReloadGame)
 				]),
 			_List_fromArray(
 				[
-					elm$html$Html$text('RELOAD')
+					$elm$html$Html$text('RELOAD')
 				]))
 		]);
 	var gameOption = function (game) {
 		return A2(
-			elm$html$Html$option,
+			$elm$html$Html$option,
 			_List_fromArray(
 				[
-					elm$html$Html$Attributes$value(game.v)
+					$elm$html$Html$Attributes$value(game.r)
 				]),
 			_List_fromArray(
 				[
-					elm$html$Html$text(game.v)
+					$elm$html$Html$text(game.r)
 				]));
 	};
 	var gameOptions = A2(
-		elm$core$List$cons,
+		$elm$core$List$cons,
 		A2(
-			elm$html$Html$option,
+			$elm$html$Html$option,
 			_List_fromArray(
 				[
-					elm$html$Html$Attributes$value('')
+					$elm$html$Html$Attributes$value('')
 				]),
 			_List_fromArray(
 				[
-					elm$html$Html$text('SELECT GAME')
+					$elm$html$Html$text('SELECT GAME')
 				])),
-		A2(elm$core$List$map, gameOption, model.ai));
+		A2($elm$core$List$map, gameOption, model.ab));
 	var gameSelector = _List_fromArray(
 		[
 			A2(
-			elm$html$Html$div,
+			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					elm$html$Html$Attributes$class('nes-select'),
-					A2(elm$html$Html$Attributes$style, 'width', '15%'),
-					A2(elm$html$Html$Attributes$style, 'left', '42.5%'),
-					A2(elm$html$Html$Attributes$style, 'margin-bottom', '1em')
+					$elm$html$Html$Attributes$class('nes-select'),
+					A2($elm$html$Html$Attributes$style, 'width', '15%'),
+					A2($elm$html$Html$Attributes$style, 'left', '42.5%'),
+					A2($elm$html$Html$Attributes$style, 'margin-bottom', '1em')
 				]),
 			_List_fromArray(
 				[
 					A2(
-					elm$html$Html$select,
+					$elm$html$Html$select,
 					_List_fromArray(
 						[
-							elm$html$Html$Attributes$id('game-selector'),
-							author$project$Main$onChange(author$project$Msg$SelectGame)
+							$elm$html$Html$Attributes$id('game-selector'),
+							$author$project$Main$onChange($author$project$Msg$SelectGame)
 						]),
 					gameOptions)
 				]))
 		]);
 	return A2(
-		elm$html$Html$section,
+		$elm$html$Html$section,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$id('games-container')
+				$elm$html$Html$Attributes$id('games-container')
 			]),
 		_Utils_ap(gameSelector, reloadButton));
 };
-var elm$html$Html$h1 = _VirtualDom_node('h1');
-var author$project$Main$viewHeader = A2(
-	elm$html$Html$h1,
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $author$project$Main$viewHeader = A2(
+	$elm$html$Html$h1,
 	_List_Nil,
 	_List_fromArray(
 		[
-			elm$html$Html$text('CHIP-8 EMULATOR')
+			$elm$html$Html$text('CHIP-8 EMULATOR')
 		]));
-var author$project$Main$prettyPrintKey = function (keyStr) {
+var $elm$html$Html$h3 = _VirtualDom_node('h3');
+var $elm$html$Html$li = _VirtualDom_node('li');
+var $author$project$Main$prettyPrintKey = function (keyStr) {
 	switch (keyStr) {
 		case ' ':
 			return 'SPACE';
@@ -9813,79 +9801,75 @@ var author$project$Main$prettyPrintKey = function (keyStr) {
 			return 'DOWN ARROW';
 		default:
 			var alphaNumeric = keyStr;
-			return elm$core$String$toUpper(alphaNumeric);
+			return $elm$core$String$toUpper(alphaNumeric);
 	}
 };
-var elm$html$Html$h3 = _VirtualDom_node('h3');
-var elm$html$Html$li = _VirtualDom_node('li');
-var elm$html$Html$ul = _VirtualDom_node('ul');
-var author$project$Main$viewKeyMapping = function (model) {
+var $elm$html$Html$ul = _VirtualDom_node('ul');
+var $author$project$Main$viewKeyMapping = function (model) {
 	var toListItems = F2(
-		function (_n1, acc) {
-			var keyStr = _n1.a;
-			var keyPadValue = _n1.b;
+		function (_v1, acc) {
+			var keyStr = _v1.a;
 			return A2(
-				elm$core$List$cons,
+				$elm$core$List$cons,
 				A2(
-					elm$html$Html$li,
+					$elm$html$Html$li,
 					_List_Nil,
 					_List_fromArray(
 						[
-							elm$html$Html$text(
-							author$project$Main$prettyPrintKey(keyStr))
+							$elm$html$Html$text(
+							$author$project$Main$prettyPrintKey(keyStr))
 						])),
 				acc);
 		});
 	var keyMapping = function () {
-		var _n0 = model.K;
-		if (!_n0.$) {
-			var game = _n0.a;
-			return game.t;
+		var _v0 = model.F;
+		if (!_v0.$) {
+			var game = _v0.a;
+			return game.p;
 		} else {
 			return _List_Nil;
 		}
 	}();
 	return A2(
-		elm$html$Html$div,
+		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$id('key-mapping-container')
+				$elm$html$Html$Attributes$id('key-mapping-container')
 			]),
 		_List_fromArray(
 			[
 				A2(
-				elm$html$Html$h3,
+				$elm$html$Html$h3,
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('CONTROLS')
+						$elm$html$Html$text('CONTROLS')
 					])),
 				A2(
-				elm$html$Html$ul,
+				$elm$html$Html$ul,
 				_List_fromArray(
 					[
-						elm$html$Html$Attributes$id('key-mapping')
+						$elm$html$Html$Attributes$id('key-mapping')
 					]),
-				A3(elm$core$List$foldl, toListItems, _List_Nil, keyMapping))
+				A3($elm$core$List$foldl, toListItems, _List_Nil, keyMapping))
 			]));
 };
-var author$project$Main$view = function (model) {
+var $author$project$Main$view = function (model) {
 	return A2(
-		elm$html$Html$div,
+		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				A2(elm$html$Html$Attributes$style, 'margin-top', '1em')
+				A2($elm$html$Html$Attributes$style, 'margin-top', '1em')
 			]),
 		_List_fromArray(
 			[
-				author$project$Main$viewHeader,
-				author$project$Main$viewCanvas(model),
-				author$project$Main$viewGameSelector(model),
-				author$project$Main$viewKeyMapping(model)
+				$author$project$Main$viewHeader,
+				$author$project$Main$viewCanvas(model),
+				$author$project$Main$viewGameSelector(model),
+				$author$project$Main$viewKeyMapping(model)
 			]));
 };
-var elm$browser$Browser$element = _Browser_element;
-var author$project$Main$main = elm$browser$Browser$element(
-	{bH: author$project$Main$init, b$: author$project$Main$subscriptions, b3: author$project$Main$update, b5: author$project$Main$view});
-_Platform_export({'Main':{'init':author$project$Main$main(
-	elm$json$Json$Decode$succeed(0))(0)}});}(this));
+var $author$project$Main$main = $elm$browser$Browser$element(
+	{bE: $author$project$Main$init, bZ: $author$project$Main$subscriptions, b2: $author$project$Main$update, b4: $author$project$Main$view});
+_Platform_export({'Main':{'init':$author$project$Main$main(
+	$elm$json$Json$Decode$succeed(0))(0)}});}(this));

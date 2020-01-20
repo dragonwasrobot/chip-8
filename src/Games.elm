@@ -7,7 +7,6 @@ emulator.
 
 -}
 
-import Dict exposing (Dict)
 import KeyCode exposing (KeyCode(..), KeyMapping)
 
 

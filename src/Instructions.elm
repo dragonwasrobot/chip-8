@@ -62,10 +62,10 @@ and their implementations.
 
 -}
 
-import Array exposing (Array)
+import Array
 import Bitwise
 import Display
-import Flags exposing (Flags)
+import Flags
 import Keypad
 import List.Extra as List
 import Memory
@@ -87,7 +87,7 @@ originally implemented. It is ignored by modern interpreters.
 -}
 jumpSys : VirtualMachine -> ( VirtualMachine, Cmd Msg )
 jumpSys virtualMachine =
-    -- TODO: "jumpSys instruction is ignored"
+    -- jumpSys instruction is ignored
     ( virtualMachine, Cmd.none )
 
 
@@ -885,7 +885,7 @@ setBit x y newBitValue virtualMachine =
                 |> Result.withDefault 0
 
         oldBitValue =
-            ((display |> Display.getCell) x y).value
+            (Display.getCell display x y).value
 
         newCarry =
             if carry == 0 && oldBitValue == True && newBitValue == True then

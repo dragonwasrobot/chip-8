@@ -5,24 +5,37 @@ import Browser
 import Browser.Events as BrowserEvents
 import Canvas exposing (Commands)
 import CanvasColor as Color
-import Dict exposing (Dict)
-import Display exposing (Cell, Display)
+import Display exposing (Display)
 import FetchDecodeExecuteLoop
 import Flags exposing (Flags)
 import Games exposing (Game)
-import Html exposing (..)
+import Html
+    exposing
+        ( Attribute
+        , Html
+        , button
+        , div
+        , h1
+        , h3
+        , li
+        , option
+        , section
+        , select
+        , text
+        , ul
+        )
 import Html.Attributes as Attr
 import Html.Events as Events
 import Http
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode
 import KeyCode exposing (KeyCode)
 import Keypad
 import List.Extra as List
 import Memory
 import Msg exposing (Msg(..))
-import Registers exposing (Registers)
+import Registers
 import Request
-import Time exposing (Posix)
+import Time
 import Timers
 import Types exposing (Error, Value8Bit)
 import VirtualMachine exposing (VirtualMachine)
@@ -223,7 +236,8 @@ reloadGame model =
 readProgram : Result Http.Error (Array Value8Bit) -> Model -> ( Model, Cmd Msg )
 readProgram programBytesResult model =
     case programBytesResult of
-        Err error ->
+        Err _ ->
+            -- We ignore errors!
             ( model, Cmd.none )
 
         Ok programBytes ->
@@ -273,7 +287,7 @@ update msg model =
         KeyUp maybeKeyCode ->
             model |> removeKeyCode maybeKeyCode
 
-        KeyPress keyCode ->
+        KeyPress _ ->
             ( model, Cmd.none )
 
         DelayTick ->
@@ -365,14 +379,17 @@ viewHeader =
 {- Canvas and Drawing -}
 
 
+cellSize : number
 cellSize =
     10
 
 
+width : number
 width =
     64 * cellSize
 
 
+height : number
 height =
     32 * cellSize
 
@@ -504,7 +521,7 @@ viewKeyMapping model =
                 Nothing ->
                     []
 
-        toListItems ( keyStr, keyPadValue ) acc =
+        toListItems ( keyStr, _ ) acc =
             li [] [ keyStr |> prettyPrintKey |> text ] :: acc
     in
     div [ Attr.id "key-mapping-container" ]

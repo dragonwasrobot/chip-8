@@ -23,51 +23,53 @@ import Registers exposing (Registers)
 import Task
 
 
-type alias Delay =
-    { running : Bool
-    , tickLength : Float
-    }
+type Delay
+    = Delay
+        { running : Bool
+        , tickLength : Float
+        }
 
 
 initDelay : Delay
 initDelay =
-    { running = False
-    , tickLength = (1 / 60) * 1000 -- 60Hz
-    }
+    Delay
+        { running = False
+        , tickLength = (1 / 60) * 1000 -- 60Hz
+        }
 
 
 isRunning : Delay -> Bool
-isRunning delay =
+isRunning (Delay delay) =
     delay.running
 
 
 setRunning : Bool -> Delay -> Delay
-setRunning running delay =
-    { delay | running = running }
+setRunning running (Delay delay) =
+    Delay { delay | running = running }
 
 
 getTickLength : Delay -> Float
-getTickLength delay =
+getTickLength (Delay delay) =
     delay.tickLength
 
 
-type alias Timers =
-    { delay : Delay }
+type Timers
+    = Timers Delay
 
 
 init : Timers
 init =
-    { delay = initDelay }
+    Timers initDelay
 
 
 getDelay : Timers -> Delay
-getDelay timers =
-    timers.delay
+getDelay (Timers delay) =
+    delay
 
 
 setDelay : Delay -> Timers -> Timers
-setDelay delay timers =
-    { timers | delay = delay }
+setDelay delay (Timers _) =
+    Timers delay
 
 
 {-| Start the delay timer
@@ -104,7 +106,7 @@ tick registers timers =
     in
     if isRunning delay && delayTimer > 0 then
         ( ( registers |> Registers.setDelayTimer (delayTimer - 1), timers )
-        , setTimeout delay.tickLength DelayTick
+        , setTimeout (getTickLength delay) DelayTick
         )
 
     else
