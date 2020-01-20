@@ -10,7 +10,7 @@ import Types exposing (Value8Bit)
 romsUrlPrefix : String
 romsUrlPrefix =
     -- Use /roms/ for dev, /chip-8/roms for prod
-    "/roms/"
+    "/chip-8/roms/"
 
 
 fetchRom : String -> (Result Http.Error (Array Value8Bit) -> msg) -> Cmd msg
