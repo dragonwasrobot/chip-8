@@ -1,17 +1,25 @@
 /* style.css */
+:root {
+    --main-color: #ffffff;
+    --main-bg-color: #212529;
+}
+
 body {
-    background-color: #fdf6e3;
+    background-color: var(--main-bg-color);
 }
 
 canvas {
     margin: 0 auto 0 auto;
-    border: 5px solid #212529;
+    box-shadow: 0 4px var(--main-color),
+                0 -4px var(--main-color),
+                4px 0 var(--main-color),
+                -4px 0 var(--main-color);
     display: block;
 }
 
 h1 {
     text-align: center;
-    color: #212529;
+    color: var(--main-color);
 }
 
 ul {
@@ -20,26 +28,38 @@ ul {
 }
 
 #game-selector {
-    border-width: 0.2em;
-    border-color: #212529;
-    margin-right: 0.5em;
-    height: 3em;
+    margin-top: 1em;
 }
 
 #game-reload {
-    margin-left: 0.5em;
+    margin-top: 1.5em;
+    padding: 6px 12px 6px 16px;
+    border: 0;
+    box-shadow: 0 -4px var(--main-color),
+                0 4px var(--main-color),
+                4px 0 var(--main-color),
+                -4px 0 var(--main-color);
+    background-color: var(--main-bg-color);
+    font-size: inherit;
+    color: var(--main-color);
 }
 
 #games-container {
-    margin: 0 0 auto;
+    margin: 1.5em;
     display: block;
     text-align: center;
-    margin-top: 1em;
 }
 
 #key-mapping-container {
-    margin: 0 0 auto;
+    margin: 1.5em;
     display: block;
     text-align: center;
-    margin-top: 1em;
+    color: var(--main-color);
+}
+
+/* Adjustments to NES.css */
+
+.nes-select.is-dark::after {
+    color: var(--main-color);
+    margin-top: 6px;
 }

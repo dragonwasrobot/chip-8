@@ -5,7 +5,6 @@ import Browser
 import Browser.Events as BrowserEvents
 import Canvas exposing (Renderable)
 import Canvas.Settings exposing (fill)
-import Canvas.Settings.Advanced exposing (transform)
 import Color as Color exposing (Color)
 import Display exposing (Display)
 import FetchDecodeExecuteLoop
@@ -349,12 +348,8 @@ height =
 
 cellColor : Color
 cellColor =
+    -- #212529
     Color.rgb255 33 37 41
-
-
-backgroundColor : Color
-backgroundColor =
-    Color.rgb255 253 246 227
 
 
 viewCanvas : Model -> Html Msg
@@ -384,19 +379,12 @@ renderCell display ( row, column ) renderables =
         cell =
             Display.getCell display row column
 
-        color =
-            if cell.value == True then
-                cellColor
-
-            else
-                backgroundColor
-
         ( x, y ) =
             ( toFloat row * cellSize, toFloat column * cellSize )
     in
     if cell.value == True then
         Canvas.shapes
-            [ fill color ]
+            [ fill cellColor ]
             [ Canvas.rect ( x, y ) cellSize cellSize ]
             :: renderables
 
@@ -419,10 +407,9 @@ viewGameSelector model =
         gameSelector : List (Html Msg)
         gameSelector =
             [ div
-                [ Attr.class "nes-select"
+                [ Attr.class "nes-select is-dark"
                 , Attr.style "width" "15%"
                 , Attr.style "left" "42.5%"
-                , Attr.style "margin-bottom" "1em"
                 ]
                 [ select
                     [ Attr.id "game-selector"
@@ -436,8 +423,6 @@ viewGameSelector model =
         reloadButton =
             [ button
                 [ Attr.id "game-reload"
-                , Attr.class "nes-btn is-warning"
-                , Attr.style "margin-left" "0.5em"
                 , Events.onClick ReloadGame
                 ]
                 [ text "RELOAD" ]

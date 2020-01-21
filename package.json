@@ -9,6 +9,7 @@
         "elm-verify-examples": "=5.0.0"
     },
     "scripts": {
+        "analyse": "./node_modules/.bin/elm-analyse",
         "format": "./node_modules/.bin/elm-format --validate src",
         "test": "./node_modules/.bin/elm-test",
         "doc-tests": "./node_modules/.bin/elm-verify-examples"

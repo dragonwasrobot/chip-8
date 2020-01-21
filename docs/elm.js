@@ -9485,7 +9485,6 @@ var $avh4$elm_color$Color$rgb255 = F3(
 			$avh4$elm_color$Color$scaleFrom255(b),
 			1.0);
 	});
-var $author$project$Main$backgroundColor = A3($avh4$elm_color$Color$rgb255, 253, 246, 227);
 var $author$project$Main$cellColor = A3($avh4$elm_color$Color$rgb255, 33, 37, 41);
 var $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableShapes = function (a) {
 	return {$: 1, a: a};
@@ -9614,7 +9613,6 @@ var $author$project$Main$renderCell = F3(
 		var row = _v0.a;
 		var column = _v0.b;
 		var cell = A3($author$project$Display$getCell, display, row, column);
-		var color = cell.aE ? $author$project$Main$cellColor : $author$project$Main$backgroundColor;
 		var _v1 = _Utils_Tuple2(row * $author$project$Main$cellSize, column * $author$project$Main$cellSize);
 		var x = _v1.a;
 		var y = _v1.b;
@@ -9624,7 +9622,7 @@ var $author$project$Main$renderCell = F3(
 				$joakin$elm_canvas$Canvas$shapes,
 				_List_fromArray(
 					[
-						$joakin$elm_canvas$Canvas$Settings$fill(color)
+						$joakin$elm_canvas$Canvas$Settings$fill($author$project$Main$cellColor)
 					]),
 				_List_fromArray(
 					[
@@ -10425,8 +10423,6 @@ var $author$project$Main$viewGameSelector = function (model) {
 			_List_fromArray(
 				[
 					$elm$html$Html$Attributes$id('game-reload'),
-					$elm$html$Html$Attributes$class('nes-btn is-warning'),
-					A2($elm$html$Html$Attributes$style, 'margin-left', '0.5em'),
 					$elm$html$Html$Events$onClick($author$project$Msg$ReloadGame)
 				]),
 			_List_fromArray(
@@ -10465,10 +10461,9 @@ var $author$project$Main$viewGameSelector = function (model) {
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					$elm$html$Html$Attributes$class('nes-select'),
+					$elm$html$Html$Attributes$class('nes-select is-dark'),
 					A2($elm$html$Html$Attributes$style, 'width', '15%'),
-					A2($elm$html$Html$Attributes$style, 'left', '42.5%'),
-					A2($elm$html$Html$Attributes$style, 'margin-bottom', '1em')
+					A2($elm$html$Html$Attributes$style, 'left', '42.5%')
 				]),
 			_List_fromArray(
 				[
