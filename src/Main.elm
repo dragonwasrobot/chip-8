@@ -3,12 +3,15 @@ module Main exposing (main)
 import Array exposing (Array)
 import Browser
 import Browser.Events as BrowserEvents
-import Canvas exposing (Commands)
-import CanvasColor as Color
+import Canvas exposing (Renderable)
+import Canvas.Settings exposing (fill)
+import Canvas.Settings.Advanced exposing (transform)
+import Color as Color exposing (Color)
 import Display exposing (Display)
 import FetchDecodeExecuteLoop
 import Flags exposing (Flags)
 import Games exposing (Game)
+import Grid
 import Html
     exposing
         ( Attribute
@@ -307,56 +310,6 @@ update msg model =
 
 
 
--- SUBSCRIPTIONS
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    let
-        flags =
-            model.virtualMachine |> VirtualMachine.getFlags
-
-        maybeGame =
-            model.selectedGame
-
-        subscriptionList =
-            keyboardSubscriptions flags maybeGame ++ clockSubscriptions flags
-    in
-    Sub.batch subscriptionList
-
-
-keyboardSubscriptions : Flags -> Maybe Game -> List (Sub Msg)
-keyboardSubscriptions flags maybeGame =
-    case ( Flags.isRunning flags, maybeGame ) of
-        ( True, Just game ) ->
-            let
-                keyDecoder toMsg =
-                    game.controls
-                        |> KeyCode.decoder
-                        |> Decode.map toMsg
-            in
-            [ BrowserEvents.onKeyUp (keyDecoder KeyUp)
-            , BrowserEvents.onKeyDown (keyDecoder KeyDown)
-            , BrowserEvents.onKeyPress (keyDecoder KeyPress)
-            ]
-
-        ( _, _ ) ->
-            []
-
-
-clockSubscriptions : Flags -> List (Sub Msg)
-clockSubscriptions flags =
-    if
-        (flags |> Flags.isWaitingForInput)
-            || (flags |> Flags.isRunning |> not)
-    then
-        []
-
-    else
-        [ Time.every (1000 / 600) ClockTick ]
-
-
-
 -- VIEW
 
 
@@ -386,79 +339,69 @@ cellSize =
 
 width : number
 width =
-    64 * cellSize
+    64
 
 
 height : number
 height =
-    32 * cellSize
-
-
-type alias Color =
-    { red : Int
-    , green : Int
-    , blue : Int
-    }
+    32
 
 
 cellColor : Color
 cellColor =
-    { red = 33
-    , green = 37
-    , blue = 41
-    }
+    Color.rgb255 33 37 41
 
 
 backgroundColor : Color
 backgroundColor =
-    { red = 253
-    , green = 246
-    , blue = 227
-    }
+    Color.rgb255 253 246 227
 
 
 viewCanvas : Model -> Html Msg
 viewCanvas model =
-    Canvas.element
-        width
-        height
-        []
-        (Canvas.empty
-            |> Canvas.clearRect 0 0 width height
-            |> renderDisplay model.virtualMachine.display
-        )
-
-
-renderDisplay : Display -> Commands -> Commands
-renderDisplay displayCells commands =
-    displayCells
-        |> Array.toList
-        |> List.indexedFoldl renderCellRow commands
-
-
-renderCellRow : Int -> Array Bool -> Commands -> Commands
-renderCellRow rowIdx rowCells commands =
-    rowCells
-        |> Array.toList
-        |> List.indexedFoldl (renderCell rowIdx) commands
-
-
-renderCell : Int -> Int -> Bool -> Commands -> Commands
-renderCell rowIdx columnIdx cellValue commands =
     let
+        shapes =
+            Canvas.shapes
+                [ fill Color.white ]
+                [ Canvas.rect ( 0, 0 ) (width * cellSize) (height * cellSize) ]
+                :: renderDisplay model.virtualMachine.display
+    in
+    Canvas.toHtml ( width * cellSize, height * cellSize )
+        []
+        shapes
+
+
+renderDisplay : Display -> List Renderable
+renderDisplay displayCells =
+    Grid.fold2d { rows = height, cols = width }
+        (renderCell displayCells)
+        []
+
+
+renderCell : Display -> ( Int, Int ) -> List Renderable -> List Renderable
+renderCell display ( row, column ) renderables =
+    let
+        cell =
+            Display.getCell display row column
+
         color =
-            if cellValue == True then
-                Color.rgba cellColor.red cellColor.green cellColor.blue 1
+            if cell.value == True then
+                cellColor
 
             else
-                Color.rgba backgroundColor.red backgroundColor.green backgroundColor.blue 1
+                backgroundColor
 
         ( x, y ) =
-            ( toFloat rowIdx * cellSize, toFloat columnIdx * cellSize )
+            ( toFloat row * cellSize, toFloat column * cellSize )
     in
-    commands
-        |> Canvas.fillStyle color
-        |> Canvas.fillRect x y cellSize cellSize
+    if cell.value == True then
+        Canvas.shapes
+            [ fill color ]
+            [ Canvas.rect ( x, y ) cellSize cellSize ]
+            :: renderables
+
+    else
+        renderables
 
 
 viewGameSelector : Model -> Html Msg
@@ -551,3 +494,53 @@ prettyPrintKey keyStr =
 
         alphaNumeric ->
             String.toUpper alphaNumeric
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    let
+        flags =
+            model.virtualMachine |> VirtualMachine.getFlags
+
+        maybeGame =
+            model.selectedGame
+
+        subscriptionList =
+            keyboardSubscriptions flags maybeGame ++ clockSubscriptions flags
+    in
+    Sub.batch subscriptionList
+
+
+keyboardSubscriptions : Flags -> Maybe Game -> List (Sub Msg)
+keyboardSubscriptions flags maybeGame =
+    case ( Flags.isRunning flags, maybeGame ) of
+        ( True, Just game ) ->
+            let
+                keyDecoder toMsg =
+                    game.controls
+                        |> KeyCode.decoder
+                        |> Decode.map toMsg
+            in
+            [ BrowserEvents.onKeyUp (keyDecoder KeyUp)
+            , BrowserEvents.onKeyDown (keyDecoder KeyDown)
+            , BrowserEvents.onKeyPress (keyDecoder KeyPress)
+            ]
+
+        ( _, _ ) ->
+            []
+
+
+clockSubscriptions : Flags -> List (Sub Msg)
+clockSubscriptions flags =
+    if
+        (flags |> Flags.isWaitingForInput)
+            || (flags |> Flags.isRunning |> not)
+    then
+        []
+
+    else
+        [ Time.every (1000 / 600) ClockTick ]
