@@ -8,6 +8,10 @@ body {
     background-color: var(--main-bg-color);
 }
 
+#container {
+    margin-top: 1em;
+}
+
 canvas {
     margin: 0 auto 0 auto;
     box-shadow: 0 4px var(--main-color),
@@ -20,11 +24,17 @@ canvas {
 h1 {
     text-align: center;
     color: var(--main-color);
+    margin-bottom: 0.75em;
 }
 
 ul {
     padding: 0;
     list-style-type: none;
+}
+
+.centerish {
+    width: 15%;
+    left: 42.5%;
 }
 
 #game-selector {
@@ -40,7 +50,7 @@ ul {
                 4px 0 var(--main-color),
                 -4px 0 var(--main-color);
     background-color: var(--main-bg-color);
-    font-size: inherit;
+    font-size: 1.2em;
     color: var(--main-color);
 }
 

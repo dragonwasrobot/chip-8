@@ -314,7 +314,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ Attr.style "margin-top" "1em" ]
+    div [ Attr.id "container" ]
         [ viewHeader
         , viewCanvas model
         , viewGameSelector model
@@ -407,10 +407,7 @@ viewGameSelector model =
         gameSelector : List (Html Msg)
         gameSelector =
             [ div
-                [ Attr.class "nes-select is-dark"
-                , Attr.style "width" "15%"
-                , Attr.style "left" "42.5%"
-                ]
+                [ Attr.class "nes-select is-dark centerish" ]
                 [ select
                     [ Attr.id "game-selector"
                     , onChange SelectGame
