@@ -12,3 +12,4 @@ elm make --optimize --output=$js src/Main.elm
 
 echo "Build size:    $(cat $js | wc -c) bytes  ($js)"
 echo "Minified size: $(cat $min | wc -c) bytes  ($min)"
+rm $js
