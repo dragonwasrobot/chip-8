@@ -1,8 +1,10 @@
 # Chip-8
 
+[![Build Status](https://travis-ci.org/dragonwasrobot/chip-8.svg?branch=master)](https://travis-ci.org/dragonwasrobot/chip-8)
+
 This is an implementation of a CHIP-8 emulator written in Elm.
 
-![Screenshot](/images/screenshot.png)
+![Screenshot](/docs/screenshot.png)
 
 A range of ROMS are already included - all of which are in public domain.
 
