@@ -46,7 +46,7 @@ blinky =
             , ( "ArrowDown", KeyCode 6 )
             ]
     in
-    { name = "BLINKY"
+    { name = "blinky.ch8"
     , controls = controls
     }
 
@@ -59,7 +59,7 @@ brix =
             , ( "ArrowRight", KeyCode 6 )
             ]
     in
-    { name = "BRIX"
+    { name = "brix.ch8"
     , controls = controls
     }
 
@@ -73,7 +73,7 @@ connect4 =
             , ( " ", KeyCode 5 )
             ]
     in
-    { name = "CONNECT4"
+    { name = "connect4.ch8"
     , controls = controls
     }
 
@@ -89,7 +89,7 @@ hidden =
             , ( "ArrowDown", KeyCode 8 )
             ]
     in
-    { name = "HIDDEN"
+    { name = "hidden.ch8"
     , controls = controls
     }
 
@@ -103,7 +103,7 @@ invaders =
             , ( "ArrowRight", KeyCode 6 )
             ]
     in
-    { name = "INVADERS"
+    { name = "invaders.ch8"
     , controls = controls
     }
 
@@ -118,7 +118,7 @@ pong =
             , ( "k", KeyCode 13 )
             ]
     in
-    { name = "PONG"
+    { name = "pong.ch8"
     , controls = controls
     }
 
@@ -133,7 +133,7 @@ tetris =
             , ( "ArrowDown", KeyCode 7 )
             ]
     in
-    { name = "TETRIS"
+    { name = "tetris.ch8"
     , controls = controls
     }
 
@@ -153,7 +153,7 @@ tictac =
             , ( "h", KeyCode 9 )
             ]
     in
-    { name = "TICTAC"
+    { name = "tictac.ch8"
     , controls = controls
     }
 
