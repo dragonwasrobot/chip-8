@@ -13,7 +13,7 @@ specification](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM).
 
 **An online demo can be found here:** http://dragonwasrobot.github.io/chip-8/
 
-Ensure you have Elm 0.19 installed. I personally recommend using asdf,
+Ensure you have Elm 0.19.1 installed. I personally recommend using asdf,
 https://github.com/asdf-vm/asdf, to handle version management of compilers.
 
 With Elm installed, perform the following steps:

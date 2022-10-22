@@ -187,7 +187,7 @@ clockTick model =
         tickSpeed =
             2
     in
-    if running == True && waitingForInput == False then
+    if running && waitingForInput == False then
         let
             ( newVirtualMachine, cmd ) =
                 model.virtualMachine |> FetchDecodeExecuteLoop.tick tickSpeed
@@ -225,11 +225,7 @@ reloadGame : Model -> ( Model, Cmd Msg )
 reloadGame model =
     case model.selectedGame of
         Just game ->
-            let
-                ( newModel, cmd ) =
-                    selectGame game.name model
-            in
-            ( newModel, cmd )
+            selectGame game.name model
 
         Nothing ->
             ( model, Cmd.none )
@@ -382,7 +378,7 @@ renderCell display ( row, column ) renderables =
         ( x, y ) =
             ( toFloat row * cellSize, toFloat column * cellSize )
     in
-    if cell.value == True then
+    if cell.value then
         Canvas.shapes
             [ fill cellColor ]
             [ Canvas.rect ( x, y ) cellSize cellSize ]
@@ -512,7 +508,7 @@ keyboardSubscriptions flags maybeGame =
             , BrowserEvents.onKeyPress (keyDecoder KeyPress)
             ]
 
-        ( _, _ ) ->
+        _ ->
             []
 
 

@@ -9,8 +9,15 @@
     "uglify-js": "^3.19.3"
   },
   "scripts": {
+    "build": "npm install && ./build.sh prod",
     "format": "./node_modules/.bin/elm-format --validate src",
+    "review": "./node_modules/.bin/elm-review",
     "doc-tests": "./node_modules/.bin/elm-verify-examples",
-    "test": "./node_modules/.bin/elm-test"
+    "test": "./node_modules/.bin/elm-test",
+    "watch": "./node_modules/.bin/nodemon -e elm --watch src --exec '/bin/bash' ./build.sh"
+  },
+  "devDependencies": {
+    "elm-review": "^2.7.6",
+    "nodemon": "^2.0.20"
   }
 }

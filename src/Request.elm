@@ -3,7 +3,7 @@ module Request exposing (fetchRom)
 import Array exposing (Array)
 import Bytes exposing (Bytes)
 import Bytes.Decode as Decode exposing (Decoder, Step(..))
-import Http exposing (Response(..))
+import Http exposing (Response(..), Error(..))
 import Types exposing (Value8Bit)
 
 
@@ -13,7 +13,7 @@ romsUrlPrefix =
     "/chip-8/roms/"
 
 
-fetchRom : String -> (Result Http.Error (Array Value8Bit) -> msg) -> Cmd msg
+fetchRom : String -> (Result Error (Array Value8Bit) -> msg) -> Cmd msg
 fetchRom romName toMsg =
     Http.get
         { url = romsUrlPrefix ++ romName
@@ -21,28 +21,28 @@ fetchRom romName toMsg =
         }
 
 
-decodeBytesResponse : Response Bytes -> Result Http.Error (Array Value8Bit)
+decodeBytesResponse : Response Bytes -> Result Error (Array Value8Bit)
 decodeBytesResponse response =
     case response of
-        Http.BadUrl_ url ->
-            Err (Http.BadUrl url)
+        BadUrl_ url ->
+            Err (BadUrl url)
 
-        Http.Timeout_ ->
-            Err Http.Timeout
+        Timeout_ ->
+            Err Timeout
 
-        Http.NetworkError_ ->
-            Err Http.NetworkError
+        NetworkError_ ->
+            Err NetworkError
 
-        Http.BadStatus_ metadata _ ->
-            Err (Http.BadStatus metadata.statusCode)
+        BadStatus_ metadata _ ->
+            Err (BadStatus metadata.statusCode)
 
-        Http.GoodStatus_ _ bytes ->
+        GoodStatus_ _ bytes ->
             case Decode.decode (romDecoder (Bytes.width bytes)) bytes of
                 Just rom ->
                     Ok rom
 
                 Nothing ->
-                    Err (Http.BadBody "Could not decode bytes payload")
+                    Err (BadBody "Could not decode bytes payload")
 
 
 romDecoder : Int -> Decoder (Array Value8Bit)

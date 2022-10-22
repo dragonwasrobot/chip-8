@@ -1,5 +1,6 @@
 module Registers exposing
     ( Registers
+    , DataRegisters
     , decrementProgramCounter
     , decrementStackPointer
     , getAddressRegister
@@ -86,14 +87,14 @@ getDataRegister index registers =
 
 setDataRegister : Int -> Value16Bit -> Registers -> Result Error Registers
 setDataRegister index value registers =
-    let
-        updatedDataRegisters =
-            registers.dataRegisters |> Array.set index value
-    in
     if index > dataRegisterCount then
         Err "Register index out of bounds"
 
     else
+        let
+            updatedDataRegisters =
+                registers.dataRegisters |> Array.set index value
+        in
         Ok { registers | dataRegisters = updatedDataRegisters }
 
 
