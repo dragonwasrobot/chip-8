@@ -13,6 +13,7 @@ import Hex
 import Instructions
 import Memory exposing (Memory)
 import Msg exposing (Msg(..))
+import Ports
 import Registers
 import Types exposing (Error, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
 import VirtualMachine exposing (VirtualMachine)
@@ -420,16 +421,16 @@ performCycle flags virtualMachine =
                 virtualMachine |> VirtualMachine.getRegisters |> Registers.getProgramCounter
 
             opcode =
-                programCounter |> fetchOpcode memory
+                programCounter
+                    |> fetchOpcode memory
 
             ( resultVirtualMachine, resultCmd ) =
                 case executeOpcode virtualMachine opcode of
                     Ok result ->
                         result
 
-                    Err _ ->
-                        -- We ignore any errors
-                        ( virtualMachine, Cmd.none )
+                    Err error ->
+                        ( virtualMachine, Ports.printError error )
 
             newRegisters =
                 resultVirtualMachine

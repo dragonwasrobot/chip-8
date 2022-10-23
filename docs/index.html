@@ -17,7 +17,7 @@
     <body>
         <div id="elm-main"></div>
         <script>
-         var app = Elm.Main.init({
+         const app = Elm.Main.init({
              node: document.getElementById('elm-main')
          });
 
@@ -34,11 +34,9 @@
           * frequency of this tone is decided by the author of the interpreter.
           */
 
-         var exists = function(obj) {
-             return typeof obj !== 'undefined' && obj !== null;
-         };
+         const exists = (obj) => typeof obj !== 'undefined' && obj !== null;
 
-         var sound = {
+         const sound = {
              audioContext: undefined,
              tickLength: (1 / 60) * 1000 // 60 Hz
          };
@@ -47,11 +45,16 @@
              sound.audioContext = new AudioContext();
          }
 
-         var playSound = function(st) {
+         const printError = (msg) => {
+             console.log(msg);
+         };
+         app.ports.printError.subscribe(printError);
 
-             var audioContext = sound.audioContext;
+         const playSound = (st) => {
+
+             const audioContext = sound.audioContext;
              if (exists(audioContext)) {
-                 var oscillator = audioContext.createOscillator();
+                 const oscillator = audioContext.createOscillator();
 
                  oscillator.type = 'square';
                  oscillator.frequency.setValueAtTime(
@@ -59,10 +62,7 @@
                  oscillator.connect(audioContext.destination);
                  oscillator.start();
 
-                 setTimeout(
-                     function() {
-                         oscillator.stop();
-                     },
+                 setTimeout(() => oscillator.stop() ,
                      sound.tickLength * st
                  );
 

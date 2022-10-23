@@ -5,10 +5,14 @@ import List.Extra as List
 import Types exposing (Value4Bit)
 
 
-{-| Mapping from standard keyboard codes to CHIP-8 keypad codes
+{-| Mapping from standard keyboard codes to CHIP-8 keypad codes:
+    ( Browser key code, CHIP-8 key code, optional description )
 -}
 type alias KeyMapping =
-    List ( String, KeyCode )
+    { browserKeyCode : String
+    , chip8KeyCode : KeyCode
+    , description : Maybe String
+    }
 
 
 type KeyCode
@@ -20,13 +24,13 @@ nibbleValue (KeyCode keyCode) =
     keyCode
 
 
-decoder : KeyMapping -> Decoder (Maybe KeyCode)
+decoder : List KeyMapping -> Decoder (Maybe KeyCode)
 decoder keyMapping =
     Decode.map (toKeyCode keyMapping) (Decode.field "key" Decode.string)
 
 
-toKeyCode : KeyMapping -> String -> Maybe KeyCode
+toKeyCode : List KeyMapping -> String -> Maybe KeyCode
 toKeyCode controls candidate =
     controls
-        |> List.find (\( str, _ ) -> str == candidate)
-        |> Maybe.map Tuple.second
+        |> List.find (\mapping -> mapping.browserKeyCode == candidate)
+        |> Maybe.map .chip8KeyCode

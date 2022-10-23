@@ -28,13 +28,14 @@ import Html
         )
 import Html.Attributes as Attr
 import Html.Events as Events
-import Http
+import Http exposing (Error(..))
 import Json.Decode as Decode
 import KeyCode exposing (KeyCode)
 import Keypad
 import List.Extra as List
 import Memory
 import Msg exposing (Msg(..))
+import Ports
 import Registers
 import Request
 import Time
@@ -234,9 +235,26 @@ reloadGame model =
 readProgram : Result Http.Error (Array Value8Bit) -> Model -> ( Model, Cmd Msg )
 readProgram programBytesResult model =
     case programBytesResult of
-        Err _ ->
-            -- We ignore errors!
-            ( model, Cmd.none )
+        Err error ->
+            let
+                errorMessage =
+                    case error of
+                        BadUrl url ->
+                            "Bad Url: " ++ url
+
+                        Timeout ->
+                            "Timeout error occurred"
+
+                        NetworkError ->
+                            "Timeout error occurred"
+
+                        BadStatus statusCode ->
+                            "Bad status code: " ++ String.fromInt statusCode
+
+                        BadBody body ->
+                            "Bad body: " ++ body
+            in
+            ( model, Ports.printError errorMessage )
 
         Ok programBytes ->
             let
@@ -247,7 +265,8 @@ readProgram programBytesResult model =
                     model.virtualMachine |> VirtualMachine.getMemory
 
                 newMemory =
-                    (programBytes |> Array.toList)
+                    programBytes
+                        |> Array.toList
                         |> List.indexedFoldl
                             (\idx value accMemory ->
                                 accMemory
@@ -391,9 +410,16 @@ renderCell display ( row, column ) renderables =
 viewGameSelector : Model -> Html Msg
 viewGameSelector model =
     let
+        toDisplayName game =
+            game.name
+                |> String.toUpper
+                |> String.split "."
+                |> List.head
+                |> Maybe.withDefault "Unknown"
+
         gameOption : Game -> Html Msg
         gameOption game =
-            option [ Attr.value game.name ] [ text game.name ]
+            option [ Attr.value game.name ] [ text <| toDisplayName <| game ]
 
         gameOptions : List (Html Msg)
         gameOptions =
@@ -434,7 +460,7 @@ onChange tagger =
 viewKeyMapping : Model -> Html Msg
 viewKeyMapping model =
     let
-        keyMapping =
+        keyMappings =
             case model.selectedGame of
                 Just game ->
                     game.controls
@@ -442,13 +468,18 @@ viewKeyMapping model =
                 Nothing ->
                     []
 
-        toListItems ( keyStr, _ ) acc =
-            li [] [ keyStr |> prettyPrintKey |> text ] :: acc
+        toListItems keyMapping acc =
+            let
+                keyCodeDescription =
+                    keyMapping.description
+                        |> Maybe.withDefault (keyMapping.browserKeyCode |> prettyPrintKey)
+            in
+            li [] [ text keyCodeDescription ] :: acc
     in
     div [ Attr.id "key-mapping-container" ]
         [ h3 [] [ text "CONTROLS" ]
         , ul [ Attr.id "key-mapping" ]
-            (List.foldl toListItems [] keyMapping)
+            (List.foldl toListItems [] keyMappings)
         ]
 
 

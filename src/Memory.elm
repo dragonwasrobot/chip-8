@@ -2,7 +2,7 @@ module Memory exposing (Memory, getCell, init, setCell)
 
 {-| Memory
 
-Memory address range from 200h to FFFh (3,584 bytes) since the first 512
+Memory address range from 200 to FFF (3,584 bytes) since the first 512
 bytes (0x200) are reserved for the CHIP-8 interpreter:
 
   - FFF = 4096 bytes.

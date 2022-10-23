@@ -51,11 +51,11 @@ following it will be properly situated in RAM.
 
 Variables used in the following instructions:
 
-  - nnn or addr - A 12-bit value, the lowest 12 bits of the instruction
-  - n or nibble - A 4-bit value, the lowest 4 bits of the instruction
+  - NNN or addr - A 12-bit value, the lowest 12 bits of the instruction
+  - N or nibble - A 4-bit value, the lowest 4 bits of the instruction
   - x - A 4-bit value, the lower 4 bits of the high byte of the instruction
   - y - A 4-bit value, the upper 4 bits of the low byte of the instruction
-  - kk or byte - An 8-bit value, the lowest 8 bits of the instruction
+  - KK or byte - An 8-bit value, the lowest 8 bits of the instruction
 
 Below, all instructions are listed along with their informal descriptions
 and their implementations.
@@ -79,9 +79,9 @@ import Types exposing (Value12Bit, Value16Bit, Value4Bit, Value8Bit)
 import VirtualMachine exposing (VirtualMachine)
 
 
-{-| 0nnn - SYS addr (Jump to a machine code routine at nnn)
+{-| 0NNN - Jump to a machine code routine at NNN
 
-This instruction is only used on the old computers on which Chip-8 was
+This instruction is only used on the old computers on which CHIP-8 was
 originally implemented. It is ignored by modern interpreters.
 
 -}
@@ -91,14 +91,14 @@ jumpSys virtualMachine =
     ( virtualMachine, Cmd.none )
 
 
-{-| 00E0 - CLS (Clear the display)
+{-| 00E0 - Clear the display
 -}
 clearDisplay : VirtualMachine -> ( VirtualMachine, Cmd Msg )
 clearDisplay virtualMachine =
     ( virtualMachine |> VirtualMachine.setDisplay Display.init, Cmd.none )
 
 
-{-| 00EE - RET (Return from a subroutine)
+{-| 00EE - Return from a subroutine
 
 The interpreter sets the program counter to the address at the top of the stack,
 then decrement the stack pointer.
@@ -126,9 +126,9 @@ returnFromSubroutine virtualMachine =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 1nnn - JP addr (Jump to location nnn)
+{-| 1NNN - Jump to location NNN
 
-The interpreter sets the program counter to nnn.
+The interpreter sets the program counter to NNN.
 
 -}
 jumpAbsolute : VirtualMachine -> Value12Bit -> ( VirtualMachine, Cmd Msg )
@@ -143,10 +143,10 @@ jumpAbsolute virtualMachine location =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 2nnn - CALL addr (Call subroutine at nnn)
+{-| 2NNN - Call subroutine at NNN
 
 The interpreter increments the stack pointer, then puts the current PC on the
-top of the stack. The PC is then set to nnn.
+top of the stack. The PC is then set to NNN.
 
 -}
 callSubroutine : VirtualMachine -> Value12Bit -> ( VirtualMachine, Cmd Msg )
@@ -182,10 +182,10 @@ callSubroutine virtualMachine location =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 3xkk - SE Vx, byte (Skip next instruction if Vx = kk)
+{-| 3XNN - Skip next instruction if VX = NN
 
-The interpreter compares register Vx to kk, and if they are equal,
-increments the program counter by 2.
+The interpreter compares register VX to NN, and if they are equal, increments
+the program counter by 2.
 
 -}
 skipNextIfEqualConstant : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
@@ -209,9 +209,9 @@ skipNextIfEqualConstant virtualMachine register byte =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 4xkk - SNE Vx, byte (Skip next instruction if Vx != kk)
+{-| 4XNN - Skip next instruction if VX != NN
 
-The interpreter compares register Vx to kk, and if they are not equal,
+The interpreter compares register VX to NN, and if they are not equal,
 increments the program counter by 2.
 
 -}
@@ -236,9 +236,9 @@ skipNextIfNotEqualConstant virtualMachine register value =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 5xy0 - SE Vx, Vy (Skip next instruction if Vx = Vy)
+{-| 5XY0 - Skip next instruction if VX = VY
 
-The interpreter compares register Vx to register Vy, and if they are equal,
+The interpreter compares register VX to register VY, and if they are equal,
 increments the program counter by 2.
 
 -}
@@ -270,9 +270,9 @@ skipNextIfRegistersEqual virtualMachine registerX registerY =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 6xkk - LD Vx, byte (Set Vx = kk)
+{-| 6XNN - Set VX = NN
 
-The interpreter puts the value kk into register Vx.
+The interpreter puts the value NN into register VX.
 
 -}
 setRegisterToConstant : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
@@ -289,9 +289,9 @@ setRegisterToConstant virtualMachine register value =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 7xkk - ADD Vx, byte (Set Vx = Vx + kk)
+{-| 7XNN - Set VX = VX + NN
 
-Adds the value kk to the value of register Vx, then stores the result in Vx.
+Adds the value NN to the value of register VX, then stores the result in VX.
 
 -}
 addToRegister : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
@@ -316,9 +316,9 @@ addToRegister virtualMachine register value =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 8xy0 - LD Vx, Vy (Set Vx = Vy)
+{-| 8XY0 - Set VX = VY
 
-Stores the value of register Vy in register Vx.
+Stores the value of register VY in register VX.
 
 -}
 setRegisterToRegister : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
@@ -340,10 +340,9 @@ setRegisterToRegister virtualMachine registerX registerY =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| 8xy1 - OR Vx, Vy (Set Vx = Vx OR Vy)
+{-| 8XY1 - Set VX = VX OR VY
 
-Performs a bitwise OR on the values of Vx and Vy, then stores the result in
-Vx.
+Performs a bitwise OR on the values of VX and VY, then stores the result in VX.
 
 -}
 setRegisterOr : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
@@ -375,10 +374,9 @@ setRegisterOr virtualMachine registerX registerY =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 8xy2 - AND Vx, Vy (Set Vx = Vx AND Vy)
+{-| 8XY2 - Set VX = VX AND VY
 
-Performs a bitwise AND on the values of Vx and Vy, then stores the result in
-Vx.
+Performs a bitwise AND on the values of VX and VY, then stores the result in VX.
 
 -}
 setRegisterAnd : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
@@ -410,10 +408,10 @@ setRegisterAnd virtualMachine registerX registerY =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 8xy3 - XOR Vx, Vy (Set Vx = Vx XOR Vy)
+{-| 8XY3 - Set VX = VX XOR VY
 
-Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the
-result in Vx.
+Performs a bitwise exclusive OR on the values of VX and VY, then stores the
+result in VX.
 
 -}
 setRegisterXor : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
@@ -446,11 +444,11 @@ setRegisterXor virtualMachine registerX registerY =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 8xy4 - ADD Vx, Vy (Set Vx = Vx + Vy, set VF = carry)
+{-| 8XY4 - Set VX = VX + VY, set VF = carry
 
-The values of Vx and Vy are added together. If the result is greater than 8
-bits (i.e., > 255,) VF is set to 1, otherwise 0. Only the lowest 8 bits of
-the result are kept, and stored in Vx.
+The values of VX and VY are added together. If the result is greater than 8 bits
+(> 255) VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are
+kept, and stored in VX.
 
 -}
 setRegisterAdd : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
@@ -491,10 +489,10 @@ setRegisterAdd virtualMachine registerX registerY =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 8xy5 - SUB Vx, Vy (Set Vx = Vx - Vy, set VF = NOT borrow)
+{-| 8XY5 - Set VX = VX - VY, set VF = NOT borrow
 
-If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
-and the results stored in Vx.
+If VX > VY, then VF is set to 1, otherwise 0. Then VY is subtracted from VX, and
+the results stored in VX.
 
 -}
 setRegisterSub : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
@@ -513,7 +511,7 @@ setRegisterSub virtualMachine registerX registerY =
                 |> Registers.getDataRegister registerY
                 |> Result.withDefault 0
 
-        carryValue =
+        notBorrowValue =
             if registerXValue > registerYValue then
                 1
 
@@ -530,7 +528,7 @@ setRegisterSub virtualMachine registerX registerY =
         newRegisters =
             registers
                 |> Registers.setDataRegister registerX newRegisterValue
-                |> Result.andThen (Registers.setDataRegister 15 carryValue)
+                |> Result.andThen (Registers.setDataRegister 15 notBorrowValue)
                 |> Result.withDefault registers
 
         newVirtualMachine =
@@ -540,10 +538,10 @@ setRegisterSub virtualMachine registerX registerY =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 8xy6 - SHR Vx (Set Vx = Vx SHR 1)
+{-| 8XY6 - Set VX = VX SHR 1
 
-If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
-Then Vx is divided by 2.
+If the least-significant bit of VX is 1, then VF is set to 1, otherwise 0. Then
+VX is divided by 2.
 
 -}
 setRegisterShiftRight : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
@@ -569,10 +567,10 @@ setRegisterShiftRight virtualMachine registerX =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 8xy7 - SUBN Vx, Vy (Set Vx = Vy - Vx, set VF = NOT borrow)
+{-| 8XY7 - Set VX = VY - VX, set VF = NOT borrow
 
-If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
-and the results stored in Vx.
+If VY > VX, then VF is set to 1, otherwise 0. Then VX is subtracted from VY,
+and the results stored in VX.
 
 -}
 setRegisterSubFlipped : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
@@ -591,7 +589,7 @@ setRegisterSubFlipped virtualMachine registerX registerY =
                 |> Registers.getDataRegister registerY
                 |> Result.withDefault 0
 
-        carryValue =
+        notBorrowValue =
             if registerYValue > registerXValue then
                 1
 
@@ -608,7 +606,7 @@ setRegisterSubFlipped virtualMachine registerX registerY =
         newRegisters =
             registers
                 |> Registers.setDataRegister registerX newRegisterValue
-                |> Result.andThen (Registers.setDataRegister 15 carryValue)
+                |> Result.andThen (Registers.setDataRegister 15 notBorrowValue)
                 |> Result.withDefault registers
 
         newVirtualMachine =
@@ -617,10 +615,10 @@ setRegisterSubFlipped virtualMachine registerX registerY =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 8xyE - SHL Vx (Set Vx = Vx SHL 1)
+{-| 8XYE - Set VX = VX SHL 1
 
-If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
-Then Vx is multiplied by 2.
+If the most-significant bit of VX is 1, then VF is set to 1, otherwise to 0.
+Then VX is multiplied by 2.
 
 -}
 setRegisterShiftLeft : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
@@ -634,7 +632,7 @@ setRegisterShiftLeft virtualMachine registerX =
                 |> Registers.getDataRegister registerX
                 |> Result.withDefault 0
 
-        carryValue =
+        msbValue =
             Bitwise.shiftRightBy 7 registerXValue
 
         newRegisterValue =
@@ -642,7 +640,7 @@ setRegisterShiftLeft virtualMachine registerX =
 
         newRegisters =
             registers
-                |> Registers.setDataRegister 15 carryValue
+                |> Registers.setDataRegister 15 msbValue
                 |> Result.andThen (Registers.setDataRegister registerX newRegisterValue)
                 |> Result.withDefault registers
 
@@ -652,9 +650,9 @@ setRegisterShiftLeft virtualMachine registerX =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| 9xy0 - SNE Vx, Vy (Skip next instruction if Vx != Vy)
+{-| 9XY0 - Skip next instruction if VX != VY
 
-The values of Vx and Vy are compared, and if they are not equal, the program
+The values of VX and VY are compared, and if they are not equal, the program
 counter is increased by 2.
 
 -}
@@ -687,9 +685,9 @@ skipNextIfRegistersNotEqual virtualMachine registerX registerY =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| Annn - LD I, addr (Set I = nnn)
+{-| ANNN - Set I = NNN
 
-The value of register I is set to nnn.
+The value of register I is set to NNN.
 
 -}
 setAddressRegisterToConstant : VirtualMachine -> Value12Bit -> ( VirtualMachine, Cmd Msg )
@@ -703,9 +701,9 @@ setAddressRegisterToConstant virtualMachine location =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| Bnnn - JP V0, addr (Jump to location nnn + V0)
+{-| BNNN - Jump to location NNN + V0
 
-The program counter is set to nnn plus the value of V0.
+The program counter is set to NNN plus the value of V0.
 
 -}
 jumpRelative : VirtualMachine -> Value16Bit -> ( VirtualMachine, Cmd Msg )
@@ -725,11 +723,10 @@ jumpRelative virtualMachine location =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| Cxkk - RND Vx, byte (Set Vx = random byte AND kk)
+{-| CXNN - Set VX = random byte AND NN
 
-The interpreter generates a random number from 0 to 255, which is then ANDed
-with the value kk. The results are stored in Vx. See instruction 8xy2 for
-more information on AND.
+The interpreter generates a random number from 0 to 255, which is then AND'ed
+with the value NN. The results are stored in VX.
 
 -}
 setRegisterRandom : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
@@ -755,17 +752,17 @@ setRegisterRandom virtualMachine registerX value =
     )
 
 
-{-| Dxyn - DRW Vx, Vy, nibble (Display n-byte sprite)
+{-| DXYN - Display N-byte sprite
 
-    Display n-byte sprite starting at memory location I at (Vx, Vy),
-    set VF = collision.
+Display N-byte sprite starting at memory location I at (VX, VY), set VF =
+collision.
 
-    The interpreter reads n bytes from memory, starting at the address stored in
-    I. These bytes are then displayed as sprites on screen at coordinates (Vx,
-    Vy). Sprites are XORed onto the existing screen. If this causes any pixels
-    to be erased, VF is set to 1, otherwise it is set to 0. If the sprite is
-    positioned so part of it is outside the coordinates of the display, it wraps
-    around to the opposite side of the screen.
+The interpreter reads N bytes from memory, starting at the address stored in I.
+These bytes are then displayed as sprites on screen at coordinates (VX, VY).
+Sprites are XORed onto the existing screen. If this causes any pixels to be
+erased, VF is set to 1, otherwise it is set to 0. If the sprite is positioned so
+part of it is outside the coordinates of the display, it wraps around to the
+opposite side of the screen.
 
 -}
 displaySprite : VirtualMachine -> Int -> Int -> Value4Bit -> ( VirtualMachine, Cmd Msg )
@@ -949,13 +946,17 @@ hexToBitPattern number =
     in
     trimmedString
         |> String.toList
-        |> List.map (ParseInt.intFromChar radix)
-        |> List.map (Result.toMaybe >> Maybe.withDefault 0 >> (\x -> x > 0))
+        |> List.map
+            (ParseInt.intFromChar radix
+                >> Result.toMaybe
+                >> Maybe.withDefault 0
+                >> (\x -> x > 0)
+            )
 
 
-{-| Ex9E - SKP Vx (Skip next instruction if key code of value Vx is pressed)
+{-| EX9E - Skip next instruction if key code of value VX is pressed
 
-Checks the keyboard, and if the key corresponding to the value of Vx is
+Checks the keyboard, and if the key corresponding to the value of VX is
 currently in the down position, PC is increased by 2.
 
 -}
@@ -983,9 +984,9 @@ skipNextIfKeyPressed virtualMachine registerX =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| ExA1 - SKNP Vx (Skip next instruction if key code of value Vx isn't pressed)
+{-| EXA1 - Skip next instruction if key code of value VX isn't pressed
 
-Checks the keyboard, and if the key corresponding to the value of Vx is
+Checks the keyboard, and if the key corresponding to the value of VX is
 currently in the up position, PC is increased by 2.
 
 -}
@@ -1013,9 +1014,9 @@ skipNextIfKeyNotPressed virtualMachine registerX =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| Fx07 - LD Vx, DT (Set Vx = delay timer value)
+{-| FX07 - Set VX = delay timer value
 
-The value of DT is placed into Vx.
+The value of DT is placed into VX.
 
 -}
 setRegisterToDelayTimer : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
@@ -1038,12 +1039,12 @@ setRegisterToDelayTimer virtualMachine registerX =
     ( newVirtualMachine, Cmd.none )
 
 
-{-| Fx0A - LD Vx, K (Wait for a key press)
+{-| FX0A - Wait for a key press
 
-Wait for a key press, store the value of the key in Vx.
+Wait for a key press, store the value of the key in VX.
 
 All execution stops until a key is pressed, then the value of that key is
-stored in Vx.
+stored in VX.
 
 -}
 waitForKeyPress : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
@@ -1060,9 +1061,9 @@ waitForKeyPress virtualMachine registerX =
     )
 
 
-{-| Fx15 - LD DT, Vx (Set delay timer = Vx)
+{-| FX15 - Set delay timer = VX
 
-DT is set equal to the value of Vx.
+DT is set equal to the value of VX.
 
 -}
 setDelayTimerToRegisterValue : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
@@ -1089,9 +1090,9 @@ setDelayTimerToRegisterValue virtualMachine registerX =
     )
 
 
-{-| Fx18 - LD ST, Vx (Set sound timer = Vx)
+{-| FX18 - Set sound timer = VX
 
-ST is set equal to the value of Vx.
+ST is set equal to the value of VX.
 
 -}
 setSoundTimerToRegisterValue : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
@@ -1111,9 +1112,9 @@ setSoundTimerToRegisterValue virtualMachine registerX =
     )
 
 
-{-| Fx1E - ADD I, Vx (Set I = I + Vx)
+{-| FX1E - Set I = I + VX
 
-The values of I and Vx are added, and the results are stored in I.
+The values of I and VX are added, and the results are stored in I.
 
 -}
 addToAddressRegister : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
@@ -1140,11 +1141,10 @@ addToAddressRegister virtualMachine registerX =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| Fx29 - LD F, Vx (Set I = location of sprite for digit Vx)
+{-| FX29 - Set I = location of sprite for digit VX
 
-The value of I is set to the location for the hexadecimal sprite
-corresponding to the value of Vx. See section 2.4, Display, for more
-information on the Chip-8 hexadecimal font.
+The value of I is set to the location for the hexadecimal sprite corresponding
+to the value of VX.
 
 -}
 setAddressRegisterToSpriteLocation : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
@@ -1164,13 +1164,13 @@ setAddressRegisterToSpriteLocation virtualMachine registerX =
     ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
 
 
-{-| Fx33 - LD B, Vx (Store BCD representation of Vx)
+{-| FX33 - Store BCD representation of VX
 
-Store BCD representation of Vx in memory locations I, I+1, and I+2.
+Store BCD representation of VX in memory locations I, I+1, and I+2.
 
-The interpreter takes the decimal value of Vx, and places the hundreds digit
-in memory at location in I, the tens digit at location I+1, and the ones
-digit at location I+2.
+The interpreter takes the decimal value of VX, and places the hundreds digit in
+memory at location in I, the tens digit at location I+1, and the ones digit at
+location I+2.
 
 -}
 storeBcdOfRegister : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
@@ -1210,11 +1210,11 @@ storeBcdOfRegister virtualMachine registerX =
     ( virtualMachine |> VirtualMachine.setMemory newMemory, Cmd.none )
 
 
-{-| Fx55 - LD [I], Vx (Store registers V0 through Vx in memory)
+{-| FX55 - Store registers V0 through VX in memory
 
-Store registers V0 through Vx in memory starting at location I.
+Store registers V0 through VX in memory starting at location I.
 
-The interpreter copies the values of registers V0 through Vx into memory,
+The interpreter copies the values of registers V0 through VX into memory,
 starting at the address in I.
 
 -}
@@ -1244,12 +1244,12 @@ storeRegistersAtAddressRegister virtualMachine registerX =
     ( virtualMachine |> VirtualMachine.setMemory newMemory, Cmd.none )
 
 
-{-| Fx65 - LD Vx, [I] (Read registers V0 through Vx from memory)
+{-| FX65 - Read registers V0 through VX from memory
 
-Read registers V0 through Vx from memory starting at location I.
+Read registers V0 through VX from memory starting at location I.
 
 The interpreter reads values from memory starting at location I into
-registers V0 through Vx.
+registers V0 through VX.
 
 -}
 readRegistersFromAddressRegister : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
