@@ -4,7 +4,7 @@
   "description": "A CHIP-8 Emulator written in Elm",
   "dependencies": {
     "elm-format": "=0.8.5",
-    "elm-test": "0.19.1-revision10",
+    "elm-test": "0.19.1-revision11",
     "elm-verify-examples": "=5.2.0",
     "uglify-js": "^3.17.4"
   },
