@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A CHIP-8 Emulator written in Elm",
   "dependencies": {
-    "elm-format": "=0.8.7",
+    "elm-format": "=0.8.8",
     "elm-test": "0.19.1-revision15",
     "elm-verify-examples": "=6.0.3",
     "uglify-js": "^3.19.3"
