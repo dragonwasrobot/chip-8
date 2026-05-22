@@ -6,8 +6,5 @@ node_modules/
 # Elm
 elm-stuff/
 
-# Emacs
-.dir-locals.el
-
-# OS/X
-.DS_Store
+# Output
+docs/elm.min.js
