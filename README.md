@@ -24,9 +24,8 @@ With Elm installed, perform the following steps:
 
 - Change the `romsUrlPrefix` in `src/Request.elm` to `/roms/`,
 - run the command `./build.sh` to compile the source, and
-- run the command `python3 -m http.server` in the root of the `docs/` folder
-  to start a server that can serve both the `docs/index.html` file and the
-  CHIP-8 roms stored in `docs/roms`, then
+- run the command `npm run serve` to start a server that can serve both the
+  `docs/index.html` file and the CHIP-8 roms stored in `docs/roms`, then
 - go to `http://localhost:8000` in your favorite browser.
 
 ## Testing

@@ -1,0 +1,24 @@
+[tools]
+node = "24"
+elm = "0.19.1"
+
+[tasks.format]
+run = "npm run format"
+
+[tasks.lint]
+run = "npm run lint"
+
+[tasks.compile]
+run = "npm run compile"
+
+[tasks.build]
+depends = ["format", "lint", "compile"]
+
+[tasks.test]
+run = "npm run test"
+
+[tasks.dev]
+depends = ["build", "test"]
+
+[tasks.serve]
+run = "npm run serve"
