@@ -1,6 +1,5 @@
 module FetchDecodeExecuteLoop exposing
     ( dropFirstNibble
-    , fetchOpcode
     , getByte
     , getNibble
     , tick
@@ -12,7 +11,7 @@ import Flags exposing (Flags)
 import Hex
 import Instructions
 import Memory exposing (Memory)
-import Msg exposing (Msg(..))
+import Msg exposing (Msg)
 import Ports
 import Registers
 import Types exposing (Error, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
@@ -114,7 +113,7 @@ handle0 virtualMachine opcode =
             Ok <| Instructions.returnFromSubroutine virtualMachine
 
         _ ->
-            Err <| "Unknown opcode: " ++ toHex opcode
+            Ok <| Instructions.jumpSys virtualMachine
 
 
 handle1 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
@@ -153,17 +152,17 @@ handle4 virtualMachine opcode =
 
 handle5 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
 handle5 virtualMachine opcode =
-    let
-        registerX =
-            opcode |> getNibble 1 |> Result.withDefault 0
-
-        registerY =
-            opcode |> getNibble 2 |> Result.withDefault 0
-    in
     if (opcode |> getNibble 3 |> Result.withDefault -1) /= 0 then
         Err <| "Unknown opcode: " ++ toHex opcode
 
     else
+        let
+            registerX =
+                opcode |> getNibble 1 |> Result.withDefault 0
+
+            registerY =
+                opcode |> getNibble 2 |> Result.withDefault 0
+        in
         Ok <| Instructions.skipNextIfRegistersEqual virtualMachine registerX registerY
 
 
@@ -238,12 +237,6 @@ handle8 virtualMachine opcode =
 handle9 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
 handle9 virtualMachine opcode =
     let
-        registerX =
-            opcode |> getNibble 1 |> Result.withDefault 0
-
-        registerY =
-            opcode |> getNibble 2 |> Result.withDefault 0
-
         nibble =
             opcode |> getNibble 3 |> Result.withDefault 0
     in
@@ -251,6 +244,13 @@ handle9 virtualMachine opcode =
         Err <| "Unknown opcode: " ++ toHex opcode
 
     else
+        let
+            registerX =
+                opcode |> getNibble 1 |> Result.withDefault 0
+
+            registerY =
+                opcode |> getNibble 2 |> Result.withDefault 0
+        in
         Ok <| Instructions.skipNextIfRegistersNotEqual virtualMachine registerX registerY
 
 
@@ -457,8 +457,7 @@ tick instructions virtualMachine =
                     let
                         flags =
                             accVirtualMachine |> VirtualMachine.getFlags
-                    in
-                    let
+
                         ( updatedVirtualMachine, cmd ) =
                             performCycle flags accVirtualMachine
                     in

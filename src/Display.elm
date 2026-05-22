@@ -19,9 +19,7 @@ init =
         ( width, height ) =
             ( 64, 32 )
     in
-    Array.initialize
-        width
-        (\_ -> Array.initialize height (\_ -> False))
+    Array.repeat width (Array.repeat height False)
 
 
 type alias Cell =

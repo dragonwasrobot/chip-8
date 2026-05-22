@@ -7,7 +7,7 @@ module Registers exposing
     , getDataRegister
     , getDelayTimer
     , getProgramCounter
-    , getSoundTimer
+      -- , getSoundTimer
     , getStackPointer
     , incrementProgramCounter
     , incrementStackPointer
@@ -16,7 +16,7 @@ module Registers exposing
     , setDataRegister
     , setDelayTimer
     , setProgramCounter
-    , setSoundTimer
+      -- , setSoundTimer
     )
 
 {-| Registers
@@ -52,14 +52,15 @@ dataRegisterCount =
 
 initDataRegisters : DataRegisters
 initDataRegisters =
-    Array.initialize dataRegisterCount (\_ -> 0)
+    Array.repeat dataRegisterCount 0
 
 
 type alias Registers =
     { dataRegisters : DataRegisters
     , addressRegister : Value16Bit
     , delayTimer : Value8Bit
-    , soundTimer : Value8Bit
+
+    -- , soundTimer : Value8Bit
     , programCounter : Value16Bit
     , stackPointer : Value8Bit
     }
@@ -70,7 +71,8 @@ init =
     { dataRegisters = initDataRegisters
     , addressRegister = 0
     , delayTimer = 0
-    , soundTimer = 0
+
+    -- , soundTimer = 0
     , programCounter = 0
     , stackPointer = 0
     }
@@ -118,14 +120,13 @@ setDelayTimer delay registers =
     { registers | delayTimer = delay }
 
 
-getSoundTimer : Registers -> Value8Bit
-getSoundTimer registers =
-    registers.soundTimer
 
-
-setSoundTimer : Value8Bit -> Registers -> Registers
-setSoundTimer sound registers =
-    { registers | soundTimer = sound }
+-- getSoundTimer : Registers -> Value8Bit
+-- getSoundTimer registers =
+--     registers.soundTimer
+-- setSoundTimer : Value8Bit -> Registers -> Registers
+-- setSoundTimer sound registers =
+--     { registers | soundTimer = sound }
 
 
 getProgramCounter : Registers -> Value16Bit

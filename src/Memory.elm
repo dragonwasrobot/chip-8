@@ -28,7 +28,7 @@ init : Memory
 init =
     let
         emptyMemory =
-            Array.initialize memorySize (\_ -> 0)
+            Array.repeat memorySize 0
     in
     emptyMemory
         |> addSpritesToMemory

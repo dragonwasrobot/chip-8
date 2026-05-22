@@ -12,7 +12,6 @@ module Instructions exposing
     , returnFromSubroutine
     , setAddressRegisterToConstant
     , setAddressRegisterToSpriteLocation
-    , setBit
     , setDelayTimerToRegisterValue
     , setRegisterAdd
     , setRegisterAnd
@@ -69,7 +68,7 @@ import Flags
 import Keypad
 import List.Extra as List
 import Memory
-import Msg exposing (Msg(..))
+import Msg exposing (Msg)
 import ParseInt
 import Random
 import Registers exposing (Registers)
@@ -885,7 +884,7 @@ setBit x y newBitValue virtualMachine =
             (Display.getCell display x y).value
 
         newCarry =
-            if carry == 0 && oldBitValue == True && newBitValue == True then
+            if carry == 0 && oldBitValue && newBitValue then
                 1
 
             else
@@ -1107,9 +1106,7 @@ setSoundTimerToRegisterValue virtualMachine registerX =
         cmd =
             Timers.playSound newSoundTimer
     in
-    ( virtualMachine
-    , cmd
-    )
+    ( virtualMachine, cmd )
 
 
 {-| FX1E - Set I = I + VX

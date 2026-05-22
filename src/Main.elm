@@ -184,12 +184,12 @@ clockTick model =
 
         waitingForInput =
             flags |> Flags.isWaitingForInput
-
-        tickSpeed =
-            2
     in
     if running && waitingForInput == False then
         let
+            tickSpeed =
+                2
+
             ( newVirtualMachine, cmd ) =
                 model.virtualMachine |> FetchDecodeExecuteLoop.tick tickSpeed
         in
@@ -304,13 +304,10 @@ update msg model =
         KeyUp maybeKeyCode ->
             model |> removeKeyCode maybeKeyCode
 
-        KeyPress _ ->
-            ( model, Cmd.none )
-
         DelayTick ->
             model |> delayTick
 
-        ClockTick _ ->
+        ClockTick ->
             model |> clockTick
 
         SelectGame gameName ->
@@ -393,11 +390,12 @@ renderCell display ( row, column ) renderables =
     let
         cell =
             Display.getCell display row column
-
-        ( x, y ) =
-            ( toFloat row * cellSize, toFloat column * cellSize )
     in
     if cell.value then
+        let
+            ( x, y ) =
+                ( toFloat row * cellSize, toFloat column * cellSize )
+        in
         Canvas.shapes
             [ fill cellColor ]
             [ Canvas.rect ( x, y ) cellSize cellSize ]
@@ -536,7 +534,6 @@ keyboardSubscriptions flags maybeGame =
             in
             [ BrowserEvents.onKeyUp (keyDecoder KeyUp)
             , BrowserEvents.onKeyDown (keyDecoder KeyDown)
-            , BrowserEvents.onKeyPress (keyDecoder KeyPress)
             ]
 
         _ ->
@@ -552,4 +549,4 @@ clockSubscriptions flags =
         []
 
     else
-        [ Time.every (1000 / 600) ClockTick ]
+        [ Time.every (1000 / 600) (\_ -> ClockTick) ]

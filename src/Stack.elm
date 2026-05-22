@@ -23,7 +23,7 @@ stackSize =
 
 init : Stack
 init =
-    Array.initialize stackSize (\_ -> 0)
+    Array.repeat stackSize 0
 
 
 pop : Value8Bit -> Stack -> Result Error Value16Bit

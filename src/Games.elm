@@ -245,19 +245,20 @@ invaders =
     }
 
 
-kaleid : Game
-kaleid =
-    let
-        controls =
-            [ { browserKeyCode = " "
-              , chip8KeyCode = KeyCode 5
-              , description = Nothing
-              }
-            ]
-    in
-    { name = "kaleid.ch8"
-    , controls = controls
-    }
+
+-- kaleid : Game
+-- kaleid =
+--     let
+--         controls =
+--             [ { browserKeyCode = " "
+--               , chip8KeyCode = KeyCode 5
+--               , description = Nothing
+--               }
+--             ]
+--     in
+--     { name = "kaleid.ch8"
+--     , controls = controls
+--     }
 
 
 morseDemo : Game
@@ -382,6 +383,7 @@ init =
     , cavern
     , chipquarium
     , connect4
+    , heartMonitorDemo
     , hidden
     , invaders
 
