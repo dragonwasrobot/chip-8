@@ -5,7 +5,7 @@ import Browser
 import Browser.Events as BrowserEvents
 import Canvas exposing (Renderable)
 import Canvas.Settings exposing (fill)
-import Color as Color exposing (Color)
+import Color exposing (Color)
 import Display exposing (Display)
 import FetchDecodeExecuteLoop
 import Flags exposing (Flags)

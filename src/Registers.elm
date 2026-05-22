@@ -1,6 +1,6 @@
 module Registers exposing
-    ( Registers
-    , DataRegisters
+    ( DataRegisters
+    , Registers
     , decrementProgramCounter
     , decrementStackPointer
     , getAddressRegister

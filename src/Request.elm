@@ -3,7 +3,7 @@ module Request exposing (fetchRom)
 import Array exposing (Array)
 import Bytes exposing (Bytes)
 import Bytes.Decode as Decode exposing (Decoder, Step(..))
-import Http exposing (Response(..), Error(..))
+import Http exposing (Error(..), Response(..))
 import Types exposing (Value8Bit)
 
 

@@ -6,7 +6,7 @@ import Types exposing (Value4Bit)
 
 
 {-| Mapping from standard keyboard codes to CHIP-8 keypad codes:
-    ( Browser key code, CHIP-8 key code, optional description )
+( Browser key code, CHIP-8 key code, optional description )
 -}
 type alias KeyMapping =
     { browserKeyCode : String

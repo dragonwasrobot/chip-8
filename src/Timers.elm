@@ -1,6 +1,6 @@
 port module Timers exposing
-    ( Timers
-    , Delay
+    ( Delay
+    , Timers
     , init
     , playSound
     , startDelayTimer
