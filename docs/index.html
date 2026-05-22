@@ -18,7 +18,10 @@
         <div id="elm-main"></div>
         <script>
          const app = Elm.Main.init({
-             node: document.getElementById('elm-main')
+             node: document.getElementById('elm-main'),
+             flags: {
+                 basePath: "/roms/"
+             }
          });
 
          /* Ports */

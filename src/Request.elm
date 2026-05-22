@@ -7,16 +7,10 @@ import Http exposing (Error(..), Response(..))
 import Types exposing (Value8Bit)
 
 
-romsUrlPrefix : String
-romsUrlPrefix =
-    -- Use /roms/ for dev, /chip-8/roms for prod
-    "/roms/"
-
-
 fetchRom : String -> (Result Error (Array Value8Bit) -> msg) -> Cmd msg
-fetchRom romName toMsg =
+fetchRom romPath toMsg =
     Http.get
-        { url = romsUrlPrefix ++ romName
+        { url = romPath
         , expect = Http.expectBytesResponse toMsg decodeBytesResponse
         }
 

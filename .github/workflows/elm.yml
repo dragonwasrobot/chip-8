@@ -81,7 +81,7 @@ jobs:
       - name: Compile and minimize project
         run: |
           echo "Compiling project..."
-          ./build.sh prod
+          ./build.sh
 
       - name: Setup Pages
         id: pages

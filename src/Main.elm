@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (InitFlags, Model, main)
 
 import Array exposing (Array)
 import Browser
@@ -48,12 +48,7 @@ import VirtualMachine exposing (VirtualMachine)
 -- INIT
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( initModel, Cmd.none )
-
-
-main : Program () Model Msg
+main : Program InitFlags Model Msg
 main =
     Browser.element
         { init = init
@@ -63,8 +58,17 @@ main =
         }
 
 
+type alias InitFlags =
+    { basePath : String }
+
+
 
 -- MODEL
+
+
+init : InitFlags -> ( Model, Cmd Msg )
+init flags =
+    ( initModel flags.basePath, Cmd.none )
 
 
 type alias Model =
@@ -72,15 +76,17 @@ type alias Model =
     , games : List Game
     , selectedGame : Maybe Game
     , error : Maybe Error
+    , basePath : String
     }
 
 
-initModel : Model
-initModel =
+initModel : String -> Model
+initModel basePath =
     { virtualMachine = VirtualMachine.init
     , games = Games.init
     , selectedGame = Nothing
     , error = Nothing
+    , basePath = basePath
     }
 
 
@@ -213,13 +219,17 @@ selectGame gameName model =
         , selectedGame = selectedGame
         , error = Nothing
       }
-    , loadGame gameName
+    , loadGame model.basePath gameName
     )
 
 
-loadGame : String -> Cmd Msg
-loadGame gameName =
-    Request.fetchRom gameName LoadedGame
+loadGame : String -> String -> Cmd Msg
+loadGame basePath gameName =
+    let
+        gamePath =
+            basePath ++ gameName
+    in
+    Request.fetchRom gamePath LoadedGame
 
 
 reloadGame : Model -> ( Model, Cmd Msg )
