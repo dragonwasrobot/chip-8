@@ -1,75 +1,75 @@
 /* style.css */
 :root {
-    --main-color: #ffffff;
-    --main-bg-color: #212529;
+  --main-color: #ffffff;
+  --main-bg-color: #212529;
 }
 
 body {
-    background-color: var(--main-bg-color);
+  background-color: var(--main-bg-color);
 }
 
 #container {
-    margin-top: 1em;
+  margin-top: 1em;
 }
 
 canvas {
-    margin: 0 auto 0 auto;
-    box-shadow: 0 4px var(--main-color),
-                0 -4px var(--main-color),
-                4px 0 var(--main-color),
-                -4px 0 var(--main-color);
-    display: block;
+  margin: 0 auto 0 auto;
+  box-shadow: 0 4px var(--main-color),
+              0 -4px var(--main-color),
+              4px 0 var(--main-color),
+              -4px 0 var(--main-color);
+  display: block;
 }
 
 h1 {
-    text-align: center;
-    color: var(--main-color);
-    margin-bottom: 0.75em;
+  text-align: center;
+  color: var(--main-color);
+  margin-bottom: 0.75em;
 }
 
 ul {
-    padding: 0;
-    list-style-type: none;
+  padding: 0;
+  list-style-type: none;
 }
 
 .centerish {
-    width: 15%;
-    left: 42.5%;
+  margin: 0 auto;
+  width: fit-content;
 }
 
 #game-selector {
-    margin-top: 1em;
+  margin-top: 1em;
 }
 
 #game-reload {
-    margin-top: 1.5em;
-    padding: 6px 12px 6px 16px;
-    border: 0;
-    box-shadow: 0 -4px var(--main-color),
-                0 4px var(--main-color),
-                4px 0 var(--main-color),
-                -4px 0 var(--main-color);
-    background-color: var(--main-bg-color);
-    font-size: 1.2em;
-    color: var(--main-color);
+  margin-top: 1.5em;
+  padding: 6px 12px 6px 16px;
+  border: 0;
+  box-shadow: 0 -4px var(--main-color),
+              0 4px var(--main-color),
+              4px 0 var(--main-color),
+              -4px 0 var(--main-color);
+  background-color: var(--main-bg-color);
+  font-size: 1.2em;
+  color: var(--main-color);
 }
 
 #games-container {
-    margin: 1.5em;
-    display: block;
-    text-align: center;
+  margin: 1.5em;
+  display: block;
+  text-align: center;
 }
 
 #key-mapping-container {
-    margin: 1.5em;
-    display: block;
-    text-align: center;
-    color: var(--main-color);
+  margin: 1.5em;
+  display: block;
+  text-align: center;
+  color: var(--main-color);
 }
 
 /* Adjustments to NES.css */
 
 .nes-select.is-dark::after {
-    color: var(--main-color);
-    margin-top: 6px;
+  color: var(--main-color);
+  margin-top: 6px;
 }
