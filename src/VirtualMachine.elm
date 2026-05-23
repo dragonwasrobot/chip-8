@@ -47,8 +47,8 @@ type alias VirtualMachine =
     }
 
 
-init : VirtualMachine
-init =
+init : Int -> VirtualMachine
+init seed =
     { memory = Memory.init
     , stack = Stack.init
     , registers = Registers.init
@@ -56,7 +56,7 @@ init =
     , display = Display.init
     , timers = Timers.init
     , keypad = Keypad.init
-    , randomSeed = Random.initialSeed 49317
+    , randomSeed = Random.initialSeed seed
     }
 
 

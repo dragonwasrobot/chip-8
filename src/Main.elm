@@ -45,7 +45,7 @@ import VirtualMachine exposing (VirtualMachine)
 
 
 
--- INIT
+-- * INIT
 
 
 main : Program InitFlags Model Msg
@@ -59,16 +59,18 @@ main =
 
 
 type alias InitFlags =
-    { basePath : String }
+    { basePath : String
+    , seed : Int
+    }
 
 
 
--- MODEL
+-- * MODEL
 
 
 init : InitFlags -> ( Model, Cmd Msg )
 init flags =
-    ( initModel flags.basePath, Cmd.none )
+    ( initModel flags, Cmd.none )
 
 
 type alias Model =
@@ -77,21 +79,23 @@ type alias Model =
     , selectedGame : Maybe Game
     , error : Maybe Error
     , basePath : String
+    , seed : Int
     }
 
 
-initModel : String -> Model
-initModel basePath =
-    { virtualMachine = VirtualMachine.init
+initModel : InitFlags -> Model
+initModel flags =
+    { virtualMachine = VirtualMachine.init flags.seed
     , games = Games.init
     , selectedGame = Nothing
     , error = Nothing
-    , basePath = basePath
+    , basePath = flags.basePath
+    , seed = flags.seed
     }
 
 
 
--- UPDATE
+-- * UPDATE
 
 
 addKeyCode : Maybe KeyCode -> Model -> ( Model, Cmd Msg )
@@ -212,7 +216,7 @@ selectGame gameName model =
             model.games |> List.find (.name >> (==) gameName)
 
         newVirtualMachine =
-            VirtualMachine.init
+            VirtualMachine.init model.seed
     in
     ( { model
         | virtualMachine = newVirtualMachine
@@ -331,7 +335,7 @@ update msg model =
 
 
 
--- VIEW
+-- * VIEW
 
 
 view : Model -> Html Msg
@@ -514,7 +518,7 @@ prettyPrintKey keyStr =
 
 
 
--- SUBSCRIPTIONS
+-- * SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
