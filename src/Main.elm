@@ -104,6 +104,7 @@ type Msg
     | KeyDown (Maybe KeyCode)
     | DelayTick
     | ClockTick
+    | FadeTick
     | SelectGame String
     | ReloadGame
     | LoadedGame (Result Http.Error (Array Value8Bit))
@@ -123,6 +124,9 @@ update msg model =
 
         ClockTick ->
             model |> clockTick
+
+        FadeTick ->
+            model |> fadeTick
 
         SelectGame gameName ->
             model |> selectGame gameName
@@ -286,6 +290,20 @@ clockTick model =
 
     else
         ( model, Cmd.none )
+
+
+fadeTick : Model -> ( Model, Cmd Msg )
+fadeTick model =
+    let
+        newDisplay =
+            model.virtualMachine
+                |> VirtualMachine.getDisplay
+                |> Display.decrementFade
+
+        newVirtualMachine =
+            model.virtualMachine |> VirtualMachine.setDisplay newDisplay
+    in
+    ( { model | virtualMachine = newVirtualMachine }, Cmd.none )
 
 
 selectGame : String -> Model -> ( Model, Cmd Msg )
@@ -455,11 +473,7 @@ renderDisplay displayCells =
 
 renderCell : Display -> ( Int, Int ) -> List Renderable -> List Renderable
 renderCell display ( row, column ) renderables =
-    let
-        cell =
-            Display.getCell display row column
-    in
-    if cell.value then
+    if Display.isRendered display row column then
         let
             ( x, y ) =
                 ( toFloat row * cellSize, toFloat column * cellSize )
@@ -617,4 +631,6 @@ clockSubscriptions flags =
         []
 
     else
-        [ Time.every (1000 / 600) (\_ -> ClockTick) ]
+        [ Time.every (1000 / 600) (\_ -> ClockTick)
+        , Time.every (1000 / 60) (\_ -> FadeTick)
+        ]
