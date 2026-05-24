@@ -1,4 +1,4 @@
-module VirtualMachine exposing
+module Chip8.VirtualMachine exposing
     ( VirtualMachine
     , getDisplay
     , getFlags
@@ -25,14 +25,14 @@ Contains the state of the CHIP-8 emulator.
 
 -}
 
-import Display exposing (Display)
-import Flags exposing (Flags)
-import Keypad exposing (Keypad)
-import Memory exposing (Memory)
+import Chip8.Display as Display exposing (Display)
+import Chip8.Flags as Flags exposing (Flags)
+import Chip8.Keypad as Keypad exposing (Keypad)
+import Chip8.Memory as Memory exposing (Memory)
+import Chip8.Registers as Registers exposing (Registers)
+import Chip8.Stack as Stack exposing (Stack)
+import Chip8.Timers as Timers exposing (Timers)
 import Random exposing (Seed)
-import Registers exposing (Registers)
-import Stack exposing (Stack)
-import Timers exposing (Timers)
 
 
 type alias VirtualMachine =

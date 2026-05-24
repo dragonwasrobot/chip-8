@@ -1,4 +1,4 @@
-module Keypad exposing
+module Chip8.Keypad exposing
     ( Keypad
     , addKeyPress
     , getKeysPressed
@@ -25,8 +25,8 @@ We create a specific mapping per game, since the 16-key keypad is unusual.
 
 -}
 
+import Chip8.KeyCode as KeyCode exposing (KeyCode)
 import Dict exposing (Dict)
-import KeyCode exposing (KeyCode)
 
 
 type alias Keypad =

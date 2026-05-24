@@ -1,4 +1,4 @@
-module Memory exposing (Memory, getCell, init, setCell)
+module Chip8.Memory exposing (Memory, getCell, init, setCell)
 
 {-| Memory
 
@@ -12,7 +12,7 @@ bytes (0x200) are reserved for the CHIP-8 interpreter:
 -}
 
 import Array exposing (Array)
-import Types exposing (Error, Value8Bit)
+import Chip8.Types exposing (RuntimeError, Value8Bit)
 
 
 type alias Memory =
@@ -34,7 +34,7 @@ init =
         |> addSpritesToMemory
 
 
-getCell : Int -> Memory -> Result Error Value8Bit
+getCell : Int -> Memory -> Result RuntimeError Value8Bit
 getCell index memory =
     if index >= memorySize then
         Err "Memory index out of bounds"
@@ -46,7 +46,7 @@ getCell index memory =
             |> Ok
 
 
-setCell : Int -> Value8Bit -> Memory -> Result Error Memory
+setCell : Int -> Value8Bit -> Memory -> Result RuntimeError Memory
 setCell index value memory =
     if index >= memorySize then
         Err "Memory index out of bounds"

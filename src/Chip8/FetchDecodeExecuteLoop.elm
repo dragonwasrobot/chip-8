@@ -1,4 +1,4 @@
-module FetchDecodeExecuteLoop exposing
+module Chip8.FetchDecodeExecuteLoop exposing
     ( dropFirstNibble
     , getByte
     , getNibble
@@ -7,15 +7,13 @@ module FetchDecodeExecuteLoop exposing
     )
 
 import Bitwise
-import Flags exposing (Flags)
+import Chip8.Flags as Flags exposing (Flags)
+import Chip8.Instructions as Instructions
+import Chip8.Memory as Memory exposing (Memory)
+import Chip8.Registers as Registers
+import Chip8.Types exposing (RuntimeError, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
+import Chip8.VirtualMachine as VirtualMachine exposing (VirtualMachine)
 import Hex
-import Instructions
-import Memory exposing (Memory)
-import Msg exposing (Msg)
-import Ports
-import Registers
-import Types exposing (Error, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
-import VirtualMachine exposing (VirtualMachine)
 
 
 {-| Gets the n'th nibble of a 16 bit word
@@ -35,7 +33,7 @@ import VirtualMachine exposing (VirtualMachine)
     --> Ok 8
 
 -}
-getNibble : Int -> Value16Bit -> Result Error Value4Bit
+getNibble : Int -> Value16Bit -> Result RuntimeError Value4Bit
 getNibble n opcode =
     if List.member n [ 0, 1, 2, 3 ] then
         opcode
@@ -103,7 +101,7 @@ toHex int =
     int |> Hex.toString |> String.toUpper
 
 
-handle0 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle0 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle0 virtualMachine opcode =
     case getByte opcode of
         0xE0 ->
@@ -116,17 +114,19 @@ handle0 virtualMachine opcode =
             Ok <| Instructions.jumpSys virtualMachine
 
 
-handle1 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle1 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle1 virtualMachine opcode =
-    opcode |> dropFirstNibble |> Instructions.jumpAbsolute virtualMachine |> Ok
+    virtualMachine
+        |> (opcode |> dropFirstNibble |> Instructions.jumpAbsolute)
+        |> Ok
 
 
-handle2 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle2 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle2 virtualMachine opcode =
     opcode |> dropFirstNibble |> Instructions.callSubroutine virtualMachine |> Ok
 
 
-handle3 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle3 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle3 virtualMachine opcode =
     let
         register =
@@ -135,10 +135,10 @@ handle3 virtualMachine opcode =
         value =
             opcode |> getByte
     in
-    Ok <| Instructions.skipNextIfEqualConstant virtualMachine register value
+    virtualMachine |> Instructions.skipNextIfEqualConstant register value |> Ok
 
 
-handle4 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle4 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle4 virtualMachine opcode =
     let
         register =
@@ -147,10 +147,10 @@ handle4 virtualMachine opcode =
         value =
             opcode |> getByte
     in
-    Ok <| Instructions.skipNextIfNotEqualConstant virtualMachine register value
+    Ok <| Instructions.skipNextIfNotEqualConstant register value virtualMachine
 
 
-handle5 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle5 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle5 virtualMachine opcode =
     if (opcode |> getNibble 3 |> Result.withDefault -1) /= 0 then
         Err <| "Unknown opcode: " ++ toHex opcode
@@ -163,10 +163,10 @@ handle5 virtualMachine opcode =
             registerY =
                 opcode |> getNibble 2 |> Result.withDefault 0
         in
-        Ok <| Instructions.skipNextIfRegistersEqual virtualMachine registerX registerY
+        Ok <| Instructions.skipNextIfRegistersEqual registerX registerY virtualMachine
 
 
-handle6 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle6 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle6 virtualMachine opcode =
     let
         registerX =
@@ -175,10 +175,10 @@ handle6 virtualMachine opcode =
         value =
             opcode |> getByte
     in
-    Ok <| Instructions.setRegisterToConstant virtualMachine registerX value
+    virtualMachine |> Instructions.setRegisterToConstant registerX value |> Ok
 
 
-handle7 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle7 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle7 virtualMachine opcode =
     let
         registerX =
@@ -187,10 +187,10 @@ handle7 virtualMachine opcode =
         value =
             opcode |> getByte
     in
-    Ok <| Instructions.addToRegister virtualMachine registerX value
+    virtualMachine |> Instructions.addToRegister registerX value |> Ok
 
 
-handle8 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle8 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle8 virtualMachine opcode =
     let
         registerX =
@@ -204,37 +204,37 @@ handle8 virtualMachine opcode =
     in
     case nibble of
         0x00 ->
-            Ok <| Instructions.setRegisterToRegister virtualMachine registerX registerY
+            virtualMachine |> Instructions.setRegisterToRegister registerX registerY |> Ok
 
         0x01 ->
-            Ok <| Instructions.setRegisterOr virtualMachine registerX registerY
+            virtualMachine |> Instructions.setRegisterOr registerX registerY |> Ok
 
         0x02 ->
-            Ok <| Instructions.setRegisterAnd virtualMachine registerX registerY
+            virtualMachine |> Instructions.setRegisterAnd registerX registerY |> Ok
 
         0x03 ->
-            Ok <| Instructions.setRegisterXor virtualMachine registerX registerY
+            virtualMachine |> Instructions.setRegisterXor registerX registerY |> Ok
 
         0x04 ->
-            Ok <| Instructions.setRegisterAdd virtualMachine registerX registerY
+            virtualMachine |> Instructions.setRegisterAdd registerX registerY |> Ok
 
         0x05 ->
-            Ok <| Instructions.setRegisterSub virtualMachine registerX registerY
+            virtualMachine |> Instructions.setRegisterSub registerX registerY |> Ok
 
         0x06 ->
-            Ok <| Instructions.setRegisterShiftRight virtualMachine registerX
+            virtualMachine |> Instructions.setRegisterShiftRight registerX |> Ok
 
         0x07 ->
-            Ok <| Instructions.setRegisterSubFlipped virtualMachine registerX registerY
+            virtualMachine |> Instructions.setRegisterSubFlipped registerX registerY |> Ok
 
         0x0E ->
-            Ok <| Instructions.setRegisterShiftLeft virtualMachine registerX
+            virtualMachine |> Instructions.setRegisterShiftLeft registerX |> Ok
 
         _ ->
-            Err <| "Unknown opcode: " ++ toHex opcode
+            "Unknown opcode: " ++ toHex opcode |> Err
 
 
-handle9 : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handle9 : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handle9 virtualMachine opcode =
     let
         nibble =
@@ -251,20 +251,26 @@ handle9 virtualMachine opcode =
             registerY =
                 opcode |> getNibble 2 |> Result.withDefault 0
         in
-        Ok <| Instructions.skipNextIfRegistersNotEqual virtualMachine registerX registerY
+        virtualMachine
+            |> Instructions.skipNextIfRegistersNotEqual registerX registerY
+            |> Ok
 
 
-handleA : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handleA : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handleA virtualMachine opcode =
-    Ok <| Instructions.setAddressRegisterToConstant virtualMachine (opcode |> dropFirstNibble)
+    virtualMachine
+        |> Instructions.setAddressRegisterToConstant (opcode |> dropFirstNibble)
+        |> Ok
 
 
-handleB : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handleB : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handleB virtualMachine opcode =
-    Ok <| Instructions.jumpRelative virtualMachine (opcode |> dropFirstNibble)
+    virtualMachine
+        |> Instructions.jumpRelative (opcode |> dropFirstNibble)
+        |> Ok
 
 
-handleC : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handleC : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handleC virtualMachine opcode =
     let
         registerX =
@@ -273,10 +279,12 @@ handleC virtualMachine opcode =
         value =
             opcode |> getByte
     in
-    Ok <| Instructions.setRegisterRandom virtualMachine registerX value
+    virtualMachine
+        |> Instructions.setRegisterRandom registerX value
+        |> Ok
 
 
-handleD : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handleD : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handleD virtualMachine opcode =
     let
         registerX =
@@ -288,10 +296,12 @@ handleD virtualMachine opcode =
         n =
             opcode |> getNibble 3 |> Result.withDefault 0
     in
-    Ok <| Instructions.displaySprite virtualMachine registerX registerY n
+    virtualMachine
+        |> Instructions.displaySprite registerX registerY n
+        |> Ok
 
 
-handleE : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handleE : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handleE virtualMachine opcode =
     let
         registerX =
@@ -302,16 +312,20 @@ handleE virtualMachine opcode =
     in
     case byte of
         0x9E ->
-            Ok <| Instructions.skipNextIfKeyPressed virtualMachine registerX
+            virtualMachine
+                |> Instructions.skipNextIfKeyPressed registerX
+                |> Ok
 
         0xA1 ->
-            Ok <| Instructions.skipNextIfKeyNotPressed virtualMachine registerX
+            virtualMachine
+                |> Instructions.skipNextIfKeyNotPressed registerX
+                |> Ok
 
         _ ->
-            Err <| "Unknown opcode: " ++ toHex opcode
+            "Unknown opcode: " ++ toHex opcode |> Err
 
 
-handleF : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+handleF : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 handleF virtualMachine opcode =
     let
         registerX =
@@ -322,37 +336,37 @@ handleF virtualMachine opcode =
     in
     case byte of
         0x07 ->
-            Ok <| Instructions.setRegisterToDelayTimer virtualMachine registerX
+            virtualMachine |> Instructions.setRegisterToDelayTimer registerX |> Ok
 
         0x0A ->
-            Ok <| Instructions.waitForKeyPress virtualMachine registerX
+            virtualMachine |> Instructions.waitForKeyPress registerX |> Ok
 
         0x15 ->
-            Ok <| Instructions.setDelayTimerToRegisterValue virtualMachine registerX
+            virtualMachine |> Instructions.setDelayTimerToRegisterValue registerX |> Ok
 
         0x18 ->
-            Ok <| Instructions.setSoundTimerToRegisterValue virtualMachine registerX
+            virtualMachine |> Instructions.setSoundTimerToRegisterValue registerX |> Ok
 
         0x1E ->
-            Ok <| Instructions.addToAddressRegister virtualMachine registerX
+            virtualMachine |> Instructions.addToAddressRegister registerX |> Ok
 
         0x29 ->
-            Ok <| Instructions.setAddressRegisterToSpriteLocation virtualMachine registerX
+            virtualMachine |> Instructions.setAddressRegisterToSpriteLocation registerX |> Ok
 
         0x33 ->
-            Ok <| Instructions.storeBcdOfRegister virtualMachine registerX
+            virtualMachine |> Instructions.storeBcdOfRegister registerX |> Ok
 
         0x55 ->
-            Ok <| Instructions.storeRegistersAtAddressRegister virtualMachine registerX
+            virtualMachine |> Instructions.storeRegistersAtAddressRegister registerX |> Ok
 
         0x65 ->
-            Ok <| Instructions.readRegistersFromAddressRegister virtualMachine registerX
+            virtualMachine |> Instructions.readRegistersFromAddressRegister registerX |> Ok
 
         _ ->
-            Err <| "Unknown opcode: " ++ toHex opcode
+            "Unknown opcode: " ++ toHex opcode |> Err
 
 
-executeOpcode : VirtualMachine -> Value16Bit -> Result Error ( VirtualMachine, Cmd Msg )
+executeOpcode : VirtualMachine -> Value16Bit -> Result RuntimeError VirtualMachine
 executeOpcode virtualMachine opcode =
     case opcode |> getNibble 0 |> Result.withDefault 0 of
         0x00 ->
@@ -407,10 +421,10 @@ executeOpcode virtualMachine opcode =
             Err <| "Unknown opcode: " ++ toHex opcode
 
 
-performCycle : Flags -> VirtualMachine -> ( VirtualMachine, Cmd Msg )
+performCycle : Flags -> VirtualMachine -> Result RuntimeError VirtualMachine
 performCycle flags virtualMachine =
     if flags |> Flags.isWaitingForInput then
-        ( virtualMachine, Cmd.none )
+        virtualMachine |> Ok
 
     else
         let
@@ -423,24 +437,21 @@ performCycle flags virtualMachine =
             opcode =
                 programCounter
                     |> fetchOpcode memory
-
-            ( resultVirtualMachine, resultCmd ) =
-                case executeOpcode virtualMachine opcode of
-                    Ok result ->
-                        result
-
-                    Err error ->
-                        ( virtualMachine, Ports.printError error )
-
-            newRegisters =
-                resultVirtualMachine
-                    |> VirtualMachine.getRegisters
-                    |> Registers.incrementProgramCounter
-
-            newVirtualMachine =
-                resultVirtualMachine |> VirtualMachine.setRegisters newRegisters
         in
-        ( newVirtualMachine, resultCmd )
+        case executeOpcode virtualMachine opcode of
+            Ok resultVirtualMachine ->
+                let
+                    newRegisters =
+                        resultVirtualMachine
+                            |> VirtualMachine.getRegisters
+                            |> Registers.incrementProgramCounter
+                in
+                resultVirtualMachine
+                    |> VirtualMachine.setRegisters newRegisters
+                    |> Ok
+
+            Err error ->
+                Err error
 
 
 {-| Perform a clock tick
@@ -448,26 +459,20 @@ performCycle flags virtualMachine =
     For each clock tick, we fetch and execute 10 instruction.
 
 -}
-tick : Int -> VirtualMachine -> ( VirtualMachine, Cmd Msg )
+tick : Int -> VirtualMachine -> Result RuntimeError VirtualMachine
 tick instructions virtualMachine =
-    let
-        ( newVirtualMachine, newCmds ) =
-            List.foldl
-                (\_ ( accVirtualMachine, accCmds ) ->
+    List.foldl
+        (\_ accVirtualMachineResult ->
+            case accVirtualMachineResult of
+                Err error ->
+                    Err error
+
+                Ok accVirtualMachine ->
                     let
                         flags =
                             accVirtualMachine |> VirtualMachine.getFlags
-
-                        ( updatedVirtualMachine, cmd ) =
-                            performCycle flags accVirtualMachine
                     in
-                    ( updatedVirtualMachine, cmd :: accCmds )
-                )
-                ( virtualMachine, [] )
-                (List.range 0 instructions)
-    in
-    if List.isEmpty newCmds then
-        ( newVirtualMachine, Cmd.none )
-
-    else
-        ( newVirtualMachine, Cmd.batch <| List.reverse newCmds )
+                    performCycle flags accVirtualMachine
+        )
+        (Ok virtualMachine)
+        (List.range 0 instructions)

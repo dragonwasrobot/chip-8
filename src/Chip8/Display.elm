@@ -1,4 +1,4 @@
-module Display exposing (Cell, Display, getCell, init, setCell)
+module Chip8.Display exposing (Cell, Display, getCell, init, setCell)
 
 import Array exposing (Array)
 

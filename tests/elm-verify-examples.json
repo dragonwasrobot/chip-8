@@ -1,7 +1,7 @@
 {
     "root": "../src/",
     "tests": [
-        "FetchDecodeExecuteLoop",
-        "Instructions"
+        "Chip8.FetchDecodeExecuteLoop",
+        "Chip8.Instructions"
     ]
 }

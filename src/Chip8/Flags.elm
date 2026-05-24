@@ -1,4 +1,4 @@
-module Flags exposing
+module Chip8.Flags exposing
     ( Flags
     , getWaitingForInputRegister
     , init
@@ -8,7 +8,7 @@ module Flags exposing
     , setWaitingForInputRegister
     )
 
-import Types exposing (Value8Bit)
+import Chip8.Types exposing (Value8Bit)
 
 
 {-| Flags

@@ -1,8 +1,8 @@
-module KeyCode exposing (KeyCode(..), KeyMapping, decoder, nibbleValue)
+module Chip8.KeyCode exposing (KeyCode(..), KeyMapping, decoder, nibbleValue)
 
+import Chip8.Types exposing (Value4Bit)
 import Json.Decode as Decode exposing (Decoder)
 import List.Extra as List
-import Types exposing (Value4Bit)
 
 
 {-| Mapping from standard keyboard codes to CHIP-8 keypad codes:

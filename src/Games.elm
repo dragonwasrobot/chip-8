@@ -7,7 +7,7 @@ emulator.
 
 -}
 
-import KeyCode exposing (KeyCode(..), KeyMapping)
+import Chip8.KeyCode exposing (KeyCode(..), KeyMapping)
 
 
 type alias Game =

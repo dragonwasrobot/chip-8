@@ -1,4 +1,4 @@
-module Registers exposing
+module Chip8.Registers exposing
     ( DataRegisters
     , Registers
     , decrementProgramCounter
@@ -7,7 +7,7 @@ module Registers exposing
     , getDataRegister
     , getDelayTimer
     , getProgramCounter
-      -- , getSoundTimer
+    , getSoundTimer
     , getStackPointer
     , incrementProgramCounter
     , incrementStackPointer
@@ -16,7 +16,7 @@ module Registers exposing
     , setDataRegister
     , setDelayTimer
     , setProgramCounter
-      -- , setSoundTimer
+    , setSoundTimer
     )
 
 {-| Registers
@@ -38,7 +38,7 @@ The program counter (PC, 16-bit) and stack pointer (SP, 8-bit).
 -}
 
 import Array exposing (Array)
-import Types exposing (Error, Value16Bit, Value8Bit)
+import Chip8.Types exposing (RuntimeError, Value16Bit, Value8Bit)
 
 
 type alias DataRegisters =
@@ -59,8 +59,7 @@ type alias Registers =
     { dataRegisters : DataRegisters
     , addressRegister : Value16Bit
     , delayTimer : Value8Bit
-
-    -- , soundTimer : Value8Bit
+    , soundTimer : Value8Bit
     , programCounter : Value16Bit
     , stackPointer : Value8Bit
     }
@@ -71,14 +70,13 @@ init =
     { dataRegisters = initDataRegisters
     , addressRegister = 0
     , delayTimer = 0
-
-    -- , soundTimer = 0
+    , soundTimer = 0
     , programCounter = 0
     , stackPointer = 0
     }
 
 
-getDataRegister : Int -> Registers -> Result Error Value16Bit
+getDataRegister : Int -> Registers -> Result RuntimeError Value16Bit
 getDataRegister index registers =
     if index >= dataRegisterCount then
         Err <| "Data register index out of bounds: " ++ String.fromInt index
@@ -87,7 +85,7 @@ getDataRegister index registers =
         Ok <| (registers.dataRegisters |> Array.get index |> Maybe.withDefault 0)
 
 
-setDataRegister : Int -> Value16Bit -> Registers -> Result Error Registers
+setDataRegister : Int -> Value16Bit -> Registers -> Result RuntimeError Registers
 setDataRegister index value registers =
     if index > dataRegisterCount then
         Err "Register index out of bounds"
@@ -120,13 +118,14 @@ setDelayTimer delay registers =
     { registers | delayTimer = delay }
 
 
+getSoundTimer : Registers -> Value8Bit
+getSoundTimer registers =
+    registers.soundTimer
 
--- getSoundTimer : Registers -> Value8Bit
--- getSoundTimer registers =
---     registers.soundTimer
--- setSoundTimer : Value8Bit -> Registers -> Registers
--- setSoundTimer sound registers =
---     { registers | soundTimer = sound }
+
+setSoundTimer : Value8Bit -> Registers -> Registers
+setSoundTimer sound registers =
+    { registers | soundTimer = sound }
 
 
 getProgramCounter : Registers -> Value16Bit

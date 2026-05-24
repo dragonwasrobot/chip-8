@@ -1,4 +1,10 @@
-module Types exposing (Error, Value12Bit, Value16Bit, Value4Bit, Value8Bit)
+module Chip8.Types exposing
+    ( RuntimeError
+    , Value12Bit
+    , Value16Bit
+    , Value4Bit
+    , Value8Bit
+    )
 
 -- Common types used in the CHIP-8 project.
 
@@ -19,5 +25,5 @@ type alias Value16Bit =
     Int
 
 
-type alias Error =
+type alias RuntimeError =
     String

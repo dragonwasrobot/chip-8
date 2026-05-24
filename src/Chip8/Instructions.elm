@@ -1,4 +1,4 @@
-module Instructions exposing
+module Chip8.Instructions exposing
     ( addToAddressRegister
     , addToRegister
     , callSubroutine
@@ -63,19 +63,24 @@ and their implementations.
 
 import Array
 import Bitwise
-import Display
-import Flags
-import Keypad
+import Chip8.Display as Display
+import Chip8.Flags as Flags
+import Chip8.Keypad as Keypad
+import Chip8.Memory as Memory
+import Chip8.Registers as Registers exposing (Registers)
+import Chip8.Stack as Stack
+import Chip8.Timers as Timers
+import Chip8.Types
+    exposing
+        ( Value12Bit
+        , Value16Bit
+        , Value4Bit
+        , Value8Bit
+        )
+import Chip8.VirtualMachine as VirtualMachine exposing (VirtualMachine)
 import List.Extra as List
-import Memory
-import Msg exposing (Msg)
 import ParseInt
 import Random
-import Registers exposing (Registers)
-import Stack
-import Timers
-import Types exposing (Value12Bit, Value16Bit, Value4Bit, Value8Bit)
-import VirtualMachine exposing (VirtualMachine)
 
 
 {-| 0NNN - Jump to a machine code routine at NNN
@@ -84,17 +89,17 @@ This instruction is only used on the old computers on which CHIP-8 was
 originally implemented. It is ignored by modern interpreters.
 
 -}
-jumpSys : VirtualMachine -> ( VirtualMachine, Cmd Msg )
+jumpSys : VirtualMachine -> VirtualMachine
 jumpSys virtualMachine =
     -- jumpSys instruction is ignored
-    ( virtualMachine, Cmd.none )
+    virtualMachine
 
 
 {-| 00E0 - Clear the display
 -}
-clearDisplay : VirtualMachine -> ( VirtualMachine, Cmd Msg )
+clearDisplay : VirtualMachine -> VirtualMachine
 clearDisplay virtualMachine =
-    ( virtualMachine |> VirtualMachine.setDisplay Display.init, Cmd.none )
+    virtualMachine |> VirtualMachine.setDisplay Display.init
 
 
 {-| 00EE - Return from a subroutine
@@ -103,7 +108,7 @@ The interpreter sets the program counter to the address at the top of the stack,
 then decrement the stack pointer.
 
 -}
-returnFromSubroutine : VirtualMachine -> ( VirtualMachine, Cmd Msg )
+returnFromSubroutine : VirtualMachine -> VirtualMachine
 returnFromSubroutine virtualMachine =
     let
         addressAtTopOfStack =
@@ -122,7 +127,7 @@ returnFromSubroutine virtualMachine =
                 |> Registers.setProgramCounter addressAtTopOfStack
                 |> Registers.decrementStackPointer
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 1NNN - Jump to location NNN
@@ -130,8 +135,8 @@ returnFromSubroutine virtualMachine =
 The interpreter sets the program counter to NNN.
 
 -}
-jumpAbsolute : VirtualMachine -> Value12Bit -> ( VirtualMachine, Cmd Msg )
-jumpAbsolute virtualMachine location =
+jumpAbsolute : Value12Bit -> VirtualMachine -> VirtualMachine
+jumpAbsolute location virtualMachine =
     let
         newRegisters =
             virtualMachine
@@ -139,7 +144,7 @@ jumpAbsolute virtualMachine location =
                 |> Registers.setProgramCounter location
                 |> Registers.decrementProgramCounter
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 2NNN - Call subroutine at NNN
@@ -148,7 +153,7 @@ The interpreter increments the stack pointer, then puts the current PC on the
 top of the stack. The PC is then set to NNN.
 
 -}
-callSubroutine : VirtualMachine -> Value12Bit -> ( VirtualMachine, Cmd Msg )
+callSubroutine : VirtualMachine -> Value12Bit -> VirtualMachine
 callSubroutine virtualMachine location =
     let
         registers =
@@ -172,13 +177,10 @@ callSubroutine virtualMachine location =
                     (Registers.getStackPointer newRegisters)
                     oldProgramCounter
                 |> Result.withDefault stack
-
-        newVirtualMachine =
-            virtualMachine
-                |> VirtualMachine.setRegisters newRegisters
-                |> VirtualMachine.setStack newStack
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine
+        |> VirtualMachine.setRegisters newRegisters
+        |> VirtualMachine.setStack newStack
 
 
 {-| 3XNN - Skip next instruction if VX = NN
@@ -187,8 +189,8 @@ The interpreter compares register VX to NN, and if they are equal, increments
 the program counter by 2.
 
 -}
-skipNextIfEqualConstant : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
-skipNextIfEqualConstant virtualMachine register byte =
+skipNextIfEqualConstant : Int -> Value8Bit -> VirtualMachine -> VirtualMachine
+skipNextIfEqualConstant register byte virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -205,7 +207,7 @@ skipNextIfEqualConstant virtualMachine register byte =
             else
                 registers
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 4XNN - Skip next instruction if VX != NN
@@ -214,8 +216,8 @@ The interpreter compares register VX to NN, and if they are not equal,
 increments the program counter by 2.
 
 -}
-skipNextIfNotEqualConstant : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
-skipNextIfNotEqualConstant virtualMachine register value =
+skipNextIfNotEqualConstant : Int -> Value8Bit -> VirtualMachine -> VirtualMachine
+skipNextIfNotEqualConstant register value virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -232,7 +234,7 @@ skipNextIfNotEqualConstant virtualMachine register value =
             else
                 registers
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 5XY0 - Skip next instruction if VX = VY
@@ -241,8 +243,8 @@ The interpreter compares register VX to register VY, and if they are equal,
 increments the program counter by 2.
 
 -}
-skipNextIfRegistersEqual : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-skipNextIfRegistersEqual virtualMachine registerX registerY =
+skipNextIfRegistersEqual : Int -> Int -> VirtualMachine -> VirtualMachine
+skipNextIfRegistersEqual registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -266,7 +268,7 @@ skipNextIfRegistersEqual virtualMachine registerX registerY =
             else
                 virtualMachine |> VirtualMachine.getRegisters
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 6XNN - Set VX = NN
@@ -274,8 +276,8 @@ skipNextIfRegistersEqual virtualMachine registerX registerY =
 The interpreter puts the value NN into register VX.
 
 -}
-setRegisterToConstant : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
-setRegisterToConstant virtualMachine register value =
+setRegisterToConstant : Int -> Value8Bit -> VirtualMachine -> VirtualMachine
+setRegisterToConstant register value virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -285,7 +287,7 @@ setRegisterToConstant virtualMachine register value =
                 |> Registers.setDataRegister register value
                 |> Result.withDefault registers
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 7XNN - Set VX = VX + NN
@@ -293,8 +295,8 @@ setRegisterToConstant virtualMachine register value =
 Adds the value NN to the value of register VX, then stores the result in VX.
 
 -}
-addToRegister : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
-addToRegister virtualMachine register value =
+addToRegister : Int -> Value8Bit -> VirtualMachine -> VirtualMachine
+addToRegister register value virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -312,7 +314,7 @@ addToRegister virtualMachine register value =
                 |> Registers.setDataRegister register newRegisterValue
                 |> Result.withDefault registers
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY0 - Set VX = VY
@@ -320,8 +322,8 @@ addToRegister virtualMachine register value =
 Stores the value of register VY in register VX.
 
 -}
-setRegisterToRegister : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterToRegister virtualMachine registerX registerY =
+setRegisterToRegister : Int -> Int -> VirtualMachine -> VirtualMachine
+setRegisterToRegister registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -336,7 +338,7 @@ setRegisterToRegister virtualMachine registerX registerY =
                 |> Registers.setDataRegister registerX newRegisterXValue
                 |> Result.withDefault registers
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY1 - Set VX = VX OR VY
@@ -344,8 +346,8 @@ setRegisterToRegister virtualMachine registerX registerY =
 Performs a bitwise OR on the values of VX and VY, then stores the result in VX.
 
 -}
-setRegisterOr : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterOr virtualMachine registerX registerY =
+setRegisterOr : Int -> Int -> VirtualMachine -> VirtualMachine
+setRegisterOr registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -366,11 +368,8 @@ setRegisterOr virtualMachine registerX registerY =
                     registerX
                     (Bitwise.or registerXValue registerYValue)
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY2 - Set VX = VX AND VY
@@ -378,8 +377,8 @@ setRegisterOr virtualMachine registerX registerY =
 Performs a bitwise AND on the values of VX and VY, then stores the result in VX.
 
 -}
-setRegisterAnd : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterAnd virtualMachine registerX registerY =
+setRegisterAnd : Int -> Int -> VirtualMachine -> VirtualMachine
+setRegisterAnd registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -400,11 +399,8 @@ setRegisterAnd virtualMachine registerX registerY =
                     registerX
                     (Bitwise.and registerXValue registerYValue)
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY3 - Set VX = VX XOR VY
@@ -413,8 +409,8 @@ Performs a bitwise exclusive OR on the values of VX and VY, then stores the
 result in VX.
 
 -}
-setRegisterXor : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterXor virtualMachine registerX registerY =
+setRegisterXor : Int -> Int -> VirtualMachine -> VirtualMachine
+setRegisterXor registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -435,12 +431,8 @@ setRegisterXor virtualMachine registerX registerY =
                     registerX
                     (Bitwise.xor registerXValue registerYValue)
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine
-                |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY4 - Set VX = VX + VY, set VF = carry
@@ -450,8 +442,8 @@ The values of VX and VY are added together. If the result is greater than 8 bits
 kept, and stored in VX.
 
 -}
-setRegisterAdd : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterAdd virtualMachine registerX registerY =
+setRegisterAdd : Int -> Int -> VirtualMachine -> VirtualMachine
+setRegisterAdd registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -481,11 +473,8 @@ setRegisterAdd virtualMachine registerX registerY =
                 |> Registers.setDataRegister registerX (modBy 256 registerSum)
                 |> Result.andThen (Registers.setDataRegister 15 carryValue)
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY5 - Set VX = VX - VY, set VF = NOT borrow
@@ -494,8 +483,8 @@ If VX > VY, then VF is set to 1, otherwise 0. Then VY is subtracted from VX, and
 the results stored in VX.
 
 -}
-setRegisterSub : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterSub virtualMachine registerX registerY =
+setRegisterSub : Int -> Int -> VirtualMachine -> VirtualMachine
+setRegisterSub registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -529,12 +518,8 @@ setRegisterSub virtualMachine registerX registerY =
                 |> Registers.setDataRegister registerX newRegisterValue
                 |> Result.andThen (Registers.setDataRegister 15 notBorrowValue)
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine
-                |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY6 - Set VX = VX SHR 1
@@ -543,8 +528,8 @@ If the least-significant bit of VX is 1, then VF is set to 1, otherwise 0. Then
 VX is divided by 2.
 
 -}
-setRegisterShiftRight : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterShiftRight virtualMachine registerX =
+setRegisterShiftRight : Int -> VirtualMachine -> VirtualMachine
+setRegisterShiftRight registerX virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -559,11 +544,8 @@ setRegisterShiftRight virtualMachine registerX =
                 |> Registers.setDataRegister 15 (modBy 2 registerXValue)
                 |> Result.andThen (Registers.setDataRegister registerX (registerXValue // 2))
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XY7 - Set VX = VY - VX, set VF = NOT borrow
@@ -572,8 +554,8 @@ If VY > VX, then VF is set to 1, otherwise 0. Then VX is subtracted from VY,
 and the results stored in VX.
 
 -}
-setRegisterSubFlipped : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterSubFlipped virtualMachine registerX registerY =
+setRegisterSubFlipped : Int -> Int -> VirtualMachine -> VirtualMachine
+setRegisterSubFlipped registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -607,11 +589,8 @@ setRegisterSubFlipped virtualMachine registerX registerY =
                 |> Registers.setDataRegister registerX newRegisterValue
                 |> Result.andThen (Registers.setDataRegister 15 notBorrowValue)
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 8XYE - Set VX = VX SHL 1
@@ -620,8 +599,8 @@ If the most-significant bit of VX is 1, then VF is set to 1, otherwise to 0.
 Then VX is multiplied by 2.
 
 -}
-setRegisterShiftLeft : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterShiftLeft virtualMachine registerX =
+setRegisterShiftLeft : Int -> VirtualMachine -> VirtualMachine
+setRegisterShiftLeft registerX virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -642,11 +621,8 @@ setRegisterShiftLeft virtualMachine registerX =
                 |> Registers.setDataRegister 15 msbValue
                 |> Result.andThen (Registers.setDataRegister registerX newRegisterValue)
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| 9XY0 - Skip next instruction if VX != VY
@@ -655,8 +631,8 @@ The values of VX and VY are compared, and if they are not equal, the program
 counter is increased by 2.
 
 -}
-skipNextIfRegistersNotEqual : VirtualMachine -> Int -> Int -> ( VirtualMachine, Cmd Msg )
-skipNextIfRegistersNotEqual virtualMachine registerX registerY =
+skipNextIfRegistersNotEqual : Int -> Int -> VirtualMachine -> VirtualMachine
+skipNextIfRegistersNotEqual registerX registerY virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -677,11 +653,8 @@ skipNextIfRegistersNotEqual virtualMachine registerX registerY =
 
             else
                 registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| ANNN - Set I = NNN
@@ -689,15 +662,15 @@ skipNextIfRegistersNotEqual virtualMachine registerX registerY =
 The value of register I is set to NNN.
 
 -}
-setAddressRegisterToConstant : VirtualMachine -> Value12Bit -> ( VirtualMachine, Cmd Msg )
-setAddressRegisterToConstant virtualMachine location =
+setAddressRegisterToConstant : Value12Bit -> VirtualMachine -> VirtualMachine
+setAddressRegisterToConstant location virtualMachine =
     let
         newRegisters =
             virtualMachine
                 |> VirtualMachine.getRegisters
                 |> Registers.setAddressRegister location
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| BNNN - Jump to location NNN + V0
@@ -705,8 +678,8 @@ setAddressRegisterToConstant virtualMachine location =
 The program counter is set to NNN plus the value of V0.
 
 -}
-jumpRelative : VirtualMachine -> Value16Bit -> ( VirtualMachine, Cmd Msg )
-jumpRelative virtualMachine location =
+jumpRelative : Value16Bit -> VirtualMachine -> VirtualMachine
+jumpRelative location virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -719,7 +692,7 @@ jumpRelative virtualMachine location =
                 |> VirtualMachine.getRegisters
                 |> Registers.setProgramCounter newProgramCounter
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| CXNN - Set VX = random byte AND NN
@@ -728,8 +701,8 @@ The interpreter generates a random number from 0 to 255, which is then AND'ed
 with the value NN. The results are stored in VX.
 
 -}
-setRegisterRandom : VirtualMachine -> Int -> Value8Bit -> ( VirtualMachine, Cmd Msg )
-setRegisterRandom virtualMachine registerX value =
+setRegisterRandom : Int -> Value8Bit -> VirtualMachine -> VirtualMachine
+setRegisterRandom registerX value virtualMachine =
     let
         ( random, newSeed ) =
             virtualMachine
@@ -744,11 +717,9 @@ setRegisterRandom virtualMachine registerX value =
                 |> Registers.setDataRegister registerX (Bitwise.and random value)
                 |> Result.withDefault registers
     in
-    ( virtualMachine
+    virtualMachine
         |> VirtualMachine.setRegisters newRegisters
         |> VirtualMachine.setRandomSeed newSeed
-    , Cmd.none
-    )
 
 
 {-| DXYN - Display N-byte sprite
@@ -764,8 +735,8 @@ part of it is outside the coordinates of the display, it wraps around to the
 opposite side of the screen.
 
 -}
-displaySprite : VirtualMachine -> Int -> Int -> Value4Bit -> ( VirtualMachine, Cmd Msg )
-displaySprite virtualMachine registerX registerY n =
+displaySprite : Int -> Int -> Value4Bit -> VirtualMachine -> VirtualMachine
+displaySprite registerX registerY n virtualMachine =
     let
         display =
             ( 64, 32 )
@@ -789,27 +760,24 @@ displaySprite virtualMachine registerX registerY n =
                             |> Memory.getCell (addressRegister + i)
                             |> Result.withDefault 0
                     )
-
-        newVirtualMachine =
-            List.indexedFoldl
-                (\row sprite accVirtualMachine ->
-                    setBitsForRow
-                        display
-                        ( registerX, registerY )
-                        row
-                        (hexToBitPattern sprite)
-                        accVirtualMachine
-                )
-                (virtualMachine
-                    |> VirtualMachine.setRegisters
-                        (registers
-                            |> Registers.setDataRegister 15 0
-                            |> Result.withDefault registers
-                        )
-                )
-                sprites
     in
-    ( newVirtualMachine, Cmd.none )
+    List.indexedFoldl
+        (\row sprite accVirtualMachine ->
+            setBitsForRow
+                display
+                ( registerX, registerY )
+                row
+                (hexToBitPattern sprite)
+                accVirtualMachine
+        )
+        (virtualMachine
+            |> VirtualMachine.setRegisters
+                (registers
+                    |> Registers.setDataRegister 15 0
+                    |> Result.withDefault registers
+                )
+        )
+        sprites
 
 
 setBitsForRow :
@@ -959,8 +927,8 @@ Checks the keyboard, and if the key corresponding to the value of VX is
 currently in the down position, PC is increased by 2.
 
 -}
-skipNextIfKeyPressed : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
-skipNextIfKeyPressed virtualMachine registerX =
+skipNextIfKeyPressed : Int -> VirtualMachine -> VirtualMachine
+skipNextIfKeyPressed registerX virtualMachine =
     let
         registerXValue =
             virtualMachine
@@ -980,7 +948,7 @@ skipNextIfKeyPressed virtualMachine registerX =
             else
                 virtualMachine |> VirtualMachine.getRegisters
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| EXA1 - Skip next instruction if key code of value VX isn't pressed
@@ -989,8 +957,8 @@ Checks the keyboard, and if the key corresponding to the value of VX is
 currently in the up position, PC is increased by 2.
 
 -}
-skipNextIfKeyNotPressed : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
-skipNextIfKeyNotPressed virtualMachine registerX =
+skipNextIfKeyNotPressed : Int -> VirtualMachine -> VirtualMachine
+skipNextIfKeyNotPressed registerX virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -1010,7 +978,7 @@ skipNextIfKeyNotPressed virtualMachine registerX =
             else
                 registers
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| FX07 - Set VX = delay timer value
@@ -1018,8 +986,8 @@ skipNextIfKeyNotPressed virtualMachine registerX =
 The value of DT is placed into VX.
 
 -}
-setRegisterToDelayTimer : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
-setRegisterToDelayTimer virtualMachine registerX =
+setRegisterToDelayTimer : Int -> VirtualMachine -> VirtualMachine
+setRegisterToDelayTimer registerX virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -1031,11 +999,8 @@ setRegisterToDelayTimer virtualMachine registerX =
             registers
                 |> Registers.setDataRegister registerX delayTimer
                 |> Result.withDefault registers
-
-        newVirtualMachine =
-            virtualMachine |> VirtualMachine.setRegisters newRegisters
     in
-    ( newVirtualMachine, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| FX0A - Wait for a key press
@@ -1046,18 +1011,15 @@ All execution stops until a key is pressed, then the value of that key is
 stored in VX.
 
 -}
-waitForKeyPress : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
-waitForKeyPress virtualMachine registerX =
+waitForKeyPress : Int -> VirtualMachine -> VirtualMachine
+waitForKeyPress registerX virtualMachine =
     let
         newFlags =
             virtualMachine
                 |> VirtualMachine.getFlags
                 |> Flags.setWaitingForInputRegister (Just registerX)
     in
-    ( virtualMachine
-        |> VirtualMachine.setFlags newFlags
-    , Cmd.none
-    )
+    virtualMachine |> VirtualMachine.setFlags newFlags
 
 
 {-| FX15 - Set delay timer = VX
@@ -1065,8 +1027,8 @@ waitForKeyPress virtualMachine registerX =
 DT is set equal to the value of VX.
 
 -}
-setDelayTimerToRegisterValue : VirtualMachine -> Int -> ( VirtualMachine, Cmd Msg )
-setDelayTimerToRegisterValue virtualMachine registerX =
+setDelayTimerToRegisterValue : Int -> VirtualMachine -> VirtualMachine
+setDelayTimerToRegisterValue registerX virtualMachine =
     let
         registerXValue =
             virtualMachine
@@ -1074,7 +1036,7 @@ setDelayTimerToRegisterValue virtualMachine registerX =
                 |> Registers.getDataRegister registerX
                 |> Result.withDefault 0
 
-        ( ( newRegisters, newTimers ), cmd ) =
+        ( newRegisters, newTimers ) =
             Timers.startDelayTimer
                 (virtualMachine
                     |> VirtualMachine.getRegisters
@@ -1082,11 +1044,9 @@ setDelayTimerToRegisterValue virtualMachine registerX =
                 )
                 (virtualMachine |> VirtualMachine.getTimers)
     in
-    ( virtualMachine
+    virtualMachine
         |> VirtualMachine.setTimers newTimers
         |> VirtualMachine.setRegisters newRegisters
-    , cmd
-    )
 
 
 {-| FX18 - Set sound timer = VX
@@ -1094,8 +1054,8 @@ setDelayTimerToRegisterValue virtualMachine registerX =
 ST is set equal to the value of VX.
 
 -}
-setSoundTimerToRegisterValue : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
-setSoundTimerToRegisterValue virtualMachine registerX =
+setSoundTimerToRegisterValue : Value4Bit -> VirtualMachine -> VirtualMachine
+setSoundTimerToRegisterValue registerX virtualMachine =
     let
         newSoundTimer =
             virtualMachine
@@ -1103,10 +1063,16 @@ setSoundTimerToRegisterValue virtualMachine registerX =
                 |> Registers.getDataRegister registerX
                 |> Result.withDefault 0
 
-        cmd =
-            Timers.playSound newSoundTimer
+        newRegisters =
+            virtualMachine
+                |> VirtualMachine.getRegisters
+                |> Registers.setSoundTimer newSoundTimer
+
+        ( newerRegisters, newTimers ) =
+            virtualMachine.timers
+                |> Timers.startSoundTimer newRegisters
     in
-    ( virtualMachine, cmd )
+    { virtualMachine | registers = newerRegisters, timers = newTimers }
 
 
 {-| FX1E - Set I = I + VX
@@ -1114,8 +1080,8 @@ setSoundTimerToRegisterValue virtualMachine registerX =
 The values of I and VX are added, and the results are stored in I.
 
 -}
-addToAddressRegister : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
-addToAddressRegister virtualMachine registerX =
+addToAddressRegister : Value4Bit -> VirtualMachine -> VirtualMachine
+addToAddressRegister registerX virtualMachine =
     let
         registerXValue =
             virtualMachine
@@ -1135,7 +1101,7 @@ addToAddressRegister virtualMachine registerX =
                 |> VirtualMachine.getRegisters
                 |> Registers.setAddressRegister newAddressRegister
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| FX29 - Set I = location of sprite for digit VX
@@ -1144,8 +1110,8 @@ The value of I is set to the location for the hexadecimal sprite corresponding
 to the value of VX.
 
 -}
-setAddressRegisterToSpriteLocation : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
-setAddressRegisterToSpriteLocation virtualMachine registerX =
+setAddressRegisterToSpriteLocation : Value4Bit -> VirtualMachine -> VirtualMachine
+setAddressRegisterToSpriteLocation registerX virtualMachine =
     let
         registerXValue =
             virtualMachine
@@ -1158,7 +1124,7 @@ setAddressRegisterToSpriteLocation virtualMachine registerX =
                 |> VirtualMachine.getRegisters
                 |> Registers.setAddressRegister (registerXValue * 5)
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters
 
 
 {-| FX33 - Store BCD representation of VX
@@ -1170,8 +1136,8 @@ memory at location in I, the tens digit at location I+1, and the ones digit at
 location I+2.
 
 -}
-storeBcdOfRegister : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
-storeBcdOfRegister virtualMachine registerX =
+storeBcdOfRegister : Value4Bit -> VirtualMachine -> VirtualMachine
+storeBcdOfRegister registerX virtualMachine =
     let
         addressRegister =
             virtualMachine
@@ -1204,7 +1170,7 @@ storeBcdOfRegister virtualMachine registerX =
                     )
                 |> Result.withDefault memory
     in
-    ( virtualMachine |> VirtualMachine.setMemory newMemory, Cmd.none )
+    virtualMachine |> VirtualMachine.setMemory newMemory
 
 
 {-| FX55 - Store registers V0 through VX in memory
@@ -1215,8 +1181,8 @@ The interpreter copies the values of registers V0 through VX into memory,
 starting at the address in I.
 
 -}
-storeRegistersAtAddressRegister : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
-storeRegistersAtAddressRegister virtualMachine registerX =
+storeRegistersAtAddressRegister : Value4Bit -> VirtualMachine -> VirtualMachine
+storeRegistersAtAddressRegister registerX virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -1238,7 +1204,7 @@ storeRegistersAtAddressRegister virtualMachine registerX =
                 (virtualMachine |> VirtualMachine.getMemory)
                 (List.range 0 registerX)
     in
-    ( virtualMachine |> VirtualMachine.setMemory newMemory, Cmd.none )
+    virtualMachine |> VirtualMachine.setMemory newMemory
 
 
 {-| FX65 - Read registers V0 through VX from memory
@@ -1249,8 +1215,8 @@ The interpreter reads values from memory starting at location I into
 registers V0 through VX.
 
 -}
-readRegistersFromAddressRegister : VirtualMachine -> Value4Bit -> ( VirtualMachine, Cmd Msg )
-readRegistersFromAddressRegister virtualMachine registerX =
+readRegistersFromAddressRegister : Value4Bit -> VirtualMachine -> VirtualMachine
+readRegistersFromAddressRegister registerX virtualMachine =
     let
         registers =
             virtualMachine |> VirtualMachine.getRegisters
@@ -1275,4 +1241,4 @@ readRegistersFromAddressRegister virtualMachine registerX =
                     )
                     registers
     in
-    ( virtualMachine |> VirtualMachine.setRegisters newRegisters, Cmd.none )
+    virtualMachine |> VirtualMachine.setRegisters newRegisters

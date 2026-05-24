@@ -3,8 +3,8 @@ module Request exposing (fetchRom)
 import Array exposing (Array)
 import Bytes exposing (Bytes)
 import Bytes.Decode as Decode exposing (Decoder, Step(..))
+import Chip8.Types exposing (Value8Bit)
 import Http exposing (Error(..), Response(..))
-import Types exposing (Value8Bit)
 
 
 fetchRom : String -> (Result Error (Array Value8Bit) -> msg) -> Cmd msg

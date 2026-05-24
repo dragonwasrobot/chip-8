@@ -58,21 +58,21 @@
 
              const audioContext = sound.audioContext;
              if (exists(audioContext)) {
-                 const oscillator = audioContext.createOscillator();
-
-                 oscillator.type = 'square';
-                 oscillator.frequency.setValueAtTime(
-                     440, audioContext.currentTime); // value in hertz
-                 oscillator.connect(audioContext.destination);
-                 oscillator.start();
-
-                 setTimeout(() => oscillator.stop() ,
-                     sound.tickLength * st
-                 );
-
-             } else {
                  console.log('Beep!');
+                 return;
              }
+
+             const oscillator = audioContext.createOscillator();
+
+             oscillator.type = 'square';
+             oscillator.frequency.setValueAtTime(
+                 440, audioContext.currentTime); // value in hertz
+             oscillator.connect(audioContext.destination);
+             oscillator.start();
+
+             setTimeout(() => oscillator.stop() ,
+                        sound.tickLength * st
+             );
          };
          app.ports.playSound.subscribe(playSound);
         </script>

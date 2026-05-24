@@ -1,14 +1,21 @@
-module Main exposing (InitFlags, Model, main)
+module Main exposing (InitFlags, Model, Msg, main)
 
 import Array exposing (Array)
 import Browser
 import Browser.Events as BrowserEvents
 import Canvas exposing (Renderable)
 import Canvas.Settings exposing (fill)
+import Chip8.Display as Display exposing (Display)
+import Chip8.FetchDecodeExecuteLoop as FetchDecodeExecuteLoop
+import Chip8.Flags as Flags exposing (Flags)
+import Chip8.KeyCode as KeyCode exposing (KeyCode)
+import Chip8.Keypad as Keypad
+import Chip8.Memory as Memory
+import Chip8.Registers as Registers
+import Chip8.Timers as Timers exposing (DelayTimer(..))
+import Chip8.Types exposing (RuntimeError, Value8Bit)
+import Chip8.VirtualMachine as VirtualMachine exposing (VirtualMachine)
 import Color exposing (Color)
-import Display exposing (Display)
-import FetchDecodeExecuteLoop
-import Flags exposing (Flags)
 import Games exposing (Game)
 import Grid
 import Html
@@ -30,18 +37,12 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Http exposing (Error(..))
 import Json.Decode as Decode
-import KeyCode exposing (KeyCode)
-import Keypad
 import List.Extra as List
-import Memory
-import Msg exposing (Msg(..))
 import Ports
-import Registers
+import Process
 import Request
+import Task
 import Time
-import Timers
-import Types exposing (Error, Value8Bit)
-import VirtualMachine exposing (VirtualMachine)
 
 
 
@@ -77,7 +78,7 @@ type alias Model =
     { virtualMachine : VirtualMachine
     , games : List Game
     , selectedGame : Maybe Game
-    , error : Maybe Error
+    , error : Maybe RuntimeError
     , basePath : String
     , seed : Int
     }
@@ -96,6 +97,41 @@ initModel flags =
 
 
 -- * UPDATE
+
+
+type Msg
+    = KeyUp (Maybe KeyCode)
+    | KeyDown (Maybe KeyCode)
+    | DelayTick
+    | ClockTick
+    | SelectGame String
+    | ReloadGame
+    | LoadedGame (Result Http.Error (Array Value8Bit))
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        KeyDown maybeKeyCode ->
+            model |> addKeyCode maybeKeyCode
+
+        KeyUp maybeKeyCode ->
+            model |> removeKeyCode maybeKeyCode
+
+        DelayTick ->
+            model |> delayTick
+
+        ClockTick ->
+            model |> clockTick
+
+        SelectGame gameName ->
+            model |> selectGame gameName
+
+        ReloadGame ->
+            model |> reloadGame
+
+        LoadedGame gameBytesResult ->
+            model |> readProgram gameBytesResult
 
 
 addKeyCode : Maybe KeyCode -> Model -> ( Model, Cmd Msg )
@@ -170,17 +206,26 @@ checkIfWaitingForKeyPress keyCode virtualMachine =
 delayTick : Model -> ( Model, Cmd Msg )
 delayTick model =
     let
-        ( ( newRegisters, newTimers ), cmd ) =
-            Timers.tick
+        ( newRegisters, newTimers ) =
+            Timers.delayTick
                 (model.virtualMachine |> VirtualMachine.getRegisters)
                 (model.virtualMachine |> VirtualMachine.getTimers)
+
+        delayCmd =
+            if Registers.getDelayTimer newRegisters > 0 then
+                Timers.getDelayLength
+                    |> Process.sleep
+                    |> Task.perform (\_ -> DelayTick)
+
+            else
+                Cmd.none
 
         newVirtualMachine =
             model.virtualMachine
                 |> VirtualMachine.setRegisters newRegisters
                 |> VirtualMachine.setTimers newTimers
     in
-    ( { model | virtualMachine = newVirtualMachine }, cmd )
+    ( { model | virtualMachine = newVirtualMachine }, delayCmd )
 
 
 clockTick : Model -> ( Model, Cmd Msg )
@@ -200,10 +245,44 @@ clockTick model =
             tickSpeed =
                 2
 
-            ( newVirtualMachine, cmd ) =
+            virtualMachineResult =
                 model.virtualMachine |> FetchDecodeExecuteLoop.tick tickSpeed
         in
-        ( { model | virtualMachine = newVirtualMachine }, cmd )
+        case virtualMachineResult of
+            Err error ->
+                ( model, Ports.printError error )
+
+            Ok virtualMachine ->
+                let
+                    ( updatedTimers, delayCmd ) =
+                        if (virtualMachine.timers |> Timers.getDelay) == Ready then
+                            ( Timers.setDelay Running virtualMachine.timers
+                            , Timers.getDelayLength
+                                |> Process.sleep
+                                |> Task.perform (\_ -> DelayTick)
+                            )
+
+                        else
+                            ( virtualMachine.timers, Cmd.none )
+
+                    playLength =
+                        virtualMachine.timers
+                            |> Timers.getSound
+                            |> Timers.getPlayLength
+
+                    soundCmd =
+                        if playLength > 0 then
+                            Ports.playSound playLength
+
+                        else
+                            Cmd.none
+
+                    newVirtualMachine =
+                        { virtualMachine | timers = Timers.clearSoundTimer updatedTimers }
+                in
+                ( { model | virtualMachine = newVirtualMachine }
+                , Cmd.batch [ soundCmd, delayCmd ]
+                )
 
     else
         ( model, Cmd.none )
@@ -307,31 +386,6 @@ readProgram programBytesResult model =
                         |> VirtualMachine.setFlags newFlags
             in
             ( { model | virtualMachine = newVirtualMachine }, Cmd.none )
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        KeyDown maybeKeyCode ->
-            model |> addKeyCode maybeKeyCode
-
-        KeyUp maybeKeyCode ->
-            model |> removeKeyCode maybeKeyCode
-
-        DelayTick ->
-            model |> delayTick
-
-        ClockTick ->
-            model |> clockTick
-
-        SelectGame gameName ->
-            model |> selectGame gameName
-
-        ReloadGame ->
-            model |> reloadGame
-
-        LoadedGame gameBytesResult ->
-            model |> readProgram gameBytesResult
 
 
 

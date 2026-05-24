@@ -1,4 +1,4 @@
-module Stack exposing (Stack, init, pop, put)
+module Chip8.Stack exposing (Stack, init, pop, put)
 
 {-| Stack
 
@@ -9,7 +9,7 @@ allows for up to 16 levels of nested subroutines.
 -}
 
 import Array exposing (Array)
-import Types exposing (Error, Value16Bit, Value8Bit)
+import Chip8.Types exposing (RuntimeError, Value16Bit, Value8Bit)
 
 
 type alias Stack =
@@ -26,7 +26,7 @@ init =
     Array.repeat stackSize 0
 
 
-pop : Value8Bit -> Stack -> Result Error Value16Bit
+pop : Value8Bit -> Stack -> Result RuntimeError Value16Bit
 pop stackPointer stack =
     if stackPointer >= stackSize then
         Err "Stack pointer out of bounds"
@@ -38,7 +38,7 @@ pop stackPointer stack =
             |> Ok
 
 
-put : Value8Bit -> Value16Bit -> Stack -> Result Error Stack
+put : Value8Bit -> Value16Bit -> Stack -> Result RuntimeError Stack
 put stackPointer value stack =
     if stackPointer >= stackSize then
         Err "Stack pointer out of bounds"
