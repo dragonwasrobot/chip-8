@@ -1,0 +1,3 @@
+allowBuilds:
+  elm-format: true
+nodeLinker: hoisted

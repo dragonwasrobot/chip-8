@@ -9,12 +9,12 @@
   },
   "scripts": {
     "compile": "elm make --output=docs/elm.min.js src/Main.elm",
-    "doc-tests": "npx elm-verify-examples",
-    "format": "npx elm-format --validate src",
-    "lint": "npx elm-review",
+    "doc-tests": "elm-verify-examples",
+    "format": "elm-format --validate src",
+    "lint": "elm-review",
     "prepare": "husky",
     "serve": "cd docs && python3 -m http.server",
-    "test": "npx elm-test tests"
+    "test": "elm-test tests"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
@@ -22,5 +22,6 @@
     "elm-review": "^2.13.5",
     "elm-test": "0.19.1-revision17",
     "husky": "^9.1.7"
-  }
+  },
+  "packageManager": "pnpm@11.7.0"
 }

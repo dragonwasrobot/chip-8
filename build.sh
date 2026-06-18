@@ -5,7 +5,7 @@ set -ef -o pipefail
 echo "Building..."
 
 # Install node dependencies
-npm install
+pnpm install --frozen-lockfile
 
 # Set flags in index.html
 OS="$(uname)"

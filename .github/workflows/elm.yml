@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Elm
         uses: jorelali/setup-elm@v6
@@ -40,18 +40,21 @@ jobs:
       - name: Compile project
         run: elm make src/Main.elm
 
+      - uses: pnpm/action-setup@v6
+
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24.12'
+          cache: pnpm
 
       - name: Install and run elm-test
         run: |
           echo "Running elm-format and elm-test..."
-          npm install
-          npm run format
-          npm run lint
-          npm run test
+          pnpm install --frozen-lockfile
+          pnpm format
+          pnpm lint
+          pnpm test
 
   commitlint:
     name: Lint commit messages
@@ -83,10 +86,13 @@ jobs:
         with:
           elm-version: 0.19.1
 
+      - uses: pnpm/action-setup@v6
+
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: '24.12'
+          cache: pnpm
 
       - name: Compile and minimize project
         run: |
