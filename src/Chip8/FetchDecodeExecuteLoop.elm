@@ -456,11 +456,17 @@ performCycle flags virtualMachine =
 
 {-| Perform a clock tick
 
-    For each clock tick, we fetch and execute 10 instruction.
+Performs 3 opcodes per tick resulting in simulating a 1800Hz CPU. This gives a
+pretty smooth feel when using the system, though it might be more faithful with
+1200Hz.
 
 -}
-tick : Int -> VirtualMachine -> Result RuntimeError VirtualMachine
-tick instructions virtualMachine =
+tick : VirtualMachine -> Result RuntimeError VirtualMachine
+tick virtualMachine =
+    let
+        opcodesPerTicks =
+            3
+    in
     List.foldl
         (\_ accVirtualMachineResult ->
             case accVirtualMachineResult of
@@ -475,4 +481,4 @@ tick instructions virtualMachine =
                     performCycle flags accVirtualMachine
         )
         (Ok virtualMachine)
-        (List.range 0 instructions)
+        (List.range 0 (opcodesPerTicks - 1))

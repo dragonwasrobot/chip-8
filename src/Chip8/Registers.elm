@@ -42,7 +42,7 @@ import Chip8.Types exposing (RuntimeError, Value16Bit, Value8Bit)
 
 
 type alias DataRegisters =
-    Array Value16Bit
+    Array Value8Bit
 
 
 dataRegisterCount : Int
@@ -76,7 +76,7 @@ init =
     }
 
 
-getDataRegister : Int -> Registers -> Result RuntimeError Value16Bit
+getDataRegister : Int -> Registers -> Result RuntimeError Value8Bit
 getDataRegister index registers =
     if index >= dataRegisterCount then
         Err <| "Data register index out of bounds: " ++ String.fromInt index
@@ -85,9 +85,9 @@ getDataRegister index registers =
         Ok <| (registers.dataRegisters |> Array.get index |> Maybe.withDefault 0)
 
 
-setDataRegister : Int -> Value16Bit -> Registers -> Result RuntimeError Registers
+setDataRegister : Int -> Value8Bit -> Registers -> Result RuntimeError Registers
 setDataRegister index value registers =
-    if index > dataRegisterCount then
+    if index >= dataRegisterCount then
         Err "Register index out of bounds"
 
     else
