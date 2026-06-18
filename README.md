@@ -50,6 +50,6 @@ The tests are written using [elm-test](https://github.com/elm-explorations/test)
 and [elm-verify-examples](https://github.com/stoeffel/elm-verify-examples/). To
 run the tests, perform the steps:
 
-- Run the command `npm install` to install `elm-test` and `elm-verify-examples`,
+- Run the command `pnpm install` to install `elm-test` and `elm-verify-examples`,
 - run the command `mise run test` to generate the documentation tests found in
   the Elm code, and run all tests in the `tests` folder.

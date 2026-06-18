@@ -1,24 +1,25 @@
 [tools]
 node = "24"
 elm = "0.19.1"
+pnpm = "latest"
 
 [tasks.format]
-run = "npm run format"
+run = "pnpm format"
 
 [tasks.lint]
-run = "npm run lint"
+run = "pnpm lint"
 
 [tasks.compile]
-run = "npm run compile"
+run = "pnpm compile"
 
 [tasks.build]
 depends = ["format", "lint", "compile"]
 
 [tasks.doc-test]
-run = "npm run doc-tests"
+run = "pnpm doc-tests"
 
 [tasks.unit-test]
-run = "npm run test"
+run = "pnpm test"
 
 [tasks.test]
 depends = ["doc-test", "unit-test"]
@@ -27,4 +28,4 @@ depends = ["doc-test", "unit-test"]
 depends = ["build", "test"]
 
 [tasks.serve]
-run = "npm run serve"
+run = "pnpm serve"
