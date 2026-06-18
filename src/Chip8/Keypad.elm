@@ -35,7 +35,7 @@ type alias Keypad =
 
 init : Keypad
 init =
-    List.range 0 16
+    List.range 0 15
         |> List.foldl (\idx -> Dict.insert idx False) Dict.empty
 
 

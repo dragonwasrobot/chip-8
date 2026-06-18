@@ -246,11 +246,8 @@ clockTick model =
     in
     if running && waitingForInput == False then
         let
-            tickSpeed =
-                2
-
             virtualMachineResult =
-                model.virtualMachine |> FetchDecodeExecuteLoop.tick tickSpeed
+                model.virtualMachine |> FetchDecodeExecuteLoop.tick
         in
         case virtualMachineResult of
             Err error ->
