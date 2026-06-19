@@ -409,9 +409,14 @@ view : Model -> Html Msg
 view model =
     div [ Attr.id "container" ]
         [ viewHeader
-        , viewCanvas model
-        , viewKeyMapping model
-        , viewGameSelector model
+        , div [ Attr.id "stage" ]
+            [ div [ Attr.id "empty-container" ] []
+            , div [ Attr.id "canvas-container" ]
+                [ viewCanvas model
+                , viewGameSelector model
+                ]
+            , viewKeyMapping model
+            ]
         ]
 
 
@@ -454,9 +459,7 @@ viewCanvas model =
                 [ Canvas.rect ( 0, 0 ) (width * cellSize) (height * cellSize) ]
                 :: renderDisplay model.virtualMachine.display
     in
-    Canvas.toHtml ( width * cellSize, height * cellSize )
-        []
-        shapes
+    Canvas.toHtml ( width * cellSize, height * cellSize ) [] shapes
 
 
 renderDisplay : Display -> List Renderable

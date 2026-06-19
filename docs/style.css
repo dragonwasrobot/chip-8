@@ -12,12 +12,21 @@ body {
 }
 
 canvas {
-  margin: 0 auto 0 auto;
   box-shadow: 0 4px var(--main-color),
               0 -4px var(--main-color),
               4px 0 var(--main-color),
               -4px 0 var(--main-color);
   display: block;
+  margin: 0 auto;
+}
+
+#stage {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 1.5em;
+  margin-top: 1em;
+  padding: 0 1em;
 }
 
 h1 {
@@ -34,16 +43,15 @@ ul {
 /* Key mapping */
 
 #key-mapping-container {
-  margin: 1.5em auto 0 auto;
-  max-width: 550px;
+  margin: 0;
   color: var(--main-color);
 }
 
 #key-mapping {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75em;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5em;
   margin: 0;
 }
 

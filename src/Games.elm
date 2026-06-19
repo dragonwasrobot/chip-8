@@ -209,16 +209,16 @@ hidden =
               , chip8KeyCode = KeyCode 6
               , description = Nothing
               }
-            , { browserKeyCode = " "
-              , chip8KeyCode = KeyCode 5
-              , description = Nothing
-              }
             , { browserKeyCode = "ArrowUp"
               , chip8KeyCode = KeyCode 2
               , description = Nothing
               }
             , { browserKeyCode = "ArrowDown"
               , chip8KeyCode = KeyCode 8
+              , description = Nothing
+              }
+            , { browserKeyCode = " "
+              , chip8KeyCode = KeyCode 5
               , description = Nothing
               }
             ]
@@ -237,13 +237,13 @@ invaders =
               , chip8KeyCode = KeyCode 4
               , description = Nothing
               }
-            , { browserKeyCode = " "
-              , chip8KeyCode = KeyCode 5
-              , description = Just "SHOOT"
-              }
             , { browserKeyCode = "ArrowRight"
               , chip8KeyCode = KeyCode 6
               , description = Nothing
+              }
+            , { browserKeyCode = " "
+              , chip8KeyCode = KeyCode 5
+              , description = Just "SHOOT"
               }
             ]
     in
@@ -267,19 +267,19 @@ pong =
         controls =
             [ { browserKeyCode = "w"
               , chip8KeyCode = KeyCode 1
-              , description = Nothing
+              , description = Just "Left Player - Up"
               }
             , { browserKeyCode = "s"
               , chip8KeyCode = KeyCode 4
-              , description = Nothing
+              , description = Just "Left Player - Down"
               }
             , { browserKeyCode = "i"
               , chip8KeyCode = KeyCode 12
-              , description = Nothing
+              , description = Just "Right Player - Up"
               }
             , { browserKeyCode = "k"
               , chip8KeyCode = KeyCode 13
-              , description = Nothing
+              , description = Just "Right Player - Down"
               }
             ]
     in
@@ -301,12 +301,12 @@ tetris =
               , chip8KeyCode = KeyCode 6
               , description = Nothing
               }
-            , { browserKeyCode = " "
-              , chip8KeyCode = KeyCode 4
-              , description = Nothing
-              }
             , { browserKeyCode = "ArrowDown"
               , chip8KeyCode = KeyCode 7
+              , description = Nothing
+              }
+            , { browserKeyCode = " "
+              , chip8KeyCode = KeyCode 4
               , description = Nothing
               }
             ]
@@ -323,39 +323,39 @@ tictac =
         controls =
             [ { browserKeyCode = "5"
               , chip8KeyCode = KeyCode 1
-              , description = Nothing
+              , description = Just "Top left"
               }
             , { browserKeyCode = "6"
               , chip8KeyCode = KeyCode 2
-              , description = Nothing
+              , description = Just "Top center"
               }
             , { browserKeyCode = "7"
               , chip8KeyCode = KeyCode 3
-              , description = Nothing
+              , description = Just "Top right"
               }
             , { browserKeyCode = "r"
               , chip8KeyCode = KeyCode 4
-              , description = Nothing
+              , description = Just "Middle left"
               }
             , { browserKeyCode = "t"
               , chip8KeyCode = KeyCode 5
-              , description = Nothing
+              , description = Just "Middle center"
               }
             , { browserKeyCode = "y"
               , chip8KeyCode = KeyCode 6
-              , description = Nothing
+              , description = Just "Middle right"
               }
             , { browserKeyCode = "f"
               , chip8KeyCode = KeyCode 7
-              , description = Nothing
+              , description = Just "Bottom left"
               }
             , { browserKeyCode = "g"
               , chip8KeyCode = KeyCode 8
-              , description = Nothing
+              , description = Just "Bottom center"
               }
             , { browserKeyCode = "h"
               , chip8KeyCode = KeyCode 9
-              , description = Nothing
+              , description = Just "Bottom right"
               }
             ]
     in
