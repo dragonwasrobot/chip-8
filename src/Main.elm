@@ -621,13 +621,18 @@ keyboardSubscriptions flags maybeGame =
 
 clockSubscriptions : Flags -> List (Sub Msg)
 clockSubscriptions flags =
-    if
-        (flags |> Flags.isWaitingForInput)
-            || (flags |> Flags.isRunning |> not)
-    then
+    if flags |> Flags.isRunning |> not then
         []
 
     else
-        [ Time.every (1000 / 600) (\_ -> ClockTick)
-        , Time.every (1000 / 60) (\_ -> FadeTick)
-        ]
+        let
+            fadeSub =
+                Time.every (1000 / 60) (\_ -> FadeTick)
+        in
+        if flags |> Flags.isWaitingForInput then
+            [ fadeSub ]
+
+        else
+            [ Time.every (1000 / 600) (\_ -> ClockTick)
+            , fadeSub
+            ]
