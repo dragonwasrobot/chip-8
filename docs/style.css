@@ -32,26 +32,21 @@ ul {
   list-style-type: none;
 }
 
-.centerish {
-  margin: 0 auto;
-  width: fit-content;
+#game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75em;
+  max-width: 640px;
+  margin: 1em auto 0 auto;
 }
 
-#game-selector {
-  margin-top: 1em;
+#game-grid .nes-btn {
+  width: 100%;
 }
 
 #game-reload {
   margin-top: 1.5em;
-  padding: 6px 12px 6px 16px;
-  border: 0;
-  box-shadow: 0 -4px var(--main-color),
-              0 4px var(--main-color),
-              4px 0 var(--main-color),
-              -4px 0 var(--main-color);
-  background-color: var(--main-bg-color);
-  font-size: 1.2em;
-  color: var(--main-color);
+  padding: 0.75em;
 }
 
 #games-container {
@@ -65,11 +60,4 @@ ul {
   display: block;
   text-align: center;
   color: var(--main-color);
-}
-
-/* Adjustments to NES.css */
-
-.nes-select.is-dark::after {
-  color: var(--main-color);
-  margin-top: 6px;
 }

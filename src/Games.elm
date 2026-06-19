@@ -11,7 +11,8 @@ import Chip8.KeyCode exposing (KeyCode(..), KeyMapping)
 
 
 type alias Game =
-    { name : String
+    { fileName : String
+    , displayName : String
     , controls : List KeyMapping
     }
 
@@ -65,7 +66,8 @@ blinky =
               }
             ]
     in
-    { name = "blinky.ch8"
+    { fileName = "blinky.ch8"
+    , displayName = "Blinky"
     , controls = controls
     }
 
@@ -84,14 +86,14 @@ brix =
               }
             ]
     in
-    { name = "brix.ch8"
+    { fileName = "brix.ch8"
+    , displayName = "Brix"
     , controls = controls
     }
 
 
 cavern : Game
 cavern =
-    -- Cavern escape.
     let
         controls =
             [ { browserKeyCode = "ArrowLeft"
@@ -116,7 +118,8 @@ cavern =
               }
             ]
     in
-    { name = "cavern.ch8"
+    { fileName = "cavern.ch8"
+    , displayName = "Cavern"
     , controls = controls
     }
 
@@ -156,7 +159,8 @@ chipquarium =
               }
             ]
     in
-    { name = "chipquarium.ch8"
+    { fileName = "chipquarium.ch8"
+    , displayName = "Chipquarium"
     , controls = controls
     }
 
@@ -179,14 +183,16 @@ connect4 =
               }
             ]
     in
-    { name = "connect4.ch8"
+    { fileName = "connect4.ch8"
+    , displayName = "Connect 4"
     , controls = controls
     }
 
 
 heartMonitorDemo : Game
 heartMonitorDemo =
-    { name = "heart_monitor.ch8"
+    { fileName = "heart_monitor.ch8"
+    , displayName = "Heart"
     , controls = []
     }
 
@@ -217,7 +223,8 @@ hidden =
               }
             ]
     in
-    { name = "hidden.ch8"
+    { fileName = "hidden.ch8"
+    , displayName = "Hidden"
     , controls = controls
     }
 
@@ -240,30 +247,16 @@ invaders =
               }
             ]
     in
-    { name = "invaders.ch8"
+    { fileName = "invaders.ch8"
+    , displayName = "Invaders"
     , controls = controls
     }
 
 
-
--- kaleid : Game
--- kaleid =
---     let
---         controls =
---             [ { browserKeyCode = " "
---               , chip8KeyCode = KeyCode 5
---               , description = Nothing
---               }
---             ]
---     in
---     { name = "kaleid.ch8"
---     , controls = controls
---     }
-
-
 morseDemo : Game
 morseDemo =
-    { name = "morse_demo.ch8"
+    { fileName = "morse_demo.ch8"
+    , displayName = "Morse"
     , controls = []
     }
 
@@ -290,15 +283,9 @@ pong =
               }
             ]
     in
-    { name = "pong.ch8"
+    { fileName = "pong.ch8"
+    , displayName = "Pong"
     , controls = controls
-    }
-
-
-testOpcode : Game
-testOpcode =
-    { name = "test_opcode.ch8"
-    , controls = []
     }
 
 
@@ -324,7 +311,8 @@ tetris =
               }
             ]
     in
-    { name = "tetris.ch8"
+    { fileName = "tetris.ch8"
+    , displayName = "Tetris"
     , controls = controls
     }
 
@@ -371,7 +359,8 @@ tictac =
               }
             ]
     in
-    { name = "tictac.ch8"
+    { fileName = "tictac.ch8"
+    , displayName = "Tic Tac Toe"
     , controls = controls
     }
 
@@ -386,11 +375,8 @@ init =
     , heartMonitorDemo
     , hidden
     , invaders
-
-    -- , kaleid
     , morseDemo
     , pong
-    , testOpcode
     , tetris
     , tictac
     ]

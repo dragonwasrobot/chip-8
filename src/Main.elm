@@ -20,16 +20,13 @@ import Games exposing (Game)
 import Grid
 import Html
     exposing
-        ( Attribute
-        , Html
+        ( Html
         , button
         , div
         , h1
         , h3
         , li
-        , option
         , section
-        , select
         , text
         , ul
         )
@@ -38,6 +35,7 @@ import Html.Events as Events
 import Http exposing (Error(..))
 import Json.Decode as Decode
 import List.Extra as List
+import Maybe.Extra as Maybe
 import Ports
 import Process
 import Request
@@ -307,7 +305,7 @@ selectGame : String -> Model -> ( Model, Cmd Msg )
 selectGame gameName model =
     let
         selectedGame =
-            model.games |> List.find (.name >> (==) gameName)
+            model.games |> List.find (.fileName >> (==) gameName)
 
         newVirtualMachine =
             VirtualMachine.init model.seed
@@ -334,7 +332,7 @@ reloadGame : Model -> ( Model, Cmd Msg )
 reloadGame model =
     case model.selectedGame of
         Just game ->
-            selectGame game.name model
+            selectGame game.fileName model
 
         Nothing ->
             ( model, Cmd.none )
@@ -487,51 +485,52 @@ renderCell display ( row, column ) renderables =
 viewGameSelector : Model -> Html Msg
 viewGameSelector model =
     let
-        toDisplayName game =
-            game.name
-                |> String.toUpper
-                |> String.split "."
-                |> List.head
-                |> Maybe.withDefault "Unknown"
+        gameGrid : Html Msg
+        gameGrid =
+            div [ Attr.id "game-grid" ] (List.map gameButton model.games)
 
-        gameOption : Game -> Html Msg
-        gameOption game =
-            option [ Attr.value game.name ] [ text <| toDisplayName <| game ]
-
-        gameOptions : List (Html Msg)
-        gameOptions =
-            option [ Attr.value "" ] [ text "SELECT GAME" ]
-                :: List.map gameOption model.games
-
-        gameSelector : List (Html Msg)
-        gameSelector =
-            [ div
-                [ Attr.class "nes-select is-dark centerish" ]
-                [ select
-                    [ Attr.id "game-selector"
-                    , onChange SelectGame
-                    ]
-                    gameOptions
+        gameButton : Game -> Html Msg
+        gameButton game =
+            button
+                [ Attr.class "nes-btn"
+                , Attr.classList [ ( "is-success", isSelected game ) ]
+                , Events.onClick (SelectGame game.fileName)
                 ]
-            ]
+                [ text game.displayName ]
 
-        reloadButton : List (Html Msg)
+        isSelected : Game -> Bool
+        isSelected game =
+            case model.selectedGame of
+                Just selected ->
+                    selected.fileName == game.fileName
+
+                Nothing ->
+                    False
+
+        reloadButton : Html Msg
         reloadButton =
-            [ button
+            let
+                gameSelected =
+                    Maybe.isJust model.selectedGame
+
+                btnStyle =
+                    if gameSelected then
+                        "is-primary"
+
+                    else
+                        "is-disabled"
+            in
+            button
                 [ Attr.id "game-reload"
+                , Attr.class "nes-btn"
+                , Attr.class btnStyle
                 , Events.onClick ReloadGame
                 ]
                 [ text "RELOAD" ]
-            ]
     in
     section
         [ Attr.id "games-container" ]
-        (gameSelector ++ reloadButton)
-
-
-onChange : (String -> msg) -> Attribute msg
-onChange tagger =
-    Events.on "change" (Decode.map tagger Events.targetValue)
+        [ gameGrid, reloadButton ]
 
 
 viewKeyMapping : Model -> Html Msg
