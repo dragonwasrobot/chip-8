@@ -2,6 +2,7 @@ module Main exposing (InitFlags, Model, Msg, main)
 
 import Array exposing (Array)
 import Browser
+import Browser.Dom as Dom
 import Browser.Events as BrowserEvents
 import Canvas exposing (Renderable)
 import Canvas.Settings exposing (fill)
@@ -106,6 +107,7 @@ type Msg
     | SelectGame String
     | ReloadGame
     | LoadedGame (Result Http.Error (Array Value8Bit))
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -134,6 +136,9 @@ update msg model =
 
         LoadedGame gameBytesResult ->
             model |> readProgram gameBytesResult
+
+        NoOp ->
+            ( model, Cmd.none )
 
 
 addKeyCode : Maybe KeyCode -> Model -> ( Model, Cmd Msg )
@@ -315,7 +320,10 @@ selectGame gameName model =
         , selectedGame = selectedGame
         , error = Nothing
       }
-    , loadGame model.basePath gameName
+    , Cmd.batch
+        [ loadGame model.basePath gameName
+        , blurElement (gameButtonId gameName)
+        ]
     )
 
 
@@ -332,10 +340,29 @@ reloadGame : Model -> ( Model, Cmd Msg )
 reloadGame model =
     case model.selectedGame of
         Just game ->
-            selectGame game.fileName model
+            let
+                ( newModel, cmd ) =
+                    selectGame game.fileName model
+            in
+            ( newModel, Cmd.batch [ cmd, blurElement reloadButtonId ] )
 
         Nothing ->
             ( model, Cmd.none )
+
+
+blurElement : String -> Cmd Msg
+blurElement elementId =
+    Dom.blur elementId |> Task.attempt (\_ -> NoOp)
+
+
+gameButtonId : String -> String
+gameButtonId fileName =
+    "game-btn-" ++ fileName
+
+
+reloadButtonId : String
+reloadButtonId =
+    "game-reload"
 
 
 readProgram : Result Http.Error (Array Value8Bit) -> Model -> ( Model, Cmd Msg )
@@ -495,7 +522,8 @@ viewGameSelector model =
         gameButton : Game -> Html Msg
         gameButton game =
             button
-                [ Attr.class "nes-btn"
+                [ Attr.id (gameButtonId game.fileName)
+                , Attr.class "nes-btn"
                 , Attr.classList [ ( "is-success", isSelected game ) ]
                 , Events.onClick (SelectGame game.fileName)
                 ]
@@ -524,7 +552,7 @@ viewGameSelector model =
                         "is-disabled"
             in
             button
-                [ Attr.id "game-reload"
+                [ Attr.id reloadButtonId
                 , Attr.class "nes-btn"
                 , Attr.class btnStyle
                 , Events.onClick ReloadGame
