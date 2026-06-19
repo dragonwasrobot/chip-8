@@ -24,9 +24,9 @@ import Html
         , button
         , div
         , h1
-        , h3
         , li
         , section
+        , span
         , text
         , ul
         )
@@ -410,8 +410,8 @@ view model =
     div [ Attr.id "container" ]
         [ viewHeader
         , viewCanvas model
-        , viewGameSelector model
         , viewKeyMapping model
+        , viewGameSelector model
         ]
 
 
@@ -544,19 +544,27 @@ viewKeyMapping model =
                 Nothing ->
                     []
 
-        toListItems keyMapping acc =
+        toChip keyMapping =
             let
-                keyCodeDescription =
+                keyLabel =
+                    prettyPrintKey keyMapping.browserKeyCode
+
+                actionLabel =
                     keyMapping.description
-                        |> Maybe.withDefault (keyMapping.browserKeyCode |> prettyPrintKey)
             in
-            li [] [ text keyCodeDescription ] :: acc
+            case actionLabel of
+                Just label ->
+                    li [ Attr.class "key-chip" ]
+                        [ span [ Attr.class "key-chip-key" ] [ text keyLabel ]
+                        , span [ Attr.class "key-chip-label" ] [ text label ]
+                        ]
+
+                Nothing ->
+                    li [ Attr.class "key-chip" ]
+                        [ span [ Attr.class "key-chip-key" ] [ text keyLabel ] ]
     in
     div [ Attr.id "key-mapping-container" ]
-        [ h3 [] [ text "CONTROLS" ]
-        , ul [ Attr.id "key-mapping" ]
-            (List.foldl toListItems [] keyMappings)
-        ]
+        [ ul [ Attr.id "key-mapping" ] (List.map toChip keyMappings) ]
 
 
 prettyPrintKey : String -> String

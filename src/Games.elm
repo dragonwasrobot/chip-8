@@ -131,23 +131,23 @@ chipquarium =
         controls =
             [ { browserKeyCode = "f"
               , chip8KeyCode = KeyCode 15
-              , description = Just "F - FEED FISH"
+              , description = Just "FEED FISH"
               }
             , { browserKeyCode = "c"
               , chip8KeyCode = KeyCode 12
-              , description = Just "C - CLEAN TANK"
+              , description = Just "CLEAN TANK"
               }
             , { browserKeyCode = "d"
               , chip8KeyCode = KeyCode 13
-              , description = Just "D - FISH SLEEP"
+              , description = Just "FISH SLEEP"
               }
             , { browserKeyCode = "b"
               , chip8KeyCode = KeyCode 11
-              , description = Just "B - ROCK-PAPER-SCISSORS"
+              , description = Just "ROCK-PAPER-SCISSORS"
               }
             , { browserKeyCode = "e"
               , chip8KeyCode = KeyCode 14
-              , description = Just "E - FISH STATS"
+              , description = Just "FISH STATS"
               }
             , { browserKeyCode = "ArrowUp"
               , chip8KeyCode = KeyCode 2
@@ -239,7 +239,7 @@ invaders =
               }
             , { browserKeyCode = " "
               , chip8KeyCode = KeyCode 5
-              , description = Just "SPACE - SHOOT"
+              , description = Just "SHOOT"
               }
             , { browserKeyCode = "ArrowRight"
               , chip8KeyCode = KeyCode 6
