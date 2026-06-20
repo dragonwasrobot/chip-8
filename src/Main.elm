@@ -473,8 +473,8 @@ height =
 
 cellColor : Color
 cellColor =
-    -- #212529
-    Color.rgb255 33 37 41
+    -- Same color --main-bg-color (#1a1c1d) in style.css
+    Color.rgb255 26 28 29
 
 
 viewCanvas : Model -> Html Msg
