@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
-    "@commitlint/config-conventional": "^21.0.2",
+    "@commitlint/config-conventional": "^21.2.0",
     "elm-review": "^2.13.5",
     "elm-test": "0.19.1-revision17",
     "husky": "^9.1.7"
