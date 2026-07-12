@@ -5,10 +5,14 @@ updates:
   schedule:
     interval: weekly
     time: "04:00"
+  cooldown:
+    default-days: 14
   open-pull-requests-limit: 10
 - package-ecosystem: npm
   directory: "/"
   schedule:
-    interval: daily
+    interval: weekly
     time: "04:00"
+  cooldown:
+    default-days: 14
   open-pull-requests-limit: 10
