@@ -17,7 +17,7 @@
     "test": "elm-test tests"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.1",
+    "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.0",
     "elm-review": "^2.13.5",
     "elm-test": "0.19.1-revision17",
